@@ -1,0 +1,94 @@
+#!/bin/bash
+
+#PBS -N MixedMode
+#PBS -l mppwidth=24
+#PBS -l mppnppn=24
+#PBS -l walltime=20:00
+#PBS -A z03
+# #PBS -q R223723
+# #PBS -A y03
+  
+cd $PBS_O_WORKDIR
+echo 'PBS_O_WORKDIR =' $PBS_O_WORKDIR
+#export MPICH_GNI_MAX_EAGER_MSG_SIZE=10000000
+ulimit -s unlimited
+
+outfile="${exename%exe}ncore${NPROC}.out"
+outfile_cco="${exename%exe}ncore${NPROC}.cco.out"
+
+cat /dev/null > ${outfile}
+cat /dev/null > ${outfile_cco}
+
+# number of OpenMP threads to use
+nth="1 2 3 6 12 24"
+
+lexe=( "./${exename}  funneled  $nth " ) 
+
+for i in "${lexe[@]}"
+do
+  echo " first list element is $i "
+  echo " "
+#  nw=$( echo ${lexe[i]} | awk '{print $NF}' )
+
+  exe=$( echo "$i" | awk '{print $1}' )
+  echo " "
+  echo " exe is $exe "
+  echo " "
+  thread_safety=$( echo "$i" | awk '{print $2}' )
+  echo " "
+  echo " thread safety is $thread_safety "
+  echo " "
+  ompval=$( echo "$i" | awk '{ for(k=3; k <= NF; k++ ) print $k}' )
+  echo " "
+  echo " OMP num threads are $ompval "
+  echo " "    
+  for j in $ompval
+  do
+
+    if (( j == 0 ))
+    then 
+
+      NTASK=$(( NPROC > 24 ? 24 : NPROC ))
+
+      aprun -n $NPROC -N $NTASK $exe
+
+    else 
+
+      if (( NPROC == 1 ))
+      then 
+        NPROC_="$NPROC"
+      else 
+        NPROC_=$(( NPROC/j ))
+      fi
+#      [ -z "$NTASK" ]   &&    NTASK=$(( 24/j ))
+      NTASK=$(( j*NPROC_ > 24 ? $(( 24/j )) : NPROC_ ))
+
+      export OMP_NUM_THREADS="$j"
+      export MPICH_MAX_THREAD_SAFETY="$thread_safety"
+      echo " "
+      echo " OpenMP threads: "$OMP_NUM_THREADS", NTASK: "$NTASK" NPROC: "$NPROC_""
+      echo " "
+
+
+      aprun -n $NPROC_ -N $NTASK -d $OMP_NUM_THREADS  $exe  -NR 2400 -NC 2400 -NITER 2005 -s -pc >> ${outfile}
+
+#  CCO overlap
+
+     aprun -n $NPROC_ -N $NTASK -d $OMP_NUM_THREADS  $exe  -NR 2400 -NC 2400 -NITER 2005 -s -pc -use_cco 1 >> ${outfile_cco}
+ 
+
+    fi
+
+  done
+
+done
+
+#
+# collect the average running times in transpose format
+#
+for fn in ${outfile} ${outfile_cco}
+do
+fout=${fn}_tr
+grep -A2 'NITER' $fn  | awk '$1 !~ /^[#\-]/ {print $2, $6}' | awk -f utils/transpose.awk | awk -v np="$NPROC" '{print np, $0}' > $fout
+done
+
