@@ -1,5 +1,5 @@
 #============================================================
-# Makefile configuration for GNU compiler, MPICH2 + OpenMP only 
+# Makefile configuration for GNU compiler, MPICH2 + OpenMP  
 #    
 # Lucian Anton 
 # created: 08/13

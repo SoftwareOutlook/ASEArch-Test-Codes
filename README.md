@@ -12,6 +12,14 @@ At the end of the run the average, minimum and maximum values of
 the runtimes are printed together with the values of the grid size,
  MPI topology and the number of OpenMP thread used.
         
+Build: Make can be customised with the help of platforms/*inc files.
+       Use platforms/gcc.inc as a template for a quick test on local
+       machine. 
+       platforms/cray-xe6.inc shows a customisation for a
+       system with mutiple compilers accesible via module.
+
+
+
 Usage description:
 
 The following flags can be used to set the grid sized and other run parameters:
@@ -26,7 +34,7 @@ The following flags can be used to set the grid sized and other run parameters:
 
 -niter <n>               set the number of smoother iterations ( default 20)
 
--t                       prints the diference between the norms of two consecutive
+-t                       prints the diference between the norm ratio of two consecutive
 			 iterations and smoother eigenvalue (it must be very small).
 
 -nh                      output without header
@@ -36,9 +44,9 @@ The following flags can be used to set the grid sized and other run parameters:
 
 -pc                      prints various setting of the run
 
--v                       Prints all collected timings for all MPI tasks
-                         Default : prints only the average, min and max value of the timings 
-                         and normalised standard deviation.
+-v                       Prints all collected timings for all MPI tasks.
+                         Default output prints only the average, min and
+                         max value of the timings and the normalised standard deviation.
 
    
 
