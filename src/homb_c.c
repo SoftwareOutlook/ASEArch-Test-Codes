@@ -83,10 +83,12 @@ int main(int argc, char *argv[]) {
     
     startTime = my_wtime();
 
-    if (use_cco)
-      jacobi_smoother_cco(iter, &norm);
-    else
-      jacobi_smoother(iter, &norm);
+    switch (kernel_key)
+      {
+      case (COMMON_KERNEL) :  common_laplace3d(iter, &norm); break;
+      case (BLOCKED_KERNEL):  blocked_laplace3d(iter, &norm); break;
+      case (CCO_KERNEL):      cco_laplace3d(iter, &norm); break;
+      }
 
     /* End timing */
     endTime = my_wtime();

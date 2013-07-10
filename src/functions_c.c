@@ -29,10 +29,18 @@ Below is the original copyright and licence.
   along with HOMB.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "homb_c.h"
+#include "functions_c.h"
 
-static const double inv6 = (1.0/6.0);
+// MPI transfer directions and neighbours tags
+#define IN -1
+#define OUT 1
+#define NORTH 0
+#define SOUTH 1
+#define WEST 2
+#define EAST 3
+#define BOTTOM 4
+#define TOP 5
 
 #ifdef USE_MPI
 // MPI auxiliaries
@@ -43,205 +51,38 @@ static const int ns_tag = 221, sn_tag=222, we_tag = 231, ew_tag=232, bt_tag = 24
 // neighbours ranks
 static int ngb_n, ngb_s, ngb_w, ngb_e, ngb_b, ngb_t;
 // transfer buffers
-static double *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;
+static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;
 // request array
 static MPI_Request request[12];
 #endif
 
-static int dims[3], coords[3];
-// Global grid sizes, MPI topology dims, Iterations (samples)
-static int  ngxyz[3], npxyz[3], sx, ex, sy, ey, sz, ez;;
-// local grid sizes, including halos
-static int nlx, nly, nlz;
-
-// eigenvalue k vector (mode)
-double kx=1.0, ky=1.0, kz=1.0;
+// Global grid sizes, start-end indices for local grids,  MPI topology
+int  ngxyz[3], sx, ex, sy, ey, sz, ez, nlx, nly, nlz, npxyz[3];
 
 // OpenMP threads number
-static int nthreads;
+int nthreads;
 
 // solution array
-static double  *udata, *uOld, *uNew;
+Real  *udata, *uOld, *uNew;
+
+static int dims[3], coords[3];
+
+// eigenvalue k vector (mode)
+Real kx=1.0, ky=1.0, kz=1.0;
 
 // Output control
 static int vOut, pHeader;
 
 
 /*********** FUNCTIONS ***********/
-
-
-void jacobi_smoother(int iteration, double *norm){
-
-  double * tmp;
-  double x = 0.0;
-  
-#pragma omp parallel if (nthreads > 1) default(none) shared(sx, ex, sy, ey, sz, ez, nthreads) reduction(+:x)
-  {
 #ifdef USE_MPI
-    post_recv();
-    buffer_halo_transfers(OUT, &x, 0);
-    //#pragma omp barrier
-    exchange_halos();
-    //#pragma omp barrier
-    buffer_halo_transfers(IN, &x, 0);
-#pragma omp barrier
-
-    // debugging
-    // shared to be added: myrank,uOld,rbuff_bt,sbuff_bt
-    /*
-    int i, j, ijk;
-    if ( myrank == 0) {
-      printf("x %g \n", x);
-      for ( j = sy; j <= ey; ++j)
-	for ( i = sx; i <= ex; ++i){
-	  ijk = uindex(i,j,ez+1);
-	    printf("%15.8g", uOld[ijk]);
-	}
-      printf("\n");
-      printf("b0");
-      for ( i = 0; i < (ex-sx+1)*(ey-sy+1); ++i)
-	printf("%15.8g", rbuff_bt[ (ex-sx+1)*(ey-sy+1) + i]);
-      printf("\n");
-    }
-    else{
-      printf("x %g \n", x);
-      printf("b1");
-      for ( i = 0; i < (ex-sx+1)*(ey-sy+1); ++i)
-	printf("%15.8g", sbuff_bt[i]);
-      printf("\n");
-
-      printf(">");
-      for ( j = sy; j <= ey; ++j)
-	for ( i = sx; i <= ex; ++i){
-	  ijk = uindex(i,j,sz);
-	  printf("%15.8g", uOld[ijk]);
-	}
-      printf("\n");  
-
-    }
-    */
-    
+  void post_recv(void);
+  void exchange_halos(void);
+  void buffer_halo_transfers(int dir, double *norm, int update);
+  void transfer_data(const int dir, int side);
 #endif
-    // explicit work placement equivalent to static schedule
-    // could be done in initalisation with thread private variables 
-    int tid = omp_get_thread_num();
-    int s3, e3, dt, d1;
-    int blk = (ez - sz + 1) / nthreads; 
-    int r = (ez - sz + 1) % nthreads;
-    
-    if (tid < r ){ 
-      dt = tid; d1 = 1;}
-    else{
-      dt = r; d1 = 0;}
+void compute_local_grid_ranges( void );
 
-    s3 = sz + tid * blk + dt;
-    e3 = s3 - 1 + blk + d1 ;
-
-    stencil_update(sx, ex, sy, ey, s3, e3, &x);
-    /*
-      #pragma omp for collapse (2)
-      for (k = sz; k <= ez; ++k)
-      for (j = sy; j <= ey; ++j)
-      for (i = sx; i <= ex; ++i){
-      ijk = uindex(i, j, k);
-      im1jk = ijk - 1;
-      ip1jk = ijk + 1;
-      ijm1k = uindex(i, j-1, k);
-      ijp1k = uindex(i, j+1, k);
-      ijkm1 = uindex(i, j, k-1);
-      ijkm1 = uindex(i, j, k+1);
-      w = inv6 *
-      (uOld[im1jk] + uOld[ip1jk] +&
-      uOld[ijm1k] + uOld[ijp1k] + &
-	   uOld[ijkm1] + uOld[ijkp1]);
-	   *norm = *norm + w*w;
-	   uNew[ijk] = w;
-	   
-	   }
-    */
-  }
-  *norm = x;
-  tmp = uNew; uNew = uOld; uOld = tmp;  
-}
-
-void jacobi_smoother_cco(int iteration, double *norm){
-
-  double *tmp, x = 0.0;
-  int chnk;
-  
-  if ( iteration == 1){  
-    if (nthreads == 1)  
-      // colapse not working inside stencil update
-      chnk = (ez - 1 - (sz + 1) + 1); // * (ey - 1 - (sy + 1) + 1);
-    else         
-      chnk = (ez - 1 - (sz + 1) + 1) / (nthreads-1); // * (ey - 1 - (sy + 1) + 1))/(nthreads-1);
-  }
-#pragma omp parallel if (nthreads > 1) default(none) shared(sx, ex, sy, ey, sz, ez, nthreads) reduction(+:x)
-  {
-#ifdef USE_MPI
-    post_recv();
-    buffer_halo_transfers(OUT, &x, 0);
-    exchange_halos();
-    buffer_halo_transfers(IN,  &x, 1);
-#endif
-    // explicit work placement equivalent to static schedule
-    // but only amongst threads 1 ... nthreads - 1 ( if nthreads > 1)
-    // could be done in initalisation with thread private variables 
-   
-    int s3, e3, dt, d1, blk, r, tid;
-    if ( nthreads > 1) {
-      tid = omp_get_thread_num();
-      if (tid > 0) {
-	blk = (ez - 1 - (sz + 1) + 1) / (nthreads - 1); 
-	r = (ez - 1 - (sz + 1) + 1) % (nthreads - 1);    
-	if (tid - 1  < r ){ 
-	  dt = tid - 1 ; d1 = 1;}
-	else{
-	  dt = r; d1 = 0;}
-	s3 = sz + 1 + (tid - 1) * blk + dt;
-	e3 = s3 - 1 + blk + d1;
-      }
-      else{
-	s3 = 0; e3 = -1;
-      }
-    }
-    else{
-      s3 = sz + 1; e3 = ez - 1;
-    } 
-    
-    //printf("cco %d %d %d %d %d %d %d\n", tid, blk, r,  s3, e3, sz+1, ez-1);
-
-    stencil_update(sx+1, ex-1, sy+1, ey-1, s3, e3, &x);
-
-
-    /*
-      #pragma omp for collapse (2)
-      for (k = sz+1; k <= ez-1; ++k)
-      for (j = sy+1; j <= ey-1; ++j)
-      for (i = sx+1; i <= ex-1; ++i){
-      ijk = uindex(i, j, k);
-      im1jk = ijk - 1;
-      ip1jk = ijk + 1;
-      ijm1k = uindex(i, j-1, k);
-      ijp1k = uindex(i, j+1, k);
-      ijkm1 = uindex(i, j, k-1);
-      ijkm1 = uindex(i, j, k+1);
-      w = inv6 *
-      (uOld[im1jk] + uOld[ip1jk] +&
-      uOld[ijm1k] + uOld[ijp1k] + &
-      uOld[ijkm1] + uOld[ijkp1]);
-      *norm = *norm + w*w;
-	uNew[ijk] = w;
-	
-	}
-    */
-
-  }
-  
-  *norm = x;
-  tmp = uNew; uNew = uOld; uOld = tmp;
-  
-}
 
 
 #ifdef USE_MPI
@@ -255,7 +96,7 @@ void post_recv(){
     // receive ghost points for left face
     if ( coords[0] > 0 ) {
       npoints = (ey - sy + 1 ) * ( ez - sz + 1);
-      MPI_Irecv(&rbuff_ns[0], npoints, MPI_DOUBLE, ngb_n, 
+      MPI_Irecv(&rbuff_ns[0], npoints, REAL_MPI, ngb_n, 
 		ns_tag, grid_comm, &request[0]);
     }
     else
@@ -265,7 +106,7 @@ void post_recv(){
     // receive ghost points for right face
     if (coords[0] < dims[0]-1){
       npoints = (ey - sy + 1 ) * ( ez - sz + 1);
-	MPI_Irecv(&rbuff_ns[npoints], npoints, MPI_DOUBLE, ngb_s, 
+	MPI_Irecv(&rbuff_ns[npoints], npoints, REAL_MPI, ngb_s, 
 		  sn_tag, grid_comm, &request[1]);
     }
     else
@@ -275,7 +116,7 @@ void post_recv(){
       // left face
       if ( coords[1] > 0 ) {
 	npoints = (ex - sx + 1 ) * ( ez - sz + 1);
-	MPI_Irecv(&rbuff_we[0], npoints, MPI_DOUBLE, ngb_w,
+	MPI_Irecv(&rbuff_we[0], npoints, REAL_MPI, ngb_w,
 		  we_tag, grid_comm, &request[2]);
       }
       else
@@ -284,7 +125,7 @@ void post_recv(){
       // right face
       if (coords[1] < dims[1]-1) {
 	npoints = (ex - sx + 1 ) * ( ez - sz + 1);
-	MPI_Irecv(&rbuff_we[npoints], npoints, MPI_DOUBLE, ngb_e,
+	MPI_Irecv(&rbuff_we[npoints], npoints, REAL_MPI, ngb_e,
 		  ew_tag, grid_comm, &request[3]);
       }
       else
@@ -295,7 +136,7 @@ void post_recv(){
       // left face
       if ( coords[2] > 0 ) {
 	npoints =  (ex - sx + 1 ) * ( ey - sy + 1);
-	MPI_Irecv(&rbuff_bt[0], npoints, MPI_DOUBLE, ngb_b,
+	MPI_Irecv(&rbuff_bt[0], npoints, REAL_MPI, ngb_b,
 		  bt_tag, grid_comm, &request[4]);
       }
       else
@@ -304,7 +145,7 @@ void post_recv(){
       // right face
       if (coords[2] < dims[2] - 1) {
 	npoints =  (ex - sx + 1 ) * ( ey - sy + 1);
-          MPI_Irecv(&rbuff_bt[npoints], npoints, MPI_DOUBLE, ngb_t,
+          MPI_Irecv(&rbuff_bt[npoints], npoints, REAL_MPI, ngb_t,
 		    tb_tag, grid_comm, &request[5]);
       }
        else
@@ -324,7 +165,7 @@ void exchange_halos(){
     // send to the right (i.e. s,e,t)
     if( coords[0] < dims[0] - 1) {
       npoints = (ey - sy + 1 ) * ( ez - sz + 1);
-      MPI_Isend(&sbuff_ns[npoints], npoints, MPI_DOUBLE, ngb_s, 
+      MPI_Isend(&sbuff_ns[npoints], npoints, REAL_MPI, ngb_s, 
                 ns_tag, grid_comm, &request[6]);
     }
     else
@@ -334,7 +175,7 @@ void exchange_halos(){
     // send to the left
     if ( coords[0] > 0 ) {
       npoints = (ey - sy + 1 ) * ( ez - sz + 1);
-      MPI_Isend(&sbuff_ns[0], npoints, MPI_DOUBLE, ngb_n, 
+      MPI_Isend(&sbuff_ns[0], npoints, MPI_REAL, ngb_n, 
                 sn_tag, grid_comm, &request[7]);
     }
     else
@@ -344,7 +185,7 @@ void exchange_halos(){
     // send to the right (s,e,t)
     if( coords[1] < dims[1]-1) {
       npoints = (ex - sx + 1 ) * ( ez - sz + 1);
-      MPI_Isend(&sbuff_we[npoints], npoints, MPI_DOUBLE, ngb_e,
+      MPI_Isend(&sbuff_we[npoints], npoints, REAL_MPI, ngb_e,
                 we_tag, grid_comm, &request[8]);
     }
     else
@@ -353,7 +194,7 @@ void exchange_halos(){
     // send to the left
     if ( coords[1] > 0 ) {
       npoints = (ex - sx + 1 ) * ( ez - sz + 1);
-      MPI_Isend(&sbuff_we[0], npoints, MPI_DOUBLE, ngb_w, 
+      MPI_Isend(&sbuff_we[0], npoints, REAL_MPI, ngb_w, 
 		ew_tag, grid_comm, &request[9]);
     }
     else
@@ -363,7 +204,7 @@ void exchange_halos(){
     // send to the right (s,e,t)
     if( coords[2] < dims[2] - 1) {
       npoints = (ex - sx + 1 ) * ( ey - sy + 1);
-      MPI_Isend(&sbuff_bt[npoints], npoints, MPI_DOUBLE, ngb_t, 
+      MPI_Isend(&sbuff_bt[npoints], npoints, REAL_MPI, ngb_t, 
                 bt_tag, grid_comm, &request[10]);
     }
     else
@@ -372,7 +213,7 @@ void exchange_halos(){
     // send to the left
     if ( coords[2] > 0 ) {
       npoints = (ex - sx + 1 ) * ( ey - sy + 1);
-      MPI_Isend(&sbuff_bt[0], npoints, MPI_DOUBLE, ngb_b, 
+      MPI_Isend(&sbuff_bt[0], npoints, REAL_MPI, ngb_b, 
 		     tb_tag, grid_comm, &request[11]);
     }
     else
@@ -386,7 +227,7 @@ void exchange_halos(){
 }
 
 
-void buffer_halo_transfers(int dir, double *norm, int update){
+void buffer_halo_transfers(int dir, Real *norm, int update){
   
   // fill the transfer buffers (dir > 0)  or halos ( dir < 0)
   //N-S
@@ -413,44 +254,12 @@ void buffer_halo_transfers(int dir, double *norm, int update){
     }
   }
 }
-#endif
 
 
-void stencil_update(int s1, int e1, int s2, int e2, int s3, int e3, double * norm){
-  
-  int i, j, k, ijk, ijm1k, ijp1k, ijkm1, ijkp1;
-  double w;
-
-  for (k = s3; k <= e3; ++k){
-    for (j = s2; j <= e2; ++j){
-      ijk = uindex(s1, j, k);
-      ijm1k = uindex(s1, j-1, k);
-      ijp1k = uindex(s1, j+1, k);
-      ijkm1 = uindex(s1, j, k-1);
-      ijkp1 = uindex(s1, j, k+1);
-      for (i = 0; i < e1 - s1 + 1; ++i){
-	w = inv6 *
-	  (uOld[ijk + i - 1] + uOld[ijk + i + 1] +
-	   uOld[ijm1k + i] + uOld[ijp1k + i] + 
-	   uOld[ijkm1 + i] + uOld[ijkp1 + i]);
-	*norm = *norm + w*w;
-	uNew[ijk + i] = w;
-      }
-    }
-  }  
-}
-
-
-inline int uindex(const int i, const int j, const int k){
-  return (i - (sx - 1) + (j - (sy - 1)) * nlx + (k - (sz - 1)) * nlx * nly );
-}
-
-
-#ifdef USE_MPI
 void transfer_data(const int dir, int side){
   
   int ib, i, j, k, ijk, s1, e1, s2, e2, s3, e3;
-  double * buff;
+  Real * buff;
   
   s1 = sx; e1 = ex; s2 = sy; e2 = ey; s3 = sz; e3 = ez;
   switch( side )
@@ -539,7 +348,7 @@ void initContext(int argc, char *argv[]){
   /* Defaults */
   ngxyz[0] = 33; ngxyz[1] = 33; ngxyz[2] = 33; niter = 20;  nthreads = 1; nproc = 1;
   npxyz[0] = 1; npxyz[1] = 1; npxyz[2] = 1;
-  use_cco = 0;
+  kernel_key = COMMON_KERNEL;
   int i;
 
   /* Cycle through command line args */
@@ -575,9 +384,24 @@ void initContext(int argc, char *argv[]){
     else if ( strcmp("-pc",argv[i]) == 0 ){
       pContext = 1;
     }
-    /* Look for computation communication overlap selection */
-    else if ( strcmp("-use_cco", argv[i]) == 0 ){
-      use_cco = 1; 
+    /* Look for kernel to use */
+    else if ( strcmp("-model", argv[i]) == 0 ){
+      ++i;
+      if (strcmp("common",argv[i]) == 0)
+	kernel_key = COMMON_KERNEL;
+      else if (strcmp("blocked",argv[i]) == 0)
+	kernel_key = BLOCKED_KERNEL;
+      else if (strcmp("cco",argv[i]) == 0)
+	kernel_key = CCO_KERNEL;
+      else{
+	printf("Wrong model specifier %s, try -help\n", argv[i]);
+#ifdef USE_MPI
+	MPI_Abort(MPI_COMM_WORLD,-1);
+#else
+	exit(-1);
+#endif
+      }
+      
     }
     /* Look for eigenvalue test */
     else if ( strcmp("-t",argv[i] ) == 0){
@@ -612,7 +436,7 @@ void initContext(int argc, char *argv[]){
 void setPEsParams() {
 
   int periods[3] = {0, 0, 0}; 
-  /* Find nPEs */
+
 #ifdef USE_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
   if ( nproc != npxyz[0] * npxyz[1] * npxyz[2]){
@@ -622,7 +446,7 @@ void setPEsParams() {
 #else
   nproc = 1;
 #endif
-  /* Find myPE */
+
 #ifdef USE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank); 
 #else 
@@ -721,7 +545,7 @@ void compute_local_grid_ranges( void ){
 
   // set transfer buffers
   sides_buff = malloc(4*((ey - sy + 1) * ( ez - sz + 1) + (ex - sx + 1) * (ez - sz + 1) 
-			 + (ex - sx + 1) * (ey -sy + 1)) * sizeof(double));
+			 + (ex - sx + 1) * (ey -sy + 1)) * sizeof(Real));
 
   sbuff_ns = &sides_buff[0];
   rbuff_ns = &sides_buff[2 * (ey - sy + 1) * ( ez - sz + 1)];
@@ -737,7 +561,7 @@ void initial_field() {
  
   int i, j, k, ijk, n = 2*nlx*nly*nlz; 
   
-  udata = malloc(n * sizeof(double));
+  udata = malloc(n * sizeof(Real));
 
   uOld = &udata[n/2]; uNew = &udata[0];
   // first tocuh policy for numa nodes
@@ -776,8 +600,8 @@ void printContext(void){
 void check_norm(int iter, double norm){
 /* test ration of to consecutive norm agains the smoother eigenvalue for the chosen mode */
 
-  double ln, gn, r, eig;
-  static double prev_gn;
+  Real ln, gn, r, eig;
+  static Real prev_gn;
 
   if (iter == 0){
     prev_gn = 1.0;
@@ -808,7 +632,7 @@ void timeUpdate(double *times){
 
 #ifdef MPI
   if ( myrank == ROOT )
-    call MPI_Gather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, times, NITER, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    call MPI_Gather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, times, NITER, MPI_DOULBE, ROOT, MPI_COMM_WORLD);
   else
     call MPI_Gather(times, niter, MPI_DOUBLE, MPI_BOTTOM, 0, MPI_DATATYPE_NULL, ROOT, MPI_COMM_WORLD);
 #endif
@@ -818,7 +642,7 @@ void timeUpdate(double *times){
 void statistics(double *times,  
                 double *minTime, double *meanTime, double *maxTime,
                 double *stdvTime, double *NstdvTime){
-  double temp;
+
   int iPE, iter, shift, ii;
   
   /* eliminate possible startup baias if niter is large enough */

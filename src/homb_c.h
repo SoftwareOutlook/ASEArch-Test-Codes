@@ -44,39 +44,39 @@ machines.
 #define PI 3.14159265358979323846
 #define MAX(x,y) (((x) > (y))? x : y)
 #define MIN(x,y) (((x) > (y))? y : x)
+
+#ifdef USE_DOUBLE_PRECISION
+typedef double Real;
+  #ifdef USE_MPI
+    #define REAL_MPI MPI_DOUBLE
+  #endif
+#else
+typedef float Real;
+  #ifdef USE_MPI
+    #define REAL_MPI MPI_FLOAT
+  #endif
+#endif
+
 #define ROOT 0
-#define IN -1
-#define OUT 1
-#define NORTH 0
-#define SOUTH 1
-#define WEST 2
-#define EAST 3
-#define BOTTOM 4
-#define TOP 5
 
-/* Global variables */
-int niter, nproc, myrank, pContext;
-// Computation communication overlap; relevan only for MPI case
-int use_cco;
+  /* Global variables */
+  // number of iterations
+int niter, myrank, nproc;
+// kernel to be used
+int kernel_key;
+#define COMMON_KERNEL 0
+#define BLOCKED_KERNEL 1
+#define CCO_KERNEL 2 
 
-// print the difference between norm ration and egenvalue ( it must be small)
-int testComputation;
+// run info
+int testComputation, pContext;
 
 /*********** Functions ***********/
-
-void jacobi_smoother(int iteration, double *norm);
-void jacobi_smoother_cco(int iteration, double *norm);
-#ifdef USE_MPI
-void post_recv(void);
-void exchange_halos(void);
-void buffer_halo_transfers(int dir, double *norm, int update);
-void transfer_data(const int dir, int side);
-#endif
-void stencil_update( int s1, int e1, int s2, int e2, int s3, int e3, double * x);
-inline int uindex(const int i, const int j, const int k);
+void blocked_laplace3d(int iteration, double *norm);
+void cco_laplace3d(int iteration, double *norm);
+void common_laplace3d(int iteration, double *norm);
 void initContext( int argc, char *argv[]);
 void setPEsParams(void);
-void compute_local_grid_ranges( void );
 void initial_field(void);
 void printContext(void);
 void check_norm(int iter, double norm);

@@ -14,19 +14,23 @@ USE_OPENMP=yes
 ifdef USE_MPI
   CC  := mpicc
   F90 := mpif90
-  FMPI = -DUSE_MPI
+  CPPFLAGS := -DUSE_MPI
 else
   CC  := gcc
   F90 := gfortran
 endif
 
+ifdef USE_DOUBLE_PRECISION
+  CPPFLAGS += -DUSE_DOUBLE_PRECISION
+endif
+
 CFLAGS_opt = -O3
 CFLAGS_debug = -g -Wall -Wuninitialized -O1
-CFLAGS := $(FMPI) $(CFLAGS_$(BUILD)) 
+CFLAGS := $(CPPFLAGS) $(CFLAGS_$(BUILD)) 
 
 FFLAGS_opt := -O3
 FFLAGS_debug := -g -fbounds-check -Wall -fbacktrace -ffpe-trap=invalid,zero,overflow -fsignaling-nans -fdump-core 
-FFLAGS := $(FFLAGS_$(BUILD))
+FFLAGS := $(CPPFLAGS) $(FFLAGS_$(BUILD))
 
 ifdef USE_OPENMP
   OMPFLAGS := -fopenmp

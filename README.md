@@ -39,8 +39,14 @@ The following flags can be used to set the grid sized and other run parameters:
 
 -nh                      output without header
 
--use_cco                 selects a smoother version which uses the master thread
-                         for MPI halo exchanges ( meaningful only for MPI runs)
+-model <name>            selects one of the implemented Jacobi versions.
+                         <name> can be one of the following:
+                         common  : uses Gold_laplace3d
+			 blocked : uses the blocked version
+                         cco     : uses a blocked version that keeps the master thread
+                                   for MPI communication and domain faces, the other threads
+				   iterates over the inside points. 
+                         Default is common.
 
 -pc                      prints various setting of the run
 
