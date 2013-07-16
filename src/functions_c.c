@@ -130,14 +130,6 @@ void post_recv(){
       }
       else
 	request[3] = MPI_REQUEST_NULL;
-      
-       
-      // B-T recv
-      // left face
-      if ( coords[2] > 0 ) {
-	npoints =  (ex - sx + 1 ) * ( ey - sy + 1);
-	MPI_Irecv(&rbuff_bt[0], npoints, REAL_MPI, ngb_b,
-		  bt_tag, grid_comm, &request[4]);
       }
       else
 	request[4] = MPI_REQUEST_NULL;
@@ -348,7 +340,7 @@ void initContext(int argc, char *argv[]){
   /* Defaults */
   ngxyz[0] = 33; ngxyz[1] = 33; ngxyz[2] = 33; niter = 20;  nthreads = 1; nproc = 1;
   npxyz[0] = 1; npxyz[1] = 1; npxyz[2] = 1;
-  kernel_key = COMMON_KERNEL;
+  kernel_key = BASELINE_KERNEL;
   int i;
 
   /* Cycle through command line args */
@@ -387,8 +379,10 @@ void initContext(int argc, char *argv[]){
     /* Look for kernel to use */
     else if ( strcmp("-model", argv[i]) == 0 ){
       ++i;
-      if (strcmp("common",argv[i]) == 0)
-	kernel_key = COMMON_KERNEL;
+      if (strcmp("baseline",argv[i]) == 0)
+	kernel_key = BASELINE_KERNEL;
+      else if ( strcmp("baseline-opt",argv[i]) == 0)
+	kernel_key = OPTBASE_KERNEL;
       else if (strcmp("blocked",argv[i]) == 0)
 	kernel_key = BLOCKED_KERNEL;
       else if (strcmp("cco",argv[i]) == 0)
@@ -410,9 +404,9 @@ void initContext(int argc, char *argv[]){
     }
     /* Look for "verbose" standard out */
     else if ( strcmp("-help",argv[i]) == 0 ){
-      printf("Usage: %s [-ng grid-size-x grid-size-y grid-size-z ] \
-[-np num-proc-x num-proc-y num-proc-z]  -niter num-iterations \
-[-v] [-t] [-pc] [-use_cco] [-nh] [-help] \n", argv[0]);
+      printf("Usage: %s [-ng <grid-size-x> <grid-size-y> <grid-size-z> ] \
+[-np <num-proc-x> <num-proc-y> <num-proc-z>]  -niter <num-iterations> \
+[-v] [-t] [-pc] [-model <model_name>] [-nh] [-help] \n", argv[0]);
 #ifdef USE_MPI
       MPI_Finalize();
 #endif
@@ -624,6 +618,22 @@ void check_norm(int iter, double norm){
     prev_gn = gn;
   }
 } 
+
+
+double local_norm(){
+ //compute the L2 norm (squared)
+  int i, j, k;
+  int NX = ngxyz[0], NY=ngxyz[1], NZ=ngxyz[2];
+  double norm = 0.0;
+  
+  for (i=1; i<NX-1;++i)
+    for (j=1; j<NY-1;++j)
+      for (k=1; k<NZ-1;++k)
+	norm += uOld[i + j*NX + k*NX*NY] * uOld[i + j*NX + k*NX*NY];
+
+  return(norm);
+
+}
 
 
 void timeUpdate(double *times){

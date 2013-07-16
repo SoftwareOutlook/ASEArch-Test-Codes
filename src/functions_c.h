@@ -13,3 +13,4 @@ extern Real  *udata, *uOld, *uNew;
 inline int uindex(const int i, const int j, const int k);
 void stencil_update( int s1, int e1, int s2, int e2, int s3, int e3, double * x); // needed by MPI 
 
+

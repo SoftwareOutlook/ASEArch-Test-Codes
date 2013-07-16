@@ -64,9 +64,10 @@ typedef float Real;
 int niter, myrank, nproc;
 // kernel to be used
 int kernel_key;
-#define COMMON_KERNEL 0
-#define BLOCKED_KERNEL 1
-#define CCO_KERNEL 2 
+#define BASELINE_KERNEL 0
+#define OPTBASE_KERNEL  1
+#define BLOCKED_KERNEL  2
+#define CCO_KERNEL      3 
 
 // run info
 int testComputation, pContext;
@@ -74,7 +75,8 @@ int testComputation, pContext;
 /*********** Functions ***********/
 void blocked_laplace3d(int iteration, double *norm);
 void cco_laplace3d(int iteration, double *norm);
-void common_laplace3d(int iteration, double *norm);
+void baseline_laplace3d(int iteration);
+void opt_baseline_laplace3d(int iteration);
 void initContext( int argc, char *argv[]);
 void setPEsParams(void);
 void initial_field(void);
@@ -88,6 +90,7 @@ void stdoutIO( double *times,
               double minTime, double meanTime, double maxTime, 
 	       double NstdvTime, double norm);
 double my_wtime();
+double local_norm();
 
 
 

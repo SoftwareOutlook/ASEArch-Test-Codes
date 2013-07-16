@@ -35,18 +35,21 @@ The following flags can be used to set the grid sized and other run parameters:
 -niter <n>               set the number of smoother iterations ( default 20)
 
 -t                       prints the diference between the norm ratio of two consecutive
-			 iterations and smoother eigenvalue (it must be very small).
+			 iterations and smoother eigenvalue (it must be very small, theoretically is 0).
 
--nh                      output without header
+-nh                      output without header (useful when collecting large data sets for plots)
 
 -model <name>            selects one of the implemented Jacobi versions.
                          <name> can be one of the following:
-                         common  : uses Gold_laplace3d
+                         baseline: uses Gold_laplace3d
+			 baseline-opt: used Titanium_laplace3d which is Gold_laplace3d with
+                                       basic loop optimisations ( hoisted if, faster index algebra)
+                  
 			 blocked : uses the blocked version
                          cco     : uses a blocked version that keeps the master thread
                                    for MPI communication and domain faces, the other threads
 				   iterates over the inside points. 
-                         Default is common.
+                         Default is baseline.
 
 -pc                      prints various setting of the run
 

@@ -85,23 +85,21 @@ int main(int argc, char *argv[]) {
 
     switch (kernel_key)
       {
-      case (COMMON_KERNEL) :  common_laplace3d(iter, &norm); break;
-      case (BLOCKED_KERNEL):  blocked_laplace3d(iter, &norm); break;
-      case (CCO_KERNEL):      cco_laplace3d(iter, &norm); break;
+      case (BASELINE_KERNEL) :  baseline_laplace3d(iter); break;
+      case (OPTBASE_KERNEL) :  opt_baseline_laplace3d(iter); break;
+      case (BLOCKED_KERNEL)  :  blocked_laplace3d(iter, &norm); break;
+      case (CCO_KERNEL)      :  cco_laplace3d(iter, &norm); break;
       }
 
-    /* End timing */
     endTime = my_wtime();
-
-    /* check the convergence progess */
-//    if ( myPE == ROOT )
-//      printf("max dt %e \n", dtg);
 
     /* Store Time */
     times[iter] = endTime-startTime;
 
-    if (testComputation) 
+    if (testComputation) {
+      norm = local_norm();
       check_norm(iter, norm);
+    }
 
 
   /* Gather iteration runtimes to ROOT's matrix */

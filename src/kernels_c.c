@@ -10,12 +10,15 @@ static const Real sixth=1.0/6.0;
 static void Gold_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2);
 
 ////////////////////////////////////////////////////////////////////////////////
-// common version
+// Baseline version that describes the logic of Jacobi iteration in 1 set of loops.
+// Howerver this version is far from optimal because of the if statement inside the
+// inner loop and of the heavy algebra used to compute ind
 static void Gold_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2) 
 {
   int   i, j, k, ind;
   //Real sixth=1.0f/6.0f;  // predefining this improves performance more than 10%
 
+#pragma omp parallel for schedule(static) default(none) shared(u1,u2,NX,NY,NZ) private(i,j,k,ind)
   for (k=0; k<NZ; k++) {
     for (j=0; j<NY; j++) {
       for (i=0; i<NX; i++) {   // i loop innermost for sequential memory access
@@ -35,22 +38,55 @@ static void Gold_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2)
 }
 
 
-void common_laplace3d(int iteration, double *norm){
+// Version that does not initializes the in each iteration boundaries. It is enough to do it only once 
+// at initialisation stage.
+// The inner loop index algebra uses less operations ( compare with Gold_laplace3d )
+static void Titanium_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2) 
+{
+  int   i, j, k, ind, indmj, indpj, indmk, indpk, NXY;
+  //Real sixth=1.0f/6.0f;  // predefining this improves performance more than 10%
+
+  NXY = NX*NY;
+#pragma omp parallel for schedule(static) default(none) shared(u1,u2,NX,NY,NZ,NXY) private(i,j,k,ind,indmj,indpj,indmk,indpk)
+  for (k=1; k<NZ-1; k++) {
+    for (j=1; j<NY-1; j++) {
+      ind = j*NX + k*NXY;
+      indmj = ind - NX;
+      indpj = ind + NX;
+      indmk = ind - NXY;
+      indpk = ind + NXY;
+      for (i=1; i<NX-1; i++) {   // i loop innermost for sequential memory access
+          u2[ind+i] = ( u1[ind+i-1] + u1[ind+i+1]
+                    +   u1[indmj+i] + u1[indpj+i]
+                    +   u1[indmk+i] + u1[indpk+i] ) * sixth;
+	  
+      }
+    }
+  }
+}
+
+
+void baseline_laplace3d(int iteration){
   // wraper for Gold_laplace3d
 
   int NX = ngxyz[0], NY=ngxyz[1], NZ=ngxyz[2];
   Real* tmp;
 
   Gold_laplace3d(NX, NY, NZ, uOld, uNew);
+   
+   tmp = uNew; uNew = uOld; uOld = tmp; 
 
-  //compute the norm (squared)
-  int i, j, k;
-  *norm = 0.0;
-  for (i=1; i<NX-1;++i)
-    for (j=1; j<NY-1;++j)
-      for (k=1; k<NZ-1;++k)
-	*norm += uNew[i + j*NX + k*NX*NY]* uNew[i + j*NX + k*NX*NY];
-  
+}
+
+
+void opt_baseline_laplace3d(int iteration){
+  // wraper for Gold_laplace3d
+
+  int NX = ngxyz[0], NY=ngxyz[1], NZ=ngxyz[2];
+  Real* tmp;
+
+  Titanium_laplace3d(NX, NY, NZ, uOld, uNew);
+   
    tmp = uNew; uNew = uOld; uOld = tmp; 
 
 }
