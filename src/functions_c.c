@@ -57,7 +57,7 @@ static MPI_Request request[12];
 #endif
 
 // Global grid sizes, start-end indices for local grids,  MPI topology
-int  ngxyz[3], sx, ex, sy, ey, sz, ez, nlx, nly, nlz, npxyz[3];
+//int  ngxyz[3], sx, ex, sy, ey, sz, ez, nlx, nly, nlz, nbxyz[3]; npxyz[3];
 
 // OpenMP threads number
 int nthreads;
@@ -81,14 +81,17 @@ static int vOut, pHeader;
   void buffer_halo_transfers(int dir, double *norm, int update);
   void transfer_data(const int dir, int side);
 #endif
-void compute_local_grid_ranges( void );
+void compute_local_grid_ranges( struct grid_info_t * g );
 
 
 
 #ifdef USE_MPI
-void post_recv(){
+void post_recv(struct grid_info_t *g){
   
-  int npoints;
+  int npoints, sx, ex, sy, ey, sz, ez;
+  sx = g->sx; ex = g->ex;
+  sy = g->sy; ey = g->ey;
+  sx = g->sz; ex = g->ez;
 
 #pragma omp master
   {
@@ -146,12 +149,15 @@ void post_recv(){
 }
 
 
-void exchange_halos(){
+void exchange_halos(const struct grid_info_t *g){
 
   MPI_Status status_sedrecv[12];
-  int  npoints, ierr;
+  int  npoints, ierr, sx, ex, sy, ey, sz, ez;
   // N-S send
 
+  sx = g->sx; ex = g->ex;
+  sy = g->sy; ey = g->ey;
+  sx = g->sz; ex = g->ez;
 #pragma omp master
   {
     // send to the right (i.e. s,e,t)
@@ -332,15 +338,17 @@ void transfer_data(const int dir, int side){
 #endif
 
 
-void initContext(int argc, char *argv[]){
+void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_key){
  
   /* "Logicals" for file output */
   vOut = 0;  pHeader = 1; pContext = 0; testComputation = 0;
   
   /* Defaults */
-  ngxyz[0] = 33; ngxyz[1] = 33; ngxyz[2] = 33; niter = 20;  nthreads = 1; nproc = 1;
-  npxyz[0] = 1; npxyz[1] = 1; npxyz[2] = 1;
-  kernel_key = BASELINE_KERNEL;
+  grid->ng[0] = 33; grid->ng[1] = 33; grid->ng[2] = 33; //Global grid
+  grid->nb[0] = grid->ng[0]; grid->nb[1] = grid->ng[1]; grid->nb[2] = grid->ng[2]; // block sizes 
+  niter = 20;  nthreads = 1; nproc = 1;
+  grid->np[0] = 1; grid->np[1] = 1; grid->np[2] = 1;
+  *kernel_key = BASELINE_KERNEL;
   int i;
 
   /* Cycle through command line args */
@@ -350,15 +358,21 @@ void initContext(int argc, char *argv[]){
     //printf(" arg %d %d %s \n", i, argc, argv[i]);
     /* Look for grid sizes */
     if ( strcmp("-ng", argv[i]) == 0 ){
-      sscanf(argv[++i],"%d",&ngxyz[0]);
-      sscanf(argv[++i],"%d",&ngxyz[1]);
-      sscanf(argv[++i],"%d",&ngxyz[2]);
+      sscanf(argv[++i],"%d",&(grid->ng[0]));
+      sscanf(argv[++i],"%d",&(grid->ng[1]));
+      sscanf(argv[++i],"%d",&(grid->ng[2]));
+    }
+    /* Look for computational block sizes */
+    else if ( strcmp("-nb", argv[i]) == 0 ){
+      sscanf(argv[++i],"%d", &(grid->nb[0]));
+      sscanf(argv[++i],"%d", &(grid->nb[1]));
+      sscanf(argv[++i],"%d", &(grid->nb[2]));
     }
     /* Look for MPI topology */  
     else if ( strcmp("-np", argv[i]) == 0 ){
-      sscanf(argv[++i],"%d",&npxyz[0]);
-      sscanf(argv[++i],"%d",&npxyz[1]);
-      sscanf(argv[++i],"%d",&npxyz[2]);
+      sscanf(argv[++i],"%d", &(grid->np[0]));
+      sscanf(argv[++i],"%d", &(grid->np[1]));
+      sscanf(argv[++i],"%d", &(grid->np[2]));
     }
     /* Look for number number of iterations*/  
     else if ( strcmp("-niter", argv[i]) == 0 ){
@@ -380,13 +394,13 @@ void initContext(int argc, char *argv[]){
     else if ( strcmp("-model", argv[i]) == 0 ){
       ++i;
       if (strcmp("baseline",argv[i]) == 0)
-	kernel_key = BASELINE_KERNEL;
+	*kernel_key = BASELINE_KERNEL;
       else if ( strcmp("baseline-opt",argv[i]) == 0)
-	kernel_key = OPTBASE_KERNEL;
+	*kernel_key = OPTBASE_KERNEL;
       else if (strcmp("blocked",argv[i]) == 0)
-	kernel_key = BLOCKED_KERNEL;
+	*kernel_key = BLOCKED_KERNEL;
       else if (strcmp("cco",argv[i]) == 0)
-	kernel_key = CCO_KERNEL;
+	*kernel_key = CCO_KERNEL;
       else{
 	printf("Wrong model specifier %s, try -help\n", argv[i]);
 #ifdef USE_MPI
@@ -405,7 +419,8 @@ void initContext(int argc, char *argv[]){
     /* Look for "verbose" standard out */
     else if ( strcmp("-help",argv[i]) == 0 ){
       printf("Usage: %s [-ng <grid-size-x> <grid-size-y> <grid-size-z> ] \
-[-np <num-proc-x> <num-proc-y> <num-proc-z>]  -niter <num-iterations> \
+[ -nb <block-size-x> <block-size-y> <block-size-z>]			\
+[-np <num-proc-x> <num-proc-y> <num-proc-z>]  -niter <num-iterations>	\
 [-v] [-t] [-pc] [-model <model_name>] [-nh] [-help] \n", argv[0]);
 #ifdef USE_MPI
       MPI_Finalize();
@@ -427,14 +442,14 @@ void initContext(int argc, char *argv[]){
   }
 }
 
-void setPEsParams() {
+void setPEsParams(struct grid_info_t *g) {
 
   int periods[3] = {0, 0, 0}; 
 
 #ifdef USE_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-  if ( nproc != npxyz[0] * npxyz[1] * npxyz[2]){
-    fprintf(stderr, "MPI topology sizes %d %d %d does not fit with nproc %d \n", npxyz[0], npxyz[1], npxyz[2], nproc);
+  if ( nproc != g->np[0] * g->np[1] * g->np[2]){
+    fprintf(stderr, "MPI topology sizes %d %d %d does not fit with nproc %d \n", g->np[0], g->np[1], g->np[2], nproc);
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 #else
@@ -449,10 +464,10 @@ void setPEsParams() {
 
   /* generate 3d topology */
 #ifdef USE_MPI
-  MPI_Cart_create(MPI_COMM_WORLD, 3, npxyz, periods , 0, &grid_comm);
+  MPI_Cart_create(MPI_COMM_WORLD, 3, g->np, periods , 0, &grid_comm);
 #endif
 
-  compute_local_grid_ranges();
+  compute_local_grid_ranges(g);
 
   /* Find number of threads per task */
   nthreads = 1;
@@ -466,9 +481,10 @@ void setPEsParams() {
   //}
 }
 
-void compute_local_grid_ranges( void ){
+void compute_local_grid_ranges( struct grid_info_t * g ){
   
   int i, nl[3], local_shift[3], r, periods[3];
+  int sx, ex, sy, ey, sz, ez;
 
 #ifdef USE_MPI
   MPI_Cart_get(grid_comm, 3, dims, periods, coords);
@@ -479,10 +495,10 @@ void compute_local_grid_ranges( void ){
 #endif  
 
   for ( i = 0; i < 3; ++i)
-    nl[i] = ngxyz[i]/dims[i];
+    nl[i] = g->ng[i] / dims[i];
   
   for (i=0; i < 3; ++i){
-    r = ngxyz[i]%dims[i];
+    r = g->ng[i] % dims[i];
     if ( coords[i] < r ){
       nl[i] += 1;
       local_shift[i] = coords[i] * nl[i];
@@ -510,7 +526,8 @@ void compute_local_grid_ranges( void ){
   if ( coords[2] == 0          ) sz = sz + 1;
   if ( coords[2] == dims[2] -1 ) ez = ez - 1;
 
-  nlx = ex - sx + 1 + 2; nly = ey - sy + 1 + 2; nlz = ez - sz +1 + 2; 
+  g->sx = sx; g->ex = ex; g->sy = sy; g->ey = ey; g->sz = sz; g->ez = ez;
+  g->nlx = ex - sx + 1 + 2; g->nly = ey - sy + 1 + 2; g->nlz = ez - sz + 1 + 2; 
 
   //printf("debug %d %d %d %d %d %d %d %d %d \n", nlx, nly, nlz, sx, ex, sy, ey, sz, ez);
   
@@ -551,30 +568,31 @@ void compute_local_grid_ranges( void ){
 }
 
 
-void initial_field() {
+void initialise_grid( const struct grid_info_t *g) {
  
-  int i, j, k, ijk, n = 2*nlx*nly*nlz; 
+  int i, j, k, ijk, n = 2 * g->nlx * g->nly * g->nlz; 
   
   udata = malloc(n * sizeof(Real));
 
   uOld = &udata[n/2]; uNew = &udata[0];
   // first tocuh policy for numa nodes
 #pragma omp parallel  for schedule(static) default (shared) private(i,j,k, ijk)
-  for (k = sz-1; k <= ez+1; ++k)
-    for (j = sy-1; j <= ey+1; ++j)
-      for (i = sx-1; i <= ex+1; ++i){
-	ijk = uindex(i,j,k);
-	  uOld[ijk] = sin((PI * i * kx) / (ngxyz[0] - 1)) * sin((PI * j * ky) / (ngxyz[1] - 1)) * sin((PI * k * kz) / (ngxyz[2] - 1));
+  for (k = g->sz - 1; k <= g->ez + 1; ++k)
+    for (j = g->sy - 1; j <= g->ey + 1; ++j)
+      for (i = g->sx - 1; i <= g->ex + 1; ++i){
+	ijk = uindex(g,i,j,k);
+	  uOld[ijk] = sin((PI * i * kx) / (g->ng[0] - 1)) * sin((PI * j * ky) / (g->ng[1] - 1)) * sin((PI * k * kz) / (g->ng[2] - 1));
 	  uNew[ijk]=0.0;
       }
   
 }
 
 
-void printContext(void){
-  printf("Global grid sizes   : %d %d %d \n", ngxyz[0], ngxyz[1], ngxyz[2]);
+void printContext(const struct grid_info_t *g){
+  printf("Global grid sizes   : %d %d %d \n", g->ng[0], g->ng[1], g->ng[2]);
+  printf("Computational block : %d %d %d \n", g->nb[0], g->nb[1], g->nb[2]); 
 #ifdef USE_MPI
-  printf("MPI topology        : %d %d %d \n", npxyz[0], npxyz[1], npxyz[2]);
+  printf("MPI topology        : %d %d %d \n", g->np[0], g->np[1], g->np[2]);
 #endif
   printf("Number of iterations: %d \n", niter);
   if (pHeader) 
@@ -591,7 +609,7 @@ void printContext(void){
 #endif
 }
 
-void check_norm(int iter, double norm){
+void check_norm(const struct grid_info_t *g, int iter, double norm){
 /* test ration of to consecutive norm agains the smoother eigenvalue for the chosen mode */
 
   Real ln, gn, r, eig;
@@ -612,7 +630,7 @@ void check_norm(int iter, double norm){
 #endif
   if ( myrank == ROOT){
     r = sqrt(gn/prev_gn);
-    eig = (cos(PI*kx/(ngxyz[0]-1)) + cos(PI*ky/(ngxyz[1]-1)) + cos(PI*kz/(ngxyz[2]-1)))/3.0;
+    eig = (cos(PI*kx/(g->ng[0]-1)) + cos(PI*ky/(g->ng[1]-1)) + cos(PI*kz/(g->ng[2]-1)))/3.0;
     if( iter > 0) 
       printf("%5d    %12.5e     %12.5e\n", iter, r, r - eig);
     prev_gn = gn;
@@ -620,10 +638,10 @@ void check_norm(int iter, double norm){
 } 
 
 
-double local_norm(){
+double local_norm(const struct grid_info_t *g){
  //compute the L2 norm (squared)
   int i, j, k;
-  int NX = ngxyz[0], NY=ngxyz[1], NZ=ngxyz[2];
+  int NX = g->ng[0], NY = g->ng[1], NZ = g->ng[2];
   double norm = 0.0;
   
   for (i=1; i<NX-1;++i)
@@ -689,7 +707,7 @@ void statistics(double *times,
 }
 
 
-void stdoutIO( double *times,  
+void stdoutIO( const struct grid_info_t *g, const int kernel_key, const double *times,  
               double minTime, double meanTime, double maxTime, 
 	       double NstdvTime, double norm){
   int iter, ii, i;
@@ -701,17 +719,28 @@ void stdoutIO( double *times,
     printf("#\tNPx\tNPy\tNPz\tNThs\tNx\tNy\tNz\tNITER\tmeanTime \tmaxTime  \tminTime  \tNstdvTime  #\n");
     printf("#==================================================================================================================================#\n");
 #else
+    if ( kernel_key == BLOCKED_KERNEL){
+      printf("#==================================================================================================================================#\n");
+    printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tmeanTime \tmaxTime  \tminTime  \tNstdvTime  #\n");
+    printf("#==================================================================================================================================#\n");
+    }
+    else {
     printf("#==========================================================================================================#\n");
     printf("#\tNThs\tNx\tNy\tNz\tNITER\tmeanTime \tmaxTime  \tminTime  \tNstdvTime  #\n");
     printf("#==========================================================================================================#\n");
+    }
 #endif 
   }
 #ifdef USE_MPI
   printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
-         npxyz[0], npxyz[1],npxyz[2],nthreads,ngxyz[0],ngxyz[1],ngxyz[2],niter, meanTime, maxTime, minTime, NstdvTime);
+         g->np[0], g->np[1], g->np[2], nthreads, g->ng[0], g->ng[1], g->ng[2],niter, meanTime, maxTime, minTime, NstdvTime);
 #else
- printf("\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
-         nthreads,ngxyz[0],ngxyz[1],ngxyz[2],niter, meanTime, maxTime, minTime, NstdvTime);
+  if ( kernel_key == BLOCKED_KERNEL)
+     printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
+	     nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2], niter, meanTime, maxTime, minTime, NstdvTime);
+    else
+      printf("\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
+	     nthreads, g->ng[0], g->ng[1], g->ng[2], niter, meanTime, maxTime, minTime, NstdvTime);
 #endif
   
   /* Only if "Verbose Output" asked for */

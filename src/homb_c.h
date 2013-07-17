@@ -57,13 +57,20 @@ typedef float Real;
   #endif
 #endif
 
+// struc to keep grid data
+struct grid_info_t
+{
+  int ng[3], nb[3]; // global grid and computational blocks
+  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; // start end indices for local grids ( used with MPI runs)
+  int np[3]; // MPI topology
+}; 
+
 #define ROOT 0
 
   /* Global variables */
   // number of iterations
 int niter, myrank, nproc;
-// kernel to be used
-int kernel_key;
+// keys of the available kernels
 #define BASELINE_KERNEL 0
 #define OPTBASE_KERNEL  1
 #define BLOCKED_KERNEL  2
@@ -73,24 +80,21 @@ int kernel_key;
 int testComputation, pContext;
 
 /*********** Functions ***********/
-void blocked_laplace3d(int iteration, double *norm);
-void cco_laplace3d(int iteration, double *norm);
-void baseline_laplace3d(int iteration);
-void opt_baseline_laplace3d(int iteration);
-void initContext( int argc, char *argv[]);
-void setPEsParams(void);
-void initial_field(void);
-void printContext(void);
-void check_norm(int iter, double norm);
+void laplace3d(const struct grid_info_t *grid, int kernel_key , double *tstart, double *tend);
+void initContext( int argc, char *argv[],  struct grid_info_t * grid, int *kernel_key);
+void setPEsParams(struct grid_info_t *grid);
+void initialise_grid(const struct grid_info_t *grid);
+void printContext(const struct grid_info_t *grid);
+void check_norm(const struct grid_info_t *g, int iter, double norm);
 void timeUpdate(double *times);
 void statistics(double *times,  
                 double *minTime, double *meanTime, double *maxTime,
                 double *stdvTime, double *NstdvTime);
-void stdoutIO( double *times,  
+void stdoutIO( const struct grid_info_t *grid, const int kernel_key, const double *times,  
               double minTime, double meanTime, double maxTime, 
 	       double NstdvTime, double norm);
 double my_wtime();
-double local_norm();
+double local_norm(const struct grid_info_t *grid);
 
 
 

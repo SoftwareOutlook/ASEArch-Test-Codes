@@ -25,6 +25,20 @@ Usage description:
 The following flags can be used to set the grid sized and other run parameters:
 
 -ng <nx> <ny> <nz>       set the global gris sizes
+
+-nb <bx> <by> <bz>       set the computational block size, relevant only for blocked model.
+                         Notes: 1) no sanity checks tests are done, you are on your own.
+                                2) for blocked model the OpeNMP parallelism is done over
+                                   computational blocks. One must ensure that there
+                                   enough work for all threads by setting appropiate 
+                                   block sizes.
+                                   The basic rule for block size should be 
+
+                                     bx*by*bz = MIN(cache_size, nx*ny*nz/Nthreads) 
+ 
+                                   However if nx*ny*nx/Nthreads is less that a few cache lines 
+                                   probable is better to leave some threads unused rather then having 
+                                   them fighting over the cache lines.
                          
 
 -np <px> <py> <pz>       set the MPI Cartesian topology

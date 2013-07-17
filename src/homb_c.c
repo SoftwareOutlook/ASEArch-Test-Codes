@@ -35,7 +35,10 @@ Below is the original copyright and licence.
 
 
 int main(int argc, char *argv[]) {
-  int iter;
+  int iter, kernel_key;
+
+  /* grid info */
+  struct grid_info_t grid;
 
    /* L2 norms */
   double norm, gnorm; 
@@ -55,10 +58,10 @@ int main(int argc, char *argv[]) {
 #endif
 
   /* Initialize Global Context */ 
-  initContext(argc, argv);
+  initContext(argc, argv, &grid, &kernel_key);
 
   /* Get task/thread information */
-  setPEsParams();
+  setPEsParams(&grid);
 #ifdef USE_MPI
   if ( (myrank == 0) && (requested_mpi_safety != provided_mpi_safety) ) {
     printf( " Warning, MPI thread safety requested level is not equal with provided \n");
@@ -73,32 +76,22 @@ int main(int argc, char *argv[]) {
      times = malloc(niter * sizeof(double));
   
 
-  initial_field();
+  initialise_grid(&grid);
 
   if (myrank == ROOT && pContext)
-    printContext();
+    printContext(&grid);
 
   /* Solve */
   for (iter = 0; iter < niter; ++iter){
     
-    startTime = my_wtime();
-
-    switch (kernel_key)
-      {
-      case (BASELINE_KERNEL) :  baseline_laplace3d(iter); break;
-      case (OPTBASE_KERNEL) :  opt_baseline_laplace3d(iter); break;
-      case (BLOCKED_KERNEL)  :  blocked_laplace3d(iter, &norm); break;
-      case (CCO_KERNEL)      :  cco_laplace3d(iter, &norm); break;
-      }
-
-    endTime = my_wtime();
+    laplace3d(&grid, kernel_key, &startTime, &endTime);
 
     /* Store Time */
     times[iter] = endTime-startTime;
 
     if (testComputation) {
-      norm = local_norm();
-      check_norm(iter, norm);
+      norm = local_norm(&grid);
+      check_norm(&grid, iter, norm);
     }
 
 
@@ -122,7 +115,7 @@ int main(int argc, char *argv[]) {
 
   /* Output */
   if (myrank == ROOT) 
-    stdoutIO(times, minTime, meanTime, maxTime, NstdvTime, gnorm);
+    stdoutIO(&grid, kernel_key, times, minTime, meanTime, maxTime, NstdvTime, gnorm);
   
   /* MPI Finalize */
 #ifdef USE_MPI

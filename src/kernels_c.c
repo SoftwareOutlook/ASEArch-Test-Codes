@@ -8,6 +8,11 @@
 static const Real sixth=1.0/6.0;
 
 static void Gold_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2);
+static void Titanium_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2);
+static void Blocked_laplace3d(int NX, int NY, int NZ, int BX, int BY, int BZ, Real* u1, Real* u2);
+//static void cco_laplace3d(int iteration, double *norm);
+//static void baseline_laplace3d(int iteration);
+//static void opt_baseline_laplace3d(int iteration);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Baseline version that describes the logic of Jacobi iteration in 1 set of loops.
@@ -47,50 +52,91 @@ static void Titanium_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2)
   //Real sixth=1.0f/6.0f;  // predefining this improves performance more than 10%
 
   NXY = NX*NY;
-#pragma omp parallel for schedule(static) default(none) shared(u1,u2,NX,NY,NZ,NXY) private(i,j,k,ind,indmj,indpj,indmk,indpk)
-  for (k=1; k<NZ-1; k++) {
-    for (j=1; j<NY-1; j++) {
-      ind = j*NX + k*NXY;
-      indmj = ind - NX;
-      indpj = ind + NX;
-      indmk = ind - NXY;
-      indpk = ind + NXY;
-      for (i=1; i<NX-1; i++) {   // i loop innermost for sequential memory access
+#pragma omp parallel default(none) shared(u1,u2,NX,NY,NZ,NXY) private(i,j,k,ind,indmj,indpj,indmk,indpk)
+  {
+#pragma omp for schedule(static)
+    for (k=1; k<NZ-1; k++) {
+      for (j=1; j<NY-1; j++) {
+	ind = j*NX + k*NXY;
+	indmj = ind - NX;
+	indpj = ind + NX;
+	indmk = ind - NXY;
+	indpk = ind + NXY;
+	for (i=1; i<NX-1; i++) {   // i loop innermost for sequential memory access
           u2[ind+i] = ( u1[ind+i-1] + u1[ind+i+1]
-                    +   u1[indmj+i] + u1[indpj+i]
-                    +   u1[indmk+i] + u1[indpk+i] ) * sixth;
+			+   u1[indmj+i] + u1[indpj+i]
+			+   u1[indmk+i] + u1[indpk+i] ) * sixth;
 	  
+	}
       }
     }
   }
 }
 
 
-void baseline_laplace3d(int iteration){
+static void Blocked_laplace3d(int NX, int NY, int NZ, int BX, int BY, int BZ, Real* u1, Real* u2) 
+{
+  int   i, j, k, ind, indmj, indpj, indmk, indpk, NXY,ii,jj,kk;
+  //Real sixth=1.0f/6.0f;  // predefining this improves performance more than 10%
+
+  NXY = NX*NY;
+#pragma omp parallel default(none) shared(u1,u2,NX,NY,NZ,NXY,BX,BY,BZ) private(i,j,k,ind,indmj,indpj,indmk,indpk,ii,jj,kk)
+  {
+#pragma omp for schedule(static) 
+    for (kk=1; kk<NZ-1; kk+=BZ)
+      for (jj=1; jj<NY-1; jj+=BY)
+	for(ii=1; ii<NX-1; ii+=BX)
+	  for (k=kk; k<MIN(kk+BZ,NZ-1); k++) {
+	    for (j=jj; j<MIN(jj+BY,NY-1); j++) {
+	      ind = j*NX + k*NXY;
+	      indmj = ind - NX;
+	      indpj = ind + NX;
+	      indmk = ind - NXY;
+	      indpk = ind + NXY;
+	      for (i=ii; i<MIN(ii+BX,NX-1); i++) {   // i loop innermost for sequential memory access
+		u2[ind+i] = ( u1[ind+i-1] + u1[ind+i+1]
+			      +   u1[indmj+i] + u1[indpj+i]
+			      +   u1[indmk+i] + u1[indpk+i] ) * sixth;
+		
+	      }
+	    }
+	  }
+  }
+}
+
+void laplace3d(const struct grid_info_t *g, int kernel_key, double *tstart, double *tend){
   // wraper for Gold_laplace3d
 
-  int NX = ngxyz[0], NY=ngxyz[1], NZ=ngxyz[2];
+  int NX = g->ng[0], NY = g->ng[1], NZ = g->ng[2];
+  int BX = g->nb[0], BY = g->nb[1], BZ = g->nb[2];
   Real* tmp;
-
-  Gold_laplace3d(NX, NY, NZ, uOld, uNew);
+  double norm;// needed by cco_laplace, to be removed later
+  int iter; // see abobe
+    switch (kernel_key)
+      {
+      case (BASELINE_KERNEL) :
+	*tstart = my_wtime();
+	Gold_laplace3d(NX, NY, NZ, uOld, uNew);
+	*tend = my_wtime(); break;
+      case (OPTBASE_KERNEL) :
+	*tstart = my_wtime();
+	Titanium_laplace3d(NX, NY, NZ, uOld, uNew);
+	*tend = my_wtime(); break;
+      case (BLOCKED_KERNEL)  :
+	*tstart = my_wtime();
+	Blocked_laplace3d(NX, NY, NZ, BX, BY, BZ, uOld, uNew);
+	*tend = my_wtime(); break;
+      case (CCO_KERNEL)      :  
+	*tstart = my_wtime();
+	//cco_laplace3d(iter, &norm); 
+	*tend = my_wtime(); break;
+      }
    
    tmp = uNew; uNew = uOld; uOld = tmp; 
 
 }
 
-
-void opt_baseline_laplace3d(int iteration){
-  // wraper for Gold_laplace3d
-
-  int NX = ngxyz[0], NY=ngxyz[1], NZ=ngxyz[2];
-  Real* tmp;
-
-  Titanium_laplace3d(NX, NY, NZ, uOld, uNew);
-   
-   tmp = uNew; uNew = uOld; uOld = tmp; 
-
-}
-
+/* MPI versions, to revise later
 void blocked_laplace3d(int iteration, double *norm){
 
   Real * tmp;
@@ -175,19 +221,20 @@ void cco_laplace3d(int iteration, double *norm){
   tmp = uNew; uNew = uOld; uOld = tmp;
   
 }
+*/
 
-void stencil_update(int s1, int e1, int s2, int e2, int s3, int e3, double * norm){
+void stencil_update(const struct grid_info_t * g, int s1, int e1, int s2, int e2, int s3, int e3, double * norm){
   
   int i, j, k, ijk, ijm1k, ijp1k, ijkm1, ijkp1;
   Real w;
 
   for (k = s3; k <= e3; ++k){
     for (j = s2; j <= e2; ++j){
-      ijk = uindex(s1, j, k);
-      ijm1k = uindex(s1, j-1, k);
-      ijp1k = uindex(s1, j+1, k);
-      ijkm1 = uindex(s1, j, k-1);
-      ijkp1 = uindex(s1, j, k+1);
+      ijk = uindex(g, s1, j, k);
+      ijm1k = uindex(g, s1, j-1, k);
+      ijp1k = uindex(g, s1, j+1, k);
+      ijkm1 = uindex(g, s1, j, k-1);
+      ijkp1 = uindex(g, s1, j, k+1);
       for (i = 0; i < e1 - s1 + 1; ++i){
 	w = sixth *
 	  (uOld[ijk + i - 1] + uOld[ijk + i + 1] +
@@ -200,7 +247,7 @@ void stencil_update(int s1, int e1, int s2, int e2, int s3, int e3, double * nor
   }  
 }
 
- inline int uindex(const int i, const int j, const int k){
-  return (i - (sx - 1) + (j - (sy - 1)) * nlx + (k - (sz - 1)) * nlx * nly );
+inline int uindex(const struct grid_info_t *g, const int i, const int j, const int k){
+  return (i - (g->sx - 1) + (j - (g->sy - 1)) * g->nlx + (k - (g->sz - 1)) * g->nlx * g->nly );
 }
 
