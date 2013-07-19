@@ -32,7 +32,8 @@ Below is the original copyright and licence.
 */
 
 #include "homb_c.h"
-
+#include "utils_c.h"
+#include "kernels_c.h"
 
 int main(int argc, char *argv[]) {
   int iter, kernel_key;
@@ -62,24 +63,25 @@ int main(int argc, char *argv[]) {
 
   /* Get task/thread information */
   setPEsParams(&grid);
+
 #ifdef USE_MPI
-  if ( (myrank == 0) && (requested_mpi_safety != provided_mpi_safety) ) {
+  if ( (grid.myrank == 0) && (requested_mpi_safety != provided_mpi_safety) ) {
     printf( " Warning, MPI thread safety requested level is not equal with provided \n");
     printf( " requested %d \n ", requested_mpi_safety);
     printf( " provided  %d \n ", provided_mpi_safety);
   }
 #endif
 
-  if ( myrank == ROOT)
-    times = malloc(niter * nproc * sizeof(double));
+  if ( grid.myrank == ROOT)
+    times = malloc(niter * grid.nproc * sizeof(double));
   else
      times = malloc(niter * sizeof(double));
   
 
   initialise_grid(&grid);
 
-  if (myrank == ROOT && pContext)
-    printContext(&grid);
+  if (grid.myrank == ROOT && pContext)
+    printContext(&grid, kernel_key);
 
   /* Solve */
   for (iter = 0; iter < niter; ++iter){
@@ -101,8 +103,8 @@ int main(int argc, char *argv[]) {
   }
 
   /* Run statistics on times (Root only) */
-  if (myrank == ROOT) 
-    statistics(times, &minTime, &meanTime,
+  if (grid.myrank == ROOT) 
+    statistics(&grid, times, &minTime, &meanTime,
                &maxTime, &stdvTime, &NstdvTime);
   
   //compute the final global norm, useful for quick validation
@@ -114,7 +116,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   /* Output */
-  if (myrank == ROOT) 
+  if (grid.myrank == ROOT) 
     stdoutIO(&grid, kernel_key, times, minTime, meanTime, maxTime, NstdvTime, gnorm);
   
   /* MPI Finalize */

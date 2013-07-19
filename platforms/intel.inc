@@ -13,7 +13,15 @@ CC := source /opt/intel/composerxe/bin/compilervars.sh intel64 && \
 
 
 ifdef USE_MIC
-FMIC = -mmic
+  FMIC = -mmic
+endif
+
+ifdef USE_MPI
+  FMPI=-DUSE_MPI
+endif
+
+ifdef USE_DOUBLE_PRECISION
+  DOUBLE=-DUSE_DOUBLE_PRECISION
 endif
 
 #FC = module add intel/comp intel/mpi && mpiifort
@@ -25,8 +33,8 @@ USE_OPENMP = yes
 FFLAGS_intel_opt   := -O3 $(FMIC) -opt-streaming-stores auto
 FFLAGS_intel_debug  :=  -g -C  $(FMIC)  -fpe0 -check noarg_temp_created
 
-CFLAGS_intel_opt := -O3 $(FMIC)
-CFLAGS_intel_debug := -g -C  $(FMIC)  -fpe0
+CFLAGS_intel_opt := $(FMPI) $(DOUBLE) -O3 $(FMIC)
+CFLAGS_intel_debug := $(FMPI) $(DOUBLE) -g $(FMIC)  
 
 MPIFLAGS         :=
 OMPFLAGS_intel_yes := -openmp

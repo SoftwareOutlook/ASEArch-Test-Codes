@@ -1,21 +1,26 @@
-// version of Jacobi smoother
-///
-// Lucian Anton, July 2013
+/*
+  variants for Jacobi smoother
+
+  Lucian Anton, July 2013
+*/
 
 #include "homb_c.h"
-#include "functions_c.h"
+#include "comm_mpi_c.h"
+#include "kernels_c.h"
+#include "comm_mpi_c.h"
+#include "utils_c.h"
+
 
 static const Real sixth=1.0/6.0;
 
 static void Gold_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2);
 static void Titanium_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2);
 static void Blocked_laplace3d(int NX, int NY, int NZ, int BX, int BY, int BZ, Real* u1, Real* u2);
-//static void cco_laplace3d(int iteration, double *norm);
-//static void baseline_laplace3d(int iteration);
-//static void opt_baseline_laplace3d(int iteration);
+static void cco_laplace3d(const struct grid_info_t *g, int iteration);
+
 
 ////////////////////////////////////////////////////////////////////////////////
-// Baseline version that describes the logic of Jacobi iteration in 1 set of loops.
+// Baseline version that describes the logic of Jacobi iteration in one set of loops.
 // Howerver this version is far from optimal because of the if statement inside the
 // inner loop and of the heavy algebra used to compute ind
 static void Gold_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2) 
@@ -43,8 +48,8 @@ static void Gold_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2)
 }
 
 
-// Version that does not initializes the in each iteration boundaries. It is enough to do it only once 
-// at initialisation stage.
+// Version that does not initializes the boundaries in each iteration.
+// It is enough to do it only once at initialisation stage.
 // The inner loop index algebra uses less operations ( compare with Gold_laplace3d )
 static void Titanium_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2) 
 {
@@ -77,7 +82,6 @@ static void Titanium_laplace3d(int NX, int NY, int NZ, Real* u1, Real* u2)
 static void Blocked_laplace3d(int NX, int NY, int NZ, int BX, int BY, int BZ, Real* u1, Real* u2) 
 {
   int   i, j, k, ind, indmj, indpj, indmk, indpk, NXY,ii,jj,kk;
-  //Real sixth=1.0f/6.0f;  // predefining this improves performance more than 10%
 
   NXY = NX*NY;
 #pragma omp parallel default(none) shared(u1,u2,NX,NY,NZ,NXY,BX,BY,BZ) private(i,j,k,ind,indmj,indpj,indmk,indpk,ii,jj,kk)
@@ -105,30 +109,39 @@ static void Blocked_laplace3d(int NX, int NY, int NZ, int BX, int BY, int BZ, Re
 }
 
 void laplace3d(const struct grid_info_t *g, int kernel_key, double *tstart, double *tend){
-  // wraper for Gold_laplace3d
+  // wrapper that controls which variant from above is to be excecuted
+  // also does MPI communication is MPI is active
 
-  int NX = g->ng[0], NY = g->ng[1], NZ = g->ng[2];
+  int NX = g->nlx, NY = g->nly, NZ = g->nlz;
   int BX = g->nb[0], BY = g->nb[1], BZ = g->nb[2];
   Real* tmp;
-  double norm;// needed by cco_laplace, to be removed later
   int iter; // see abobe
     switch (kernel_key)
       {
       case (BASELINE_KERNEL) :
 	*tstart = my_wtime();
+#ifdef USE_MPI
+	exchange_halos(g);
+#endif
 	Gold_laplace3d(NX, NY, NZ, uOld, uNew);
 	*tend = my_wtime(); break;
       case (OPTBASE_KERNEL) :
 	*tstart = my_wtime();
+#ifdef USE_MPI
+	exchange_halos(g);
+#endif
 	Titanium_laplace3d(NX, NY, NZ, uOld, uNew);
 	*tend = my_wtime(); break;
       case (BLOCKED_KERNEL)  :
 	*tstart = my_wtime();
+#ifdef USE_MPI
+	exchange_halos(g);
+#endif
 	Blocked_laplace3d(NX, NY, NZ, BX, BY, BZ, uOld, uNew);
 	*tend = my_wtime(); break;
       case (CCO_KERNEL)      :  
 	*tstart = my_wtime();
-	//cco_laplace3d(iter, &norm); 
+	cco_laplace3d(g, iter); 
 	*tend = my_wtime(); break;
       }
    
@@ -136,7 +149,8 @@ void laplace3d(const struct grid_info_t *g, int kernel_key, double *tstart, doub
 
 }
 
-/* MPI versions, to revise later
+/* MPI versions */
+/*
 void blocked_laplace3d(int iteration, double *norm){
 
   Real * tmp;
@@ -172,21 +186,21 @@ void blocked_laplace3d(int iteration, double *norm){
   *norm = x;
   tmp = uNew; uNew = uOld; uOld = tmp;  
 }
+*/
 
+static void cco_laplace3d(const struct grid_info_t *g, int iteration){
 
-void cco_laplace3d(int iteration, double *norm){
+  int sx = g->sx, ex = g->ex;
+  int sy = g->sy, ey = g->ey;
+  int sz = g->sz, ez = g->ez;
 
-  Real* tmp;
-  double x = 0.0;
-  
-
-#pragma omp parallel if (nthreads > 1) default(none) shared(sx, ex, sy, ey, sz, ez, nthreads) reduction(+:x)
+#pragma omp parallel if (nthreads > 1) default(none) shared(g, sx, ex, sy, ey, sz, ez, nthreads) 
   {
 #ifdef USE_MPI
-    post_recv();
-    buffer_halo_transfers(OUT, &x, 0);
-    exchange_halos();
-    buffer_halo_transfers(IN,  &x, 1);
+    post_recv(g);
+    buffer_halo_transfers(g, OUT, NO_UPDATE);
+    post_send(g);
+    buffer_halo_transfers(g, IN, UPDATE);
 #endif
     // explicit work placement equivalent to static schedule
     // but only amongst threads 1 ... nthreads - 1 ( if nthreads > 1)
@@ -210,27 +224,24 @@ void cco_laplace3d(int iteration, double *norm){
       }
     }
     else{
-      s3 = sz + 1; e3 = ez - 1;
+      s3 = sz+1; e3 = ez-1;
     } 
     
-    stencil_update(sx+1, ex-1, sy+1, ey-1, s3, e3, &x);
+    stencil_update(g, sx+1, ex-1, sy+1, ey-1, s3, e3);
+    //stencil_update(g, sx, ex, sy, ey, sz, ez);
 
   }
   
-  *norm = x;
-  tmp = uNew; uNew = uOld; uOld = tmp;
-  
 }
-*/
 
-void stencil_update(const struct grid_info_t * g, int s1, int e1, int s2, int e2, int s3, int e3, double * norm){
+void stencil_update(const struct grid_info_t * g, int s1, int e1, int s2, int e2, int s3, int e3){
   
   int i, j, k, ijk, ijm1k, ijp1k, ijkm1, ijkp1;
   Real w;
 
   for (k = s3; k <= e3; ++k){
     for (j = s2; j <= e2; ++j){
-      ijk = uindex(g, s1, j, k);
+      ijk   = uindex(g, s1, j, k);
       ijm1k = uindex(g, s1, j-1, k);
       ijp1k = uindex(g, s1, j+1, k);
       ijkm1 = uindex(g, s1, j, k-1);
@@ -240,7 +251,6 @@ void stencil_update(const struct grid_info_t * g, int s1, int e1, int s2, int e2
 	  (uOld[ijk + i - 1] + uOld[ijk + i + 1] +
 	   uOld[ijm1k + i] + uOld[ijp1k + i] + 
 	   uOld[ijkm1 + i] + uOld[ijkp1 + i]);
-	*norm = *norm + w*w;
 	uNew[ijk + i] = w;
       }
     }
@@ -248,6 +258,7 @@ void stencil_update(const struct grid_info_t * g, int s1, int e1, int s2, int e2
 }
 
 inline int uindex(const struct grid_info_t *g, const int i, const int j, const int k){
+  // Attention: this function works with global gird indices i, j, k
   return (i - (g->sx - 1) + (j - (g->sy - 1)) * g->nlx + (k - (g->sz - 1)) * g->nlx * g->nly );
 }
 

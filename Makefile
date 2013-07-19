@@ -22,7 +22,7 @@ default: $(HOMB)
 
 all: $(HOMB)
 
-$(HOMB_C): functions_c.o homb_c.o kernels_c.o
+$(HOMB_C): comm_mpi_c.o utils_c.o homb_c.o kernels_c.o
 	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE)  $^
 
 $(HOMB_F90) : homb_f90.o functions_f90.o 
@@ -41,6 +41,7 @@ vclean:
 
 homb_f90.o : functions_f90.o
 
-functions_c.o : src/functions_c.c src/homb_c.h src/functions_c.h
-kernels_c.o : src/kernels_c.c src/homb_c.h src/functions_c.h
-homb_c.o : src/homb_c.c src/homb_c.h  
+utils_c.o : src/utils_c.c src/homb_c.h src/utils_c.h src/kernels_c.h src/comm_mpi_c.h 
+kernels_c.o : src/kernels_c.c src/homb_c.h src/kernels_c.h src/utils_c.h src/comm_mpi_c.h
+comm_mpi_c.o : src/comm_mpi_c.c src/homb_c.h src/comm_mpi_c.h 
+homb_c.o : src/homb_c.c src/homb_c.h src/utils_c.h src/kernels_c.h
