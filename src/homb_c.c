@@ -36,19 +36,19 @@ Below is the original copyright and licence.
 #include "kernels_c.h"
 
 int main(int argc, char *argv[]) {
-  int iter, kernel_key;
+  int irun, kernel_key;
 
   /* grid info */
   struct grid_info_t grid;
 
    /* L2 norms */
-  double norm, gnorm; 
+  double gnorm, norm;
 
   /* Timing measurements */
-  double startTime, endTime;
-  double meanTime = 0., minTime = 1.e100, maxTime = 0.;
-  double stdvTime = 0., NstdvTime = 0., *times;
-
+  struct times_t meanTime, minTime, maxTime;
+  struct times_t *times;
+  
+  double compTime, commTime;
 
 #ifdef USE_MPI
   /* MPI thread safety level parameters */
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   initContext(argc, argv, &grid, &kernel_key);
 
   /* Get task/thread information */
-  setPEsParams(&grid);
+  setPEsParams(&grid, kernel_key);
 
 #ifdef USE_MPI
   if ( (grid.myrank == 0) && (requested_mpi_safety != provided_mpi_safety) ) {
@@ -73,41 +73,42 @@ int main(int argc, char *argv[]) {
 #endif
 
   if ( grid.myrank == ROOT)
-    times = malloc(niter * grid.nproc * sizeof(double));
+    times = malloc(nruns * grid.nproc * sizeof(struct times_t));
   else
-     times = malloc(niter * sizeof(double));
+    times = malloc(nruns * sizeof(struct times_t));
   
-
   initialise_grid(&grid);
 
   if (grid.myrank == ROOT && pContext)
     printContext(&grid, kernel_key);
 
   /* Solve */
-  for (iter = 0; iter < niter; ++iter){
+  for (irun = 0; irun < nruns; ++irun){
     
-    laplace3d(&grid, kernel_key, &startTime, &endTime);
+    laplace3d(&grid, kernel_key, &compTime, &commTime);
 
-    /* Store Time */
-    times[iter] = endTime-startTime;
+    times[irun].comp = compTime;
+#ifdef USE_GPU
+    times[irun].comm = commTime;
+#endif
 
     if (testComputation) {
       norm = local_norm(&grid);
-      check_norm(&grid, iter, norm);
+      check_norm(&grid, irun, norm);
     }
 
 
   /* Gather iteration runtimes to ROOT's matrix */
-  timeUpdate(times);
-
-  }
+    timeUpdate(times);
+  }//end for loop
 
   /* Run statistics on times (Root only) */
   if (grid.myrank == ROOT) 
     statistics(&grid, times, &minTime, &meanTime,
-               &maxTime, &stdvTime, &NstdvTime);
+               &maxTime);
   
   //compute the final global norm, useful for quick validation
+  if (!testComputation) norm = local_norm(&grid);
 #ifdef USE_MPI
   MPI_Reduce(&norm, &gnorm, 1, MPI_DOUBLE,
 		  MPI_SUM, ROOT, MPI_COMM_WORLD);
@@ -117,13 +118,17 @@ int main(int argc, char *argv[]) {
 
   /* Output */
   if (grid.myrank == ROOT) 
-    stdoutIO(&grid, kernel_key, times, minTime, meanTime, maxTime, NstdvTime, gnorm);
+     stdoutIO(&grid, kernel_key, times, &minTime, &meanTime, &maxTime, gnorm);
   
   /* MPI Finalize */
 #ifdef USE_MPI
   MPI_Finalize();
 #endif
   
+#ifdef USE_GPU
+  if(grid.gpuflag==1)
+	  freeDeviceMemory();
+#endif
   return(EXIT_SUCCESS);
 
 }

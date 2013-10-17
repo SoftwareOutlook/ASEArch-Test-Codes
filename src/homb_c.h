@@ -61,14 +61,29 @@ typedef float Real;
 struct grid_info_t
 {
   int ng[3], nb[3]; // global grid and computational blocks
+  int threads_per_column; // number of threads per column in wave algorithm
   int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; // start end indices for local grids ( used with MPI runs)
   int nproc, myrank; // MPI rank
   int np[3]; // MPI topology size
   int cp[3]; // grid coordinated of this ranks
+  int key;	// kernel identifier
+  int malign; // allocate aligned memory to help vectorization
+#ifdef USE_GPU
+  int gpuflag; //gpu flag
+  float kernelTimer;
+  float memoryTimer;
+  int memoryCtr;
+#endif
 #ifdef USE_MPI
   MPI_Comm comm;
 #endif 
 }; 
+
+struct times_t
+{
+  double comp, comm;
+  // comm is used for GPU <--> host timmings
+};
 
 // MPI root or proc 0
 #define ROOT 0
@@ -78,3 +93,8 @@ struct grid_info_t
 #define OPTBASE_KERNEL  1
 #define BLOCKED_KERNEL  2
 #define CCO_KERNEL      3 
+#define WAVE_KERNEL     4
+#define WAVE_DIAGONAL_KERNEL	5
+#define GPUBASE_KERNEL   6
+#define GPUSHM_KERNEL   7
+

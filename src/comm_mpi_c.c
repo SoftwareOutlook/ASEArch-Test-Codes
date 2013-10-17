@@ -343,7 +343,8 @@ void compute_local_grid_ranges( struct grid_info_t * g ){
   }
 
   sx = local_shift[0];
-  ex = sx + nl[0]  - 1;
+
+  ex = sx + nl[0] - 1;
   sy = local_shift[1];
   ey = sy + nl[1] - 1;
   sz = local_shift[2];

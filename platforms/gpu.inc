@@ -9,45 +9,37 @@ LANG := C
 
 COMP=gcc
 
+
 USE_OPENMP=yes
-BUILD=opt
 
 ifdef USE_MPI
   CC  := mpicc
   F90 := mpif90
   CPPFLAGS := -DUSE_MPI
 else
-  CC  := gcc
-  F90 := gfortran
+	CC  := gcc
+	F90 := gfortran
 endif
 
-ifdef USE_GPU
-	CPPFLAGS += -DUSE_GPU
-	INC	:= -I$(CUDADIR)/include 
-	LIB	:= -L$(CUDADIR)/lib64 -lcuda -lcudart
-	CUDAO := laplace3d_kernel.o
-	NVCCFLAGS_opt := -O3 -gencode arch=compute_30,code=sm_30 
-	NVCCFLAGS_debug := -g -G -O0 -gencode arch=compute_30,code=sm_30 
-	NVCCFLAGS := $(NVCCFLAGS_$(BUILD))
-	#-keep --ptxas-options=-v
-endif
+NVCC := nvcc
+CPPFLAGS := -DUSE_GPU
+INC	:= -I/usr/local/cuda-5.0/include 
+LIB	:= -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart
 
 ifdef USE_DOUBLE_PRECISION
   CPPFLAGS += -DUSE_DOUBLE_PRECISION
 endif
 
-ifdef USE_VEC1D
-  CPPFLAGS += -DUSE_VEC1D
-endif
-
-CFLAGS_opt = -O3
-CFLAGS_debug = -g -Wall -Wuninitialized -O1
+CFLAGS_opt = -O3  
+CFLAGS_debug = -g -Wall -Wuninitialized -O1 
 CFLAGS := $(CPPFLAGS) $(CFLAGS_$(BUILD)) 
+#CFLAGS := $(CPPFLAGS) $(CFLAGS_debug) 
+NVCCFLAGS := -arch=sm_30 --ptxas-options=-v --use_fast_math
 
 FFLAGS_opt := -O3
 FFLAGS_debug := -g -fbounds-check -Wall -fbacktrace -ffpe-trap=invalid,zero,overflow -fsignaling-nans -fdump-core 
 FFLAGS := $(CPPFLAGS) $(FFLAGS_$(BUILD))
 
 ifdef USE_OPENMP
-  OMPFLAGS := -fopenmp
+  OMPFLAGS := -fopenmp 
 endif
