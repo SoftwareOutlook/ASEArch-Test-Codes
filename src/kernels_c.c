@@ -50,16 +50,19 @@ static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* 
 }
 
 // 1D loop that helps the compiler to vectorize
-static void vec_oneD_loop(const int n, const Real uNorth[], const Real uSouth[], const Real uWest[], const Real uEast[], const Real uBottom[], const Real uTop[], Real w[] ){
+static void vec_oneD_loop(const int n, const Real * restrict uNorth, const Real *restrict uSouth, const Real *restrict uWest, 
+   const Real *restrict uEast, const Real *restrict uBottom, const Real *restrict uTop, Real *restrict w ){
   int i;
   //static Real inv6=1.0f/6.0f;
   //#pragma unroll(4)
   //extern int sscal;
+#if 0
 #ifdef __INTEL_COMPILER
 #pragma ivdep
 #endif
 #ifdef __IBMC__
 #pragma ibm independent_loop
+#endif
 #endif
   for (i=0; i < n; ++i)
     w[i] = sixth * (uNorth[i] + uSouth[i] + uWest[i] + uEast[i] + uBottom[i] + uTop[i]);
@@ -75,9 +78,7 @@ static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Re
   //Real sixth=1.0f/6.0f;  // predefining this improves performance more than 10%
 
   NXY = nxShift*NY;
-#pragma omp parallel default(none) shared(u1,u2,NX,NY,NZ,NXY, nxShift) private(i,j,k,ind,indmj,indpj,indmk,indpk)
-  {
-#pragma omp for schedule(static)
+#pragma omp parallel for default(none) shared(u1,u2,NX,NY,NZ,NXY, nxShift) private(i,j,k,ind,indmj,indpj,indmk,indpk) schedule(static) collapse(2)
     for (k=1; k<NZ-1; k++) {
       for (j=1; j<NY-1; j++) {
 	ind = j*nxShift + k*NXY;
@@ -97,7 +98,6 @@ static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Re
 #endif
       }
     }
-  }
 }
 
 
@@ -215,16 +215,16 @@ static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, 
            |   |   |   |   |   |    | 
         4  |   |   |   |   |   |    |
        --------------------------------
-           | t1|   |   |   |   |    |
+           | t0|   |   |   |   |    |
         3  |   |   |   |   |   |    |
        --------------------------------
-           |   | t3|   |   |   |    |
+           |   | t2|   |   |   |    |
         2  |   |   |   |   |   |    |
        --------------------------------
-           | t2|   | t5|   |   |    |
+           | t1|   | t4|   |   |    |
         1  |   |   |   |   |   |    |
        --------------------------------
-           |   | t4|   | t7|   |    |
+           |   | t3|   | t6|   |    |
         0  |   |   |   |   |   |    |
        --------------------------------
              0   1   2   3   4    5

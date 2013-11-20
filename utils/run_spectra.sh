@@ -1,10 +1,12 @@
 #!/bin/sh
 #
-# collect data accross grid size for a list of models 
+# collects data accross grid size for pscified algorithms 
 #
 
 # default max grid
 MAX_LINSIZE=30
+
+#data file
 fout=jacobi_spectra_$(date "+%s").txt
 
 # command options
@@ -26,6 +28,8 @@ for argument in $options
         -exe)exe_list="${val//,/ }";;
 	-nthreads)threads_list="${val//,/ }" ;;
 	-test)test_flag="-t";;
+        -malign)fmalign="-malign $val";;
+	-system)run_command=$val ;;
         *)  echo "unknown flag $argument" ; exit  1;;
     esac
 done
@@ -68,11 +72,11 @@ do
 	    # $((++index))
 	    for ((linsize=10; linsize <= max_linsize; linsize += step)) 
 	    do
-		biter=$(((10*max_linsize)/linsize))
-		niter=5
+		niter=$(((10*max_linsize)/linsize))
+		nruns=5
 		if [ "$model" = wave ]
 		then 
-		    nwave="$biter $((nth<biter?nth:biter))"
+		    nwave="$niter $((nth<niter?nth:niter))"
 		    echo "model $model $nwave"
 		else
 		    nwave=""
@@ -82,14 +86,31 @@ do
 		if [ "$blk_y" -eq 0 ] ; then  blk_yt=$linsize ; else blk_yt=$blk_y ; fi
 		if [ "$blk_z" -eq 0 ] ; then  blk_zt=$linsize ; else blk_zt=$blk_z ; fi
 		
-		echo "./"$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -biter $biter -niter $niter -nh $test_flag  >> $fout"
-		./"$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -biter $biter -niter $niter -nh $test_flag  >> $fout
-#/bgsys/drivers/ppcfloor/hlcs/bin/runjob -n $nproc -p $NTASK --envs OMP_NUM_THREADS="$nth" BG_THREADLAYOUT=1 : "$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -biter $biter -niter $niter -nh $test_flag  >> $fout -t
+		echo "nth $nth ./"$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -niter $niter -nruns $nruns -nh $test_flag  $fmalign >> $fout"
+		case $run_command in
+		    mic)
+		    # mic on csemic2
+			export I_MPI_MIC=1
+			mpirun -n 1 -host mic0  -env LD_LIBRARY_PATH /lib -env OMP_NUM_THREADS $nth -env KMP_AFFINITY verbose,scatter "$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -niter $niter -nruns $nruns -nh $test_flag  $fmalign >> $fout
+			;;
+		    bgq)
+		    # blue joule
+			/bgsys/drivers/ppcfloor/hlcs/bin/runjob -n 1 --envs OMP_NUM_THREADS="$nth" BG_THREADLAYOUT=1 : "$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -niter $niter -nruns $nruns -nh $test_flag  >> $fout
+			;;
+                    idp)
+		    # IdataPlex
+			mpiexec.hydra -np 1 -env OMP_NUM_THREADS $nth  -env KMP_AFFINITY verbose,granularity=core,scatter $exe  -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -biter $biter -niter $niter -nh  $test_flag  $fmalign >> $fout 
+                        ;;
+		    *)
+		    #command line	
+			echo "exe $exe"
+			./"$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -niter $niter -nruns $nruns -nh $test_flag  >> $fout
+			;;
+		esac
 	    done
 	    # make a gnuplot block
             echo " " >> $fout
             echo " " >> $fout
-#	    awk '{print $2, (($2-1)*($3-1)*($4-1))/$'"$tmincol"'}' $fout > $fspectra
 	done
     done	
 done	

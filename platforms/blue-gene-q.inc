@@ -51,12 +51,14 @@ endif
 FLAGS_ibm_debug := -g -C  
 FLAGS_ibm_opt   := -O3  -qstrict
 CLAGS_ibm_debug := -g -qnoopt   
-CLAGS_ibm_opt   := -O3  -qstrict
+CLAGS_ibm_opt   := -O3 -qhot -qreport
 OMPFLAGS_ibm_yes := -qsmp=omp
 OMPFLAGS_ibm_no :=
 
-FLAGS_gcc_opt :=  -O3
-FLAGS_gcc_debug := -g -fcheck=all -finit-real=snan -Wall -Wtabs -Wno-unused-fbacktrace -ffpe-trap=invalid,zero,overflow -fsignaling-nans -fdump-core 
+FLAGS_gcc_opt :=  -O3 -std=c99
+FLAGS_gcc_debug := -g -fcheck=all -finit-real=snan -Wall -Wtabs -Wno-unused-fbacktrace -ffpe-trap=invalid,zero,overflow -fsignaling-nans -fdump-core -std=c99
+CLAGS_gcc_opt = -O3 -std=c99 
+CLAGS_gcc_debug = -g -Wall -Wuninitialized -O1 -std=c99
 OMPFLAGS_gcc_yes  := -fopenmp
 OMPFLAGS_gcc_no   :=
 
@@ -68,4 +70,10 @@ LD_FLAGS :=
 
 F90 := module unload ibmmpi && module unload gccmpi && module load $(MODULE_PRG) && $(F90)
 CC := module unload ibmmpi && module unload gccmpi && module load $(MODULE_PRG) && $(CC)
+
+ifeq ($(LANG),C)
+  ifeq ($(COMP),gcc)
+    LIB := -lm
+  endif
+endif
 

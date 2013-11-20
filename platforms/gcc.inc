@@ -42,7 +42,7 @@ endif
 
 CFLAGS_opt = -O3
 CFLAGS_debug = -g -Wall -Wuninitialized -O1
-CFLAGS := $(CPPFLAGS) $(CFLAGS_$(BUILD)) 
+CFLAGS := $(CPPFLAGS) $(CFLAGS_$(BUILD)) -std=c99 
 
 FFLAGS_opt := -O3
 FFLAGS_debug := -g -fbounds-check -Wall -fbacktrace -ffpe-trap=invalid,zero,overflow -fsignaling-nans -fdump-core 
@@ -50,4 +50,8 @@ FFLAGS := $(CPPFLAGS) $(FFLAGS_$(BUILD))
 
 ifdef USE_OPENMP
   OMPFLAGS := -fopenmp
+endif
+
+ifeq ($(LANG),C)
+  LIB := -lm
 endif

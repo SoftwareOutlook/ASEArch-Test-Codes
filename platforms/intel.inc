@@ -9,7 +9,7 @@ F90 := source /opt/intel/composerxe/bin/compilervars.sh intel64 && \
       source /opt/intel/impi/4.1.0/intel64/bin/mpivars.sh && mpiifort
 
 CC := source /opt/intel/composerxe/bin/compilervars.sh intel64 && \
-      source /opt/intel/impi/4.1.0/intel64/bin/mpivars.sh && icc
+      source /opt/intel/impi/4.1.0/intel64/bin/mpivars.sh && mpiicc
 
 LANG = C
 
@@ -38,8 +38,8 @@ USE_OPENMP = yes
 FFLAGS_intel_opt   := -O3 $(FMIC) -opt-streaming-stores auto 
 FFLAGS_intel_debug  :=  -g -C  $(FMIC)  -fpe0 -check noarg_temp_created
 
-CFLAGS_intel_opt := $(VEC1D) $(FMPI) $(DOUBLE) -O3 -xHost -align -vec-report6 $(FMIC)
-CFLAGS_intel_debug := $(VEC1D) $(FMPI) $(DOUBLE) -g $(FMIC)  
+CFLAGS_intel_opt := $(VEC1D) $(FMPI) $(DOUBLE) -O3 -restrict -align -vec-report6 $(FMIC)
+CFLAGS_intel_debug := $(VEC1D) $(FMPI) $(DOUBLE) -g -restrict $(FMIC)  
 
 MPIFLAGS         :=
 OMPFLAGS_intel_yes := -openmp
