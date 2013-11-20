@@ -36,7 +36,7 @@ endif
 
 CFLAGS_opt = -O3  
 CFLAGS_debug = -g -Wall -Wuninitialized -O1 
-CFLAGS := $(CPPFLAGS) $(CFLAGS_$(BUILD)) 
+CFLAGS := $(CPPFLAGS) $(CFLAGS_$(BUILD)) -std=c99
 #CFLAGS := $(CPPFLAGS) $(CFLAGS_debug) 
 NVCCFLAGS := $(PNVFLAGS) -arch=sm_30 --ptxas-options=-v --use_fast_math
 
