@@ -1,13 +1,14 @@
 /*
-This is the partof  DL_HOMB, a hybrid OpemMP MPI Benchmark for
-3D Jacobi solver for Laplace equation.
+This is part of JTC, a CUDA-OpenMP-MPI Benchmark for
+Jacobi solver applied to a 3D Laplace equation.
 
-Lucian Anton July 2013.
+Lucian Anton 
+March 2014.
 
-This code started from v 1.0 of HOMB
+DL_HOMB started from v 1.0 of HOMB
 http://sourceforge.net/projects/homb/
 
-Below is the original copyright and licence.
+The original copyright and licence is below.
 
   Copyright 2009 Maxwell Lipford Hutchinson
 
@@ -69,8 +70,6 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
   grid->myrank = 0;
 #endif
 
-
-
   /* "Logicals" for file output */
   vOut = 0;  pHeader = 1; pContext = 0; testComputation = 0;
   
@@ -78,6 +77,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
   grid->ng[0] = 33; grid->ng[1] = 33; grid->ng[2] = 33; //Global grid
   grid->nb[0] = grid->ng[0]; grid->nb[1] = grid->ng[1]; grid->nb[2] = grid->ng[2]; // block sizes 
   grid->malign = -1;
+  grid->nwaves = -1; 
 
 #ifdef USE_GPU
   // use nb components to store thread block sizes
@@ -91,7 +91,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
   grid->cp[0] = 0; grid->cp[1] = 0; grid->cp[2] = 0;
   *kernel_key = BASELINE_KERNEL;
 
-  int i, niter_fixed = 0;
+  int i;
 
   /* Cycle through command line args */
   i = 0;
@@ -116,17 +116,17 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       sscanf(argv[++i],"%d", &(grid->np[1]));
       sscanf(argv[++i],"%d", &(grid->np[2]));
     }
-    /* Look for number number of iterations*/  
+    /* Look for number number of iteration block (runs)*/  
     else if ( strcmp("-nruns", argv[i]) == 0 ){
       sscanf(argv[++i],"%d",&nruns);
     }
-    /* Look for iteration block size */
+    /* Look for the size of iteration block */
     else if ( strcmp("-niter", argv[i]) == 0 ){
       int iaux;
-      sscanf(argv[++i],"%d",&iaux);
+      sscanf(argv[++i],"%d",&niter);
       // number of waves takes precedence over blk_iter
-      if ( ! niter_fixed )
-	niter = iaux;
+      //if ( ! niter_fixed )
+      //niter = iaux;
     }
     /* Look for verbouse output */
     else if ( strcmp("-v", argv[i]) == 0 ){
@@ -156,8 +156,8 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       else if (strcmp("cco",argv[i]) == 0)
 	*kernel_key = grid->key = CCO_KERNEL;
       else if (strcmp("wave",argv[i]) == 0 ){
-	sscanf(argv[++i],"%d",&niter);
-	niter_fixed = 1;// prevent reseting by -biter flag
+	sscanf(argv[++i],"%d",&(grid->nwaves));
+	//niter_fixed = 1;// prevent reseting by -niter flag
 	sscanf(argv[++i],"%d",&(grid->threads_per_column));
 	if ( grid->threads_per_column == 0 ) 
 	  *kernel_key = grid->key = WAVE_DIAGONAL_KERNEL;
@@ -226,6 +226,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 
 void setPEsParams(struct grid_info_t *g, int kernel_key) {
 
+ 
 #ifdef USE_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &(g->nproc));
   if ( g->nproc != g->np[0] * g->np[1] * g->np[2]){
@@ -250,19 +251,23 @@ void setPEsParams(struct grid_info_t *g, int kernel_key) {
   nthreads = omp_get_max_threads();
 #endif
 
-  /* check if the number of threads per column is a factor nthreads */
+  /* sanity checkes for the time skewed algorithm */
   if (kernel_key == WAVE_KERNEL){ 
+    char errmsg[255];
     if ( (nthreads % g->threads_per_column != 0) || 
-	 (g->threads_per_column > nthreads)){
-      char errmsg[255];
-      sprintf(errmsg,"ERROR : nthreads must be a multiple of threads per column in wave model. nthreads : %d threads per column : %d \n", nthreads, g->threads_per_column);
+	 (g->threads_per_column > nthreads)){     
+      sprintf(errmsg,"nthreads must be a multiple of threads per column in wave model. nthreads : %d threads per column : %d \n", nthreads, g->threads_per_column);
       error_abort(errmsg,"");
     }
-    if (g->threads_per_column > niter){
-      char errmsg[255];
-      sprintf(errmsg,"ERROR : threads_per_column %d > number of waves %d !!! quitting ... \n",  g->threads_per_column, niter);
+    if (g->threads_per_column > g->nwaves){
+      sprintf(errmsg,"threads_per_column %d > number of waves %d !!! quitting ... \n",  g->threads_per_column,  g->nwaves);
       error_abort(errmsg,"");
     }
+    if (niter%g->nwaves != 0){
+      sprintf(errmsg,"number of iterations per run %d is not a multiple of number of waves %d !!! quitting ... \n", niter, g->nwaves);
+      error_abort(errmsg,"");
+    } 
+
   }
   //  #pragma omp parallel shared(nThreads)
   //{

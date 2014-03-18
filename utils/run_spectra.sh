@@ -1,13 +1,10 @@
 #!/bin/sh
 #
-# collects data accross grid size for pscified algorithms 
+# collects data accross grid size for specified algorithms of Jacobi Test Code 
+# 
+# Lucian Anton 
+# March 2014
 #
-
-# default max grid
-MAX_LINSIZE=30
-
-#data file
-fout=jacobi_spectra_$(date "+%s").txt
 
 # command options
 options=$@
@@ -22,6 +19,7 @@ for argument in $options
     val="${argument#*=}"
     case $flag in
         -model) model_list="${val//,/ }" ;;
+        -wave) wave_params=(${val//,/ }) ;;
 	-blocks) blk_val=(${val//,/ }) ; blk_x="${blk_val[0]}";blk_y="${blk_val[1]}";blk_z="${blk_val[2]}";;
 	-maxsize)max_linsize=$val;;
 	-step)step=$val;;
@@ -30,11 +28,26 @@ for argument in $options
 	-test)test_flag="-t";;
         -malign)fmalign="-malign $val";;
 	-system)run_command=$val ;;
+	-help|-h) 
+	       echo "$0 -model=<model list> wave=<wavel param list> -blocks=<block sizes list>"
+	       echo "   -mingrid=<start grid sizes> -maxgrid=<end grid sizes> -step=<grid increase>"
+	       echo "   -exe=<executables list> -nthreads=<number of OpenMP threads list> "
+	       echo "   -test pass the -t flag to executable for testing"
+	       echo "   -malig=<val> use posix_memalign for main arrays, align memory with <va>"
+	       echo "   -system=<val> : select system <val> for bach execution" 
+	       exit 0
+	       ;;
         *)  echo "unknown flag $argument" ; exit  1;;
     esac
 done
 
 #defaults
+# default max grid
+MAX_LINSIZE=32
+MIN_LINSIZE=32
+#data file
+fout=jacobi_spectra_$(date "+%s").txt
+
 if [ -z "$exe_list" ] 
 then 
     echo "please provide an executable list:  -exe=exe1[,exe2[,..]]" 
@@ -74,37 +87,44 @@ do
 	    do
 		niter=$(((10*max_linsize)/linsize))
 		nruns=5
-		if [ "$model" = wave ]
-		then 
-		    nwave="$niter $((nth<niter?nth:niter))"
-		    echo "model $model $nwave"
-		else
-		    nwave=""
+		if [ "$model" = wave ] 
+		then
+		    if [ -z "$wave_params" ] 
+		    then 
+			wave_params_temp="$niter $((nth > 1 ? 2 : 1))"
+		    else
+			# adjsut run parameters to avoid unnecessary stops
+			(( wave_params[0] > niter )) && niter=${wave_params[0]}
+			(( niter % wave_params[0] > 0 )) && niter=$(( niter -  niter % wave_params[0] ))
+			wave_params_temp="$niter $(( wave_params[1] > nth ? nth : wave_params[1] ))"
+		    fi
 		fi
+		    
 		
 		if [ "$blk_x" -eq 0 ] ; then  blk_xt=$linsize ; else blk_xt=$blk_x ; fi
 		if [ "$blk_y" -eq 0 ] ; then  blk_yt=$linsize ; else blk_yt=$blk_y ; fi
 		if [ "$blk_z" -eq 0 ] ; then  blk_zt=$linsize ; else blk_zt=$blk_z ; fi
 		
-		echo "nth $nth ./"$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -niter $niter -nruns $nruns -nh $test_flag  $fmalign >> $fout"
+		arguments="-ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign"
+
+		echo "nth $nth $exe $arguments"
 		case $run_command in
 		    mic)
 		    # mic on csemic2
 			export I_MPI_MIC=1
-			mpirun -n 1 -host mic0  -env LD_LIBRARY_PATH /lib -env OMP_NUM_THREADS $nth -env KMP_AFFINITY verbose,scatter "$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -niter $niter -nruns $nruns -nh $test_flag  $fmalign >> $fout
+			mpirun -n 1 -host mic0  -env LD_LIBRARY_PATH /lib -env OMP_NUM_THREADS $nth -env KMP_AFFINITY verbose,balanced "$exe" $arguments  >> $fout
 			;;
 		    bgq)
 		    # blue joule
-			/bgsys/drivers/ppcfloor/hlcs/bin/runjob -n 1 --envs OMP_NUM_THREADS="$nth" BG_THREADLAYOUT=1 : "$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -niter $niter -nruns $nruns -nh $test_flag  >> $fout
+			/bgsys/drivers/ppcfloor/hlcs/bin/runjob -n 1 --envs OMP_NUM_THREADS="$nth" BG_THREADLAYOUT=1 : "$exe" $arguments  >> $fout
 			;;
                     idp)
 		    # IdataPlex
-			mpiexec.hydra -np 1 -env OMP_NUM_THREADS $nth  -env KMP_AFFINITY verbose,granularity=core,scatter $exe  -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -biter $biter -niter $niter -nh  $test_flag  $fmalign >> $fout 
+			mpiexec.hydra -np 1 -env OMP_NUM_THREADS $nth  -env KMP_AFFINITY verbose,granularity=core,scatter "$exe" $arguments  >> $fout
                         ;;
 		    *)
-		    #command line	
-			echo "exe $exe"
-			./"$exe" -ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $nwave -niter $niter -nruns $nruns -nh $test_flag  >> $fout
+		    # interactive shell 
+			$exe $arguments  >> $fout
 			;;
 		esac
 	    done
