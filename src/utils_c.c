@@ -542,9 +542,9 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
     }
     else if ( useGPU)
       {
-	printf("#=============================================================================================================================================================#\n");
-	printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tNITER\tminTime\t         meanTime\tmaxTime \tminCpyTime\tmeanCpyTime \tmaxCpyTime    #\n");
-	printf("#=============================================================================================================================================================#\n");
+	printf("#==================================================================================================================================================================#\n");
+	printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tminTime\t         meanTime\tmaxTime \tminCpyTime\tmeanCpyTime \tmaxCpyTime #\n");
+	printf("#==================================================================================================================================================================#\n");
       }
     else {
       printf("#==========================================================================================================#\n");
@@ -563,8 +563,8 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
 	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2],
 	   niter, minTime->comp, meanTime->comp, maxTime->comp);
   else if (useGPU)
-    printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
-	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], niter, 
+    printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
+	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2], niter, 
 	   minTime->comp, meanTime->comp, maxTime->comp,minTime->comm, meanTime->comm,
 	   maxTime->comm);
   else
