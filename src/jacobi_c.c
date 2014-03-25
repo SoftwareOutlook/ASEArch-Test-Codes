@@ -32,7 +32,7 @@ Below is the original copyright and licence.
   along with HOMB.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "homb_c.h"
+#include "jacobi_c.h"
 #include "utils_c.h"
 #include "kernels_c.h"
 

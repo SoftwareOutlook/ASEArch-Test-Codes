@@ -34,7 +34,7 @@ all: $(HOMB)
 
 
 
-$(HOMB_C):  kernels_c.o comm_mpi_c.o utils_c.o homb_c.o $(CUDAO)
+$(HOMB_C):  kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO)
 	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE) $^ $(LIB) 
 
 
@@ -57,10 +57,10 @@ ifdef USE_GPU
 endif
 homb_f90.o : functions_f90.o
 
-utils_c.o : src/utils_c.c src/homb_c.h src/utils_c.h src/kernels_c.h src/comm_mpi_c.h 
-kernels_c.o : src/kernels_c.c src/homb_c.h src/kernels_c.h src/utils_c.h src/comm_mpi_c.h
-comm_mpi_c.o : src/comm_mpi_c.c src/homb_c.h src/comm_mpi_c.h 
-homb_c.o : src/homb_c.c src/homb_c.h src/utils_c.h src/kernels_c.h
+utils_c.o : src/utils_c.c src/jacobi_c.h src/utils_c.h src/kernels_c.h src/comm_mpi_c.h 
+kernels_c.o : src/kernels_c.c src/jacobi_c.h src/kernels_c.h src/utils_c.h src/comm_mpi_c.h
+comm_mpi_c.o : src/comm_mpi_c.c src/jacobi_c.h src/comm_mpi_c.h 
+jacobi_c.o : src/jacobi_c.c src/jacobi_c.h src/utils_c.h src/kernels_c.h
 ifdef USE_GPU
 laplace3d_kernel.o : src/laplace3d_kernel.cu src/gpu_laplace3d_wrapper.h src/cutil_inline.h
 endif 

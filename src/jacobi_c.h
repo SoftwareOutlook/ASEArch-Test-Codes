@@ -68,6 +68,7 @@ struct grid_info_t
   int cp[3]; // grid coordinated of this ranks
   int key;	// kernel identifier
   int malign; // allocate aligned memory to help vectorization
+  int nwaves; // number of waves used in time skwed algorithm
 #ifdef USE_GPU
   int gpuflag; //gpu flag
   float kernelTimer;

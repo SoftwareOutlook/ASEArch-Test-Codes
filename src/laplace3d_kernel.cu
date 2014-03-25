@@ -1,3 +1,13 @@
+/*
+This is part of Jacobi Test Code (JTC) , a hybrid CUDA-OpenMP-MPI benchmark for
+Jacobi solver applied to a 3D Laplace equation.
+
+This file contains CUDA kernels and auxiliary functions
+
+Lucian Anton
+March 2014.
+*/
+
 #include<stdio.h>
 #include "cutil_inline.h"
 
@@ -9,7 +19,7 @@
  * this notifies the compiler that the definitions are present in external file
  */
 extern "C" {
-#include "homb_c.h"
+#include "jacobi_c.h"
 #include "gpu_laplace3d_wrapper.h"
 }
 
@@ -33,16 +43,23 @@ extern Real *d_u1, *d_u2;
 
 __global__ void kernel_laplace3d(int NX, int NY, int NZ, Real *d_u1, Real *d_u2)
 {
-  int   i, j, k, indg, active, IOFF, JOFF, KOFF;
+  int   i, j, k, bz, ks, ke, indg, active, IOFF, JOFF, KOFF;
   Real u2, sixth=1.0/6.0;
 
   //
   // define global indices and array offsets
   //
 
+  // number of blocks that cover the grid in y dir
+  int nby =  1 + (NY-1) / blockDim.y;
+  // thinkness in z direction
+  bz = 1 + (NZ-1) / (1 + (gridDim.y - 1) / nby); 
+
   i    = threadIdx.x + blockIdx.x * blockDim.x;
-  j    = threadIdx.y + blockIdx.y * blockDim.y;
-  indg = i + j*NX;
+  j    = threadIdx.y + (blockIdx.y % nby) * blockDim.y;
+  ks   =  (blockIdx.y / nby) * bz;
+  //j    = threadIdx.y + blockIdx.y * blockDim.y;
+  indg = i + j*NX + ks*NX*NY;
 
   IOFF = 1;
   JOFF = NX;
@@ -50,7 +67,8 @@ __global__ void kernel_laplace3d(int NX, int NY, int NZ, Real *d_u1, Real *d_u2)
 
   active = i>=0 && i<=NX-1 && j>=0 && j<=NY-1;
 
-  for (k=0; k<NZ; k++) {
+  ke = ( ks+bz > NZ ? NZ : ks+bz);
+  for (k=ks; k<ke; k++) {
 
     if (active) {
       if (i==0 || i==NX-1 || j==0 || j==NY-1 || k==0 || k==NZ-1) {
@@ -395,7 +413,7 @@ void laplace3d_GPU(const int kernel_key, Real* uOld, int NX,int NY,int NZ,const 
     {
     case(GPUBASE_KERNEL):
       for (iter = 0; iter < iter_block; ++iter){
-    	  kernel_laplace3d<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
+	kernel_laplace3d<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
     	  aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
@@ -525,7 +543,7 @@ void getUpdatedArray(float* host,float* dev,int NX,int NY,int NZ,float* memoryTi
 }
 
 extern "C"
-void calcGpuDims(int blockXsize,int blockYsize,int* gridsize,int NX,int NY, int kernel_key)
+void calcGpuDims(int blockXsize,int blockYsize, int blockZsize, int* gridsize,int NX,int NY, int NZ, int kernel_key)
 {
   if (kernel_key == GPUSHM_KERNEL){
     gridsize[2] = blockXsize + 2; // halo
@@ -536,7 +554,7 @@ void calcGpuDims(int blockXsize,int blockYsize,int* gridsize,int NX,int NY, int 
   }
   else{
 	gridsize[0] = 1 + (NX-1)/blockXsize;
-	gridsize[1] = 1 + (NY-1)/blockYsize;
+	gridsize[1] = (1 + (NY-1)/blockYsize) * (1 + (NZ-1) / blockZsize);
 	gridsize[2] = blockXsize;
 	gridsize[3] = blockYsize;
   }

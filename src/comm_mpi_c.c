@@ -6,7 +6,7 @@ Lucian Anton July 2013
 
 // MPI transfer directions and neighbours tags
 
-#include "homb_c.h"
+#include "jacobi_c.h"
 #include "kernels_c.h"
 #include "comm_mpi_c.h"
 

@@ -5,7 +5,7 @@ Jacobi solver applied to a 3D Laplace equation.
 Lucian Anton 
 March 2014.
 
-DL_HOMB started from v 1.0 of HOMB
+This file originates from v 1.0 of HOMB
 http://sourceforge.net/projects/homb/
 
 The original copyright and licence is below.
@@ -28,7 +28,7 @@ The original copyright and licence is below.
   along with HOMB.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "homb_c.h"
+#include "jacobi_c.h"
 #include "utils_c.h"
 #include "kernels_c.h"
 #include "comm_mpi_c.h"

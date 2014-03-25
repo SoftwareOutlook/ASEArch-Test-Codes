@@ -16,5 +16,5 @@ void getUpdatedArray(float* host,float* dev,int NX,int NY,int NZ,float* memoryTi
 void GPU_Titanium_Laplace3d(Real* dev1, Real* dev2,int NX, int NY, int NZ,const int* gridparams,float* kernelTimer);
 void GPU_Titanium_Shmem(Real* dev1, Real* dev2, int NX, int NY, int NZ,float* kernelTimer);
 void GPU_Blocked_Laplace3d(Real* dev1, Real* dev2,int NX,int NY,int NZ,int BX,int BY,int BZ);
-void calcGpuDims(int blockXsize,int blockYsize,int* gridsize,int NX,int NY, int kernel_key);
+void calcGpuDims(int blockXsize,int blockYsize, int blockZsize, int* gridsize,int NX,int NY, int NZ, int kernel_key);
 #endif

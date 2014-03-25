@@ -4,7 +4,7 @@
   Lucian Anton, July 2013
 */
 
-#include "homb_c.h"
+#include "jacobi_c.h"
 #include "comm_mpi_c.h"
 #include "kernels_c.h"
 #include "comm_mpi_c.h"
@@ -413,7 +413,7 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       break;
     default :     
 #ifdef USE_GPU
-      calcGpuDims(BX, BY, gridxy, NX, NY,kernel_key);
+      calcGpuDims(BX, BY, BZ, gridxy, NX, NY, NY, kernel_key);
       float taux_comp, taux_comm;
       //invoke GPU function
       laplace3d_GPU(kernel_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
