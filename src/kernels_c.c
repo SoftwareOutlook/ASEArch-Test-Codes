@@ -330,7 +330,7 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
   //if using GPU execution apply this function for cuda execution
   //configuration parameters
 #ifdef USE_GPU
- int gridxy[4];
+  int gridxy[4]; //for blocks and grid dims
 #endif
 
  // set shift for x direction, this is differs from NX if posix malign is used
@@ -413,7 +413,7 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       break;
     default :     
 #ifdef USE_GPU
-      calcGpuDims(BX, BY, BZ, gridxy, NX, NY, NY, kernel_key);
+      calcGpuDims( kernel_key, BX, BY, BZ, NX,NY,NZ, gridxy);
       float taux_comp, taux_comm;
       //invoke GPU function
       laplace3d_GPU(kernel_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);

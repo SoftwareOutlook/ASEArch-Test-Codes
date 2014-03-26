@@ -543,21 +543,32 @@ void getUpdatedArray(float* host,float* dev,int NX,int NY,int NZ,float* memoryTi
 }
 
 extern "C"
-void calcGpuDims(int blockXsize,int blockYsize, int blockZsize, int* gridsize,int NX,int NY, int NZ, int kernel_key)
+void calcGpuDims(int kernel_key, int blockXsize, int blockYsize, int blockZsize,int NX,int NY, int NZ, int* gridsize)
 {
-  if (kernel_key == GPUSHM_KERNEL){
-    gridsize[2] = blockXsize + 2; // halo
-    gridsize[3] = blockYsize + 2;
-    gridsize[0] = 1 + (NX-1)/blockXsize;
-    gridsize[1] = 1 + (NY-1)/blockYsize;
+  // set threads block sizes and grid sizes.
+  // used 2 dimensions
+  // 0, 1 -> grid x, y
+  // 2,3 -> block x, y
 
-  }
-  else{
-	gridsize[0] = 1 + (NX-1)/blockXsize;
-	gridsize[1] = (1 + (NY-1)/blockYsize) * (1 + (NZ-1) / blockZsize);
-	gridsize[2] = blockXsize;
-	gridsize[3] = blockYsize;
-  }
+  switch (kernel_key)
+    {
+    case (GPUSHM_KERNEL) :
+      gridsize[2] = blockXsize + 2; // halo
+      gridsize[3] = blockYsize + 2;
+      gridsize[0] = 1 + (NX-1)/blockXsize;
+      gridsize[1] = 1 + (NY-1)/blockYsize;
+      break;
+    case(GPUBASE_KERNEL):
+      gridsize[0] = 1 + (NX-1)/blockXsize;
+      gridsize[1] = (1 + (NY-1)/blockYsize) * (1 + (NZ-1) / blockZsize);
+      gridsize[2] = blockXsize;
+      gridsize[3] = blockYsize;
+      break;
+    default:
+      fprintf(stderr,"unkwon gpu kernel in calcGpuDims, quitting ...!");
+      exit (1);
+    }
+  // Needs to test if the blocks and grid sizes are meaningful 
 }
 
  
