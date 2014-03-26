@@ -84,11 +84,13 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
   // default values taken from Mike Giles code
   grid->nb[0] = 32;
   grid->nb[1]= 4;
+  grid->nb[2]= grid->ng[2];
 #endif
 
   nruns = 5; niter = 1; nthreads = 1; grid->nproc = 1;
   grid->np[0] = 1; grid->np[1] = 1; grid->np[2] = 1;
   grid->cp[0] = 0; grid->cp[1] = 0; grid->cp[2] = 0;
+  // if compiled with GPU flag use GPU kernel as default
   *kernel_key = BASELINE_KERNEL;
 
   int i;
@@ -217,8 +219,8 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       print_help(grid, "usage");
     else{
       /* basic test on flag values */
-      if (argv[i][0] != '-' )
-	error_abort("Wrong command line argument, try -help\n", argv[i]);
+      //if (argv[i][0] != '-' )
+      error_abort("Wrong command line argument, try -help\n", argv[i]);
       
     }
   }
@@ -527,6 +529,8 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
                const struct times_t *minTime,  const struct times_t *meanTime,  const struct times_t *maxTime, 
 	        double norm){
 
+  int gpu_header = (kernel_key == GPUBASE_KERNEL) || (kernel_key == GPUSHM_KERNEL);
+
   if (pHeader){
     printf("# Last norm %22.15e\n",sqrt(norm));
 #ifdef USE_MPI
@@ -540,7 +544,7 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
     printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tminTime\tmeanTime \tmaxTime    #\n");
     printf("#==================================================================================================================================#\n");
     }
-    else if ( useGPU)
+    else if ( gpu_header)
       {
 	printf("#==================================================================================================================================================================#\n");
 	printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tminTime\t         meanTime\tmaxTime \tminCpyTime\tmeanCpyTime \tmaxCpyTime #\n");
