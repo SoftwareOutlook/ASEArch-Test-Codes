@@ -386,14 +386,16 @@ void printContext(const struct grid_info_t *g, int kernel_key){
 #endif
 
 #ifdef USE_GPU
-  int dev;
-  struct cudaDeviceProp devProp;
-  cudaSafeCall(cudaGetDevice(&dev));
-  cudaSafeCall(cudaGetDeviceProperties(&devProp,dev));
-  printf("\n Using CUDA device %d    : %s\n", dev, devProp.name);
-  printf(" Compute capability     : %d%d\n", devProp.major, devProp.minor);
-  printf(" Memory Clock Rate (KHz): %d\n", devProp.memoryClockRate);
-  printf(" Memory Bus Width (bits): %d\n\n", devProp.memoryBusWidth);
+  if(g->gpuflag==1) {
+    int dev;
+    struct cudaDeviceProp devProp;
+    cudaSafeCall(cudaGetDevice(&dev));
+    cudaSafeCall(cudaGetDeviceProperties(&devProp,dev));
+    printf("\n Using CUDA device %d    : %s\n", dev, devProp.name);
+    printf(" Compute capability     : %d%d\n", devProp.major, devProp.minor);
+    printf(" Memory Clock Rate (KHz): %d\n", devProp.memoryClockRate);
+    printf(" Memory Bus Width (bits): %d\n\n", devProp.memoryBusWidth);
+  }
 #endif
 
 }

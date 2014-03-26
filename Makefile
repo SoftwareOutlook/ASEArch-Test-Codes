@@ -5,8 +5,8 @@
 # modified by Lucian Anton June 2013
 #==============================================
 
-HOMB_C = homb_c
-HOMB_F90 = homb_f90
+JTC_C = jacobi_c
+JTC_F90 = jacobi_f90
 
 
 ifndef PLATFORM
@@ -16,29 +16,29 @@ endif
 
 include platforms/$(PLATFORM).inc
 
-HOMB := $(HOMB_$(LANG))
+JTC := $(JTC_$(LANG))
 
-EXE := $(HOMB)_$(COMP)_$(BUILD).exe
+EXE := $(JTC)_$(COMP)_$(BUILD).exe
 
 ifdef USE_VEC1D
-  EXE := $(HOMB)_$(COMP)_$(BUILD)_vec1d.exe 
+  EXE := $(JTC)_$(COMP)_$(BUILD)_vec1d.exe 
 endif
 
 ifdef USE_GPU
-  EXE := $(HOMB)_$(COMP)_$(BUILD)_gpu.exe 
+  EXE := $(JTC)_$(COMP)_$(BUILD)_gpu.exe 
 endif
 
-default: $(HOMB)
+default: $(JTC)
 
-all: $(HOMB)
+all: $(JTC)
 
 
 
-$(HOMB_C):  kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO)
+$(JTC_C):  kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO)
 	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE) $^ $(LIB) 
 
-
-$(HOMB_F90) : homb_f90.o functions_f90.o 
+# Fortran build is inactive in this version
+$(JTC_F90) : homb_f90.o functions_f90.o 
 	$(F90) $(MPIFLAGS) $(FFLAGS) $(OMPFLAGS) -o $(EXE) $^
 
 clean:
