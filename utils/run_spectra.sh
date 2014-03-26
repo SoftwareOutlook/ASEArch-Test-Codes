@@ -22,6 +22,7 @@ for argument in $options
         -wave) wave_params=(${val//,/ }) ;;
 	-blocks) blk_val=(${val//,/ }) ; blk_x="${blk_val[0]}";blk_y="${blk_val[1]}";blk_z="${blk_val[2]}";;
 	-maxsize)max_linsize=$val;;
+	-minsize)min_linsize=$val;;
 	-step)step=$val;;
         -exe)exe_list="${val//,/ }";;
 	-nthreads)threads_list="${val//,/ }" ;;
@@ -30,7 +31,7 @@ for argument in $options
 	-system)run_command=$val ;;
 	-help|-h) 
 	       echo "$0 -model=<model list> wave=<wavel param list> -blocks=<block sizes list>"
-	       echo "   -mingrid=<start grid sizes> -maxgrid=<end grid sizes> -step=<grid increase>"
+	       echo "   -minsize=<start grid sizes> -maxsize=<end grid sizes> -step=<grid increase>"
 	       echo "   -exe=<executables list> -nthreads=<number of OpenMP threads list> "
 	       echo "   -test pass the -t flag to executable for testing"
 	       echo "   -malig=<val> use posix_memalign for main arrays, align memory with <va>"
@@ -60,6 +61,7 @@ then
     blk_x=0; blk_y=0; blk_z=0
 fi
 
+[ -z "$min_linsize" ] && max_linsize=$MIN_LINSIZE
 [ -z "$max_linsize" ] && max_linsize=$MAX_LINSIZE
 
 [ -z "$step" ] && step=7
