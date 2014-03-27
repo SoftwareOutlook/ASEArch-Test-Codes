@@ -250,9 +250,12 @@ static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, 
     
     // the threads are partition in threads_per_column rows, max_thread_column columns
     // k is the fast direction
+#ifdef _OPENMP
      int jth = omp_get_thread_num()/threads_per_column;
      int kth = omp_get_thread_num()%threads_per_column;
-
+#else
+     int jth = 0; int kth = 0;
+#endif       
      // loop over the grid blocks in diagonal planes
      for (iplane = 0; iplane <= (nby - 1 + nbz - 1) + 2 * (nwaves - 1); ++iplane){  
 
@@ -486,7 +489,11 @@ static void cco_laplace3d(const struct grid_info_t *g, int iteration){
    
     int s3, e3, dt, d1, blk, r, tid;
     if ( nthreads > 1) {
+#ifdef _OPENMP
       tid = omp_get_thread_num();
+#else 
+      tid = 0;
+#endif
       if (tid > 0) {
 	blk = (ez - 1 - (sz + 1) + 1) / (nthreads - 1); 
 	r = (ez - 1 - (sz + 1) + 1) % (nthreads - 1);    

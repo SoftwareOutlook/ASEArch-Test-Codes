@@ -76,10 +76,6 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
   grid->nwaves = -1; 
   grid->gpuflag = 0;
 
-#ifdef USE_GPU
-  grid->gpuflag = 1;
-#endif
-
   nruns = 5; niter = 1; nthreads = 1; grid->nproc = 1;
   grid->np[0] = 1; grid->np[1] = 1; grid->np[2] = 1;
   grid->cp[0] = 0; grid->cp[1] = 0; grid->cp[2] = 0;
@@ -166,6 +162,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       else if (strcmp("gpu-baseline",argv[i]) == 0){
 #ifdef USE_GPU
 	  *kernel_key = grid->key = GPUBASE_KERNEL;
+	  grid->gpuflag = 1;
 #else
 	  error_abort("GPU model specified without gpu compilation", "");
 #endif
@@ -173,6 +170,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       else if (strcmp("gpu-shm",argv[i]) == 0){
 #ifdef USE_GPU
 	*kernel_key = grid->key = GPUSHM_KERNEL;
+	grid->gpuflag = 1;
 #else
 	error_abort("GPU model specified without gpu compilation", "");
 #endif
@@ -180,6 +178,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       else if (strcmp("gpu-bandwidth",argv[i]) == 0){
 #ifdef USE_GPU
 	*kernel_key = grid->key = GPUBANDWIDTH_KERNEL;
+	grid->gpuflag = 1;
 #else
 	error_abort("GPU model specified without gpu compilation", "");
 #endif
@@ -218,13 +217,13 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
     // default blocks sizes are set to grid sizes if
     // not specified in command line
     // for GPU use a standard 32x4 block
-#ifdef USE_GPU
-    grid->nb[0] = 32;
-    grid->nb[1]= 4;
-    grid->nb[2]= grid->ng[2];
-#else
-    grid->nb[0] = grid->ng[0]; grid->nb[1] = grid->ng[1]; grid->nb[2] = grid->ng[2];
-#endif
+    if (grid->gpuflag){
+      grid->nb[0] = 32;
+      grid->nb[1]= 4;
+      grid->nb[2]= grid->ng[2];
+    } else{
+      grid->nb[0] = grid->ng[0]; grid->nb[1] = grid->ng[1]; grid->nb[2] = grid->ng[2];
+    }
   }
 }
 
@@ -570,7 +569,7 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
     printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",
 	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2],
 	   niter, minTime->comp, meanTime->comp, maxTime->comp);
-  else if (g->gpuflag)
+  else if (gpu_header)
     printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
 	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2], niter, 
 	   minTime->comp, meanTime->comp, maxTime->comp,minTime->comm, meanTime->comm,
@@ -599,6 +598,12 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
 */
 }
 
+#ifndef USE_MPI
+#ifndef _OPENMP
+#include <sys/time.h>
+#endif
+#endif
+
 double my_wtime(){
   
 #ifdef USE_MPI
@@ -608,8 +613,13 @@ double my_wtime(){
   return (omp_get_wtime());
 #else
   // needs a C standard timer
-  printf("my_wtime not defined !!!\n");
-  return(0.0);
+  //printf("my_wtime not defined !!!\n");
+  struct timeval t;
+  if ( gettimeofday(&t, NULL) < 0){
+    perror("get-time-of-day error");
+    return(-1.0);
+  } else
+    return( (double) t.tv_sec+((double) t.tv_usec)*1.e-6);
 #endif
 #endif
 }
