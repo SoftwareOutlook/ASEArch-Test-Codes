@@ -643,10 +643,10 @@ static void print_help( const struct grid_info_t *g, const char *s){
   if ( g->myrank == 0) {
     if ( strcmp(s, "usage") == 0 )
       printf("Usage: [-ng <grid-size-x> <grid-size-y> <grid-size-z> ] \
-[ -nb <block-size-x> <block-size-y> <block-size-z>]			\
-[-np <num-proc-x> <num-proc-y> <num-proc-z>]  [-niter <num-iterations>]	\
-[-biter <iterations-block-size>] [-malign <memory-alignment> ]  \
-[-v] [-t] [-pc] [-model <model_name> [num-waves] [threads-per-column]] [-nh] [-help] \n");
+[ -nb <block-size-x> <block-size-y> <block-size-z>] \
+ [-model <model_name> [num-waves] [threads-per-column]] \
+[-niter <num-iterations>]  [-biter <iterations-block-size>] \
+[-malign <memory-alignment> ] [-v] [-t] [-pc] [-nh] [-help] [-version] \n");
       
     else if (strcmp(s, "model") == 0)
       printf("possible values for model parameter: \n \

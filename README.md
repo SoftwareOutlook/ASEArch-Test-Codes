@@ -76,25 +76,27 @@ The following flags can be used to set the grid sized and other run parameters:
                                         
                          gpu-shm : uses shared memory to store plane xy in a block of threads  
 			 gpu-bandwidth : measure the time for the simple update u[i] = const * v[i]
-			                 -t is meaningleas in this case
+			                 -t is meaningless in this case
                           
                          NOTES: 1) For GPU runs transfer time between device and host is also implemented      
                                 2) Default model is baseline.
 
--pc                      prints information on run parameters.
+-pc                      prints information on run parameters at the beginning of a calculation.
 
 -malign <n>              use posix_memalign to allocate working array with an address alignment of <n> bytes. 
                          It may help vectorisation on certain systems.
                          Default allocation is done with malloc.
 
+-help                   prints short description of command line arguments
+-version                prints version
 
 
 Run script:
 
-For sytematic data collection of execution times over a set of grid
+For systematic data collection of execution times over a set of grid
 sizes the script utils/run_spectra.sh is provided.  The script adjusts
 the number of iterations function grid size such that the timings are
-meaningfull for small grids and run time is not unnecessarly large for
+meaningful for small grids and run time is not unnecessarily large for
 large grids. The timing is collected in an output file suitable for
 gnuplot.
 
