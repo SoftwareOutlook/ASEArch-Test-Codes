@@ -98,4 +98,4 @@ struct times_t
 #define WAVE_DIAGONAL_KERNEL	5
 #define GPUBASE_KERNEL   6
 #define GPUSHM_KERNEL   7
-
+#define GPUBANDWIDTH_KERNEL   8

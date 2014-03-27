@@ -56,19 +56,15 @@ then
 fi
 
 [ -z "$model_list" ] && model_list="baseline-opt blocked wave"
-if [ -z "$blk_val" ]
-then 
-    blk_x=0; blk_y=0; blk_z=0
-fi
 
-[ -z "$min_linsize" ] && max_linsize=$MIN_LINSIZE
+[ -z "$min_linsize" ] && min_linsize=$MIN_LINSIZE
 [ -z "$max_linsize" ] && max_linsize=$MAX_LINSIZE
 
 [ -z "$step" ] && step=7
 
 [ -z "$threads_list" ] && threads_list=1
 
-#echo "max linsize $max_linsize step $step model_list $model_list"
+#echo "min-max linsize $min_linsize $max_linsize step $step model_list $model_list"
 
 index=0
 for exe in $exe_list
@@ -85,7 +81,7 @@ do
 
 	    echo "# $((index++)) model $model nth $nth exe $exe" >> $fout
 	    # $((++index))
-	    for ((linsize=10; linsize <= max_linsize; linsize += step)) 
+	    for ((linsize=min_linsize; linsize <= max_linsize; linsize += step)) 
 	    do
 		niter=$(((10*max_linsize)/linsize))
 		nruns=5
@@ -102,12 +98,16 @@ do
 		    fi
 		fi
 		    
+		arguments="-ng $linsize $linsize $linsize -model $model $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign"
 		
-		if [ "$blk_x" -eq 0 ] ; then  blk_xt=$linsize ; else blk_xt=$blk_x ; fi
-		if [ "$blk_y" -eq 0 ] ; then  blk_yt=$linsize ; else blk_yt=$blk_y ; fi
-		if [ "$blk_z" -eq 0 ] ; then  blk_zt=$linsize ; else blk_zt=$blk_z ; fi
-		
-		arguments="-ng $linsize $linsize $linsize -nb $blk_xt $blk_yt $blk_zt -model $model $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign"
+		# block flags are not not compulsory
+		if [ "$blk_val" ] 
+		then
+		    if [ "$blk_x" -eq 0 ] ; then  blk_xt=$linsize ; else blk_xt=$blk_x ; fi
+		    if [ "$blk_y" -eq 0 ] ; then  blk_yt=$linsize ; else blk_yt=$blk_y ; fi
+		    if [ "$blk_z" -eq 0 ] ; then  blk_zt=$linsize ; else blk_zt=$blk_z ; fi
+		    arguments="$arguments -nb  $blk_xt $blk_yt $blk_zt"
+		fi
 
 		echo "nth $nth $exe $arguments"
 		case $run_command in

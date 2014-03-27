@@ -136,6 +136,32 @@ __global__ void kernel_laplace3d_shm(int NX, int NY, int NZ, Real *d_u1, Real *d
   }
 }
 
+//This kernel can be used for a quick extimate of the bandwidth 
+__global__ void kernel_BandWidth(int NX, int NY, int NZ, Real *d_u1, Real *d_u2)
+{
+  int   i, j, k, ks, indg, active, IOFF, JOFF, KOFF;
+  Real u2, sixth=1.0/6.0;
+
+  //
+  // define global indices and array offsets
+  //
+  int nby = 1 + (NY-1) / blockDim.y;
+  int  bz = 1 + (NZ-1) / (1 + (gridDim.y - 1) / nby); 
+  i    = threadIdx.x + blockIdx.x * blockDim.x;
+  j    = threadIdx.y + (blockIdx.y % nby) * blockDim.y;
+  ks   =  (blockIdx.y / nby) * bz;
+  indg = i + j*NX + ks*NX*NY;
+
+  KOFF = NX*NY;
+  
+  int  ke = ( ks+bz > NZ ? NZ : ks+bz);
+  for (k=ks; k < ke; k++) {
+      d_u2[indg] = d_u1[indg] * sixth;
+      indg += KOFF;
+    }
+}
+
+
 
 /**
  * this function is used to just check if an CUDA enabled GPU device is present in
@@ -242,6 +268,12 @@ void laplace3d_GPU(const int kernel_key, Real* uOld, int NX,int NY,int NZ,const 
 	aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
+    case(GPUBANDWIDTH_KERNEL):
+      for (iter = 0; iter < iter_block; ++iter){
+        kernel_BandWidth<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
+        aux=d_u1; d_u1=d_u2; d_u2=aux;
+      }
+      break;
     }
   
   cudaEventRecord(compStop,0);
@@ -304,6 +336,7 @@ void calcGpuDims(int kernel_key, int blockXsize, int blockYsize, int blockZsize,
       gridsize[0] = 1 + (NX-1)/blockXsize;
       gridsize[1] = 1 + (NY-1)/blockYsize;
       break;
+    case(GPUBANDWIDTH_KERNEL):
     case(GPUBASE_KERNEL):
       gridsize[0] = 1 + (NX-1)/blockXsize;
       gridsize[1] = (1 + (NY-1)/blockYsize) * (1 + (NZ-1) / blockZsize);

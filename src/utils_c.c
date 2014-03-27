@@ -51,9 +51,6 @@ Real  *udata, *uOld, *uNew;
 //GPU arrays
 Real *d_u1, *d_u2, *d_foo;
 
-// GPU flag used in IO formating 
-static int useGPU=0;
-
 // eigenvalue k vector (mode)
 static Real kx=1.0, ky=1.0, kz=1.0;
 
@@ -75,16 +72,12 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
   
   /* Defaults */
   grid->ng[0] = 33; grid->ng[1] = 33; grid->ng[2] = 33; //Global grid
-  grid->nb[0] = grid->ng[0]; grid->nb[1] = grid->ng[1]; grid->nb[2] = grid->ng[2]; // block sizes 
   grid->malign = -1;
   grid->nwaves = -1; 
+  grid->gpuflag = 0;
 
 #ifdef USE_GPU
-  // use nb components to store thread block sizes
-  // default values taken from Mike Giles code
-  grid->nb[0] = 32;
-  grid->nb[1]= 4;
-  grid->nb[2]= grid->ng[2];
+  grid->gpuflag = 1;
 #endif
 
   nruns = 5; niter = 1; nthreads = 1; grid->nproc = 1;
@@ -94,6 +87,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
   *kernel_key = BASELINE_KERNEL;
 
   int i;
+  int have_blocks=0;
 
   /* Cycle through command line args */
   i = 0;
@@ -108,6 +102,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
     }
     /* Look for computational block sizes */
     else if ( strcmp("-nb", argv[i]) == 0 ){
+      have_blocks=1;
       sscanf(argv[++i],"%d", &(grid->nb[0]));
       sscanf(argv[++i],"%d", &(grid->nb[1]));
       sscanf(argv[++i],"%d", &(grid->nb[2]));
@@ -171,8 +166,6 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       else if (strcmp("gpu-baseline",argv[i]) == 0){
 #ifdef USE_GPU
 	  *kernel_key = grid->key = GPUBASE_KERNEL;
-	  grid->gpuflag = 1;
-	  useGPU=1;
 #else
 	  error_abort("GPU model specified without gpu compilation", "");
 #endif
@@ -180,21 +173,18 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       else if (strcmp("gpu-shm",argv[i]) == 0){
 #ifdef USE_GPU
 	*kernel_key = grid->key = GPUSHM_KERNEL;
-	grid->gpuflag = 1;
-	useGPU=1;
 #else
 	error_abort("GPU model specified without gpu compilation", "");
 #endif
       }
-      /*
-      else if (strcmp("optgpu",argv[i]) == 0){
+      else if (strcmp("gpu-bandwidth",argv[i]) == 0){
 #ifdef USE_GPU
-	*kernel_key = grid->key = OPTBASEGPU_KERNEL;
-	grid->gpuflag = 1;
+	*kernel_key = grid->key = GPUBANDWIDTH_KERNEL;
 #else
 	error_abort("GPU model specified without gpu compilation", "");
 #endif
 	}
+      /*
       else if (strcmp("blockedgpu",argv[i]) == 0){
 #ifdef USE_GPU
     	  *kernel_key = grid->key = BLOCKEDGPU_KERNEL;
@@ -223,6 +213,18 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       error_abort("Wrong command line argument, try -help\n", argv[i]);
       
     }
+  }
+  if (!have_blocks){
+    // default blocks sizes are set to grid sizes if
+    // not specified in command line
+    // for GPU use a standard 32x4 block
+#ifdef USE_GPU
+    grid->nb[0] = 32;
+    grid->nb[1]= 4;
+    grid->nb[2]= grid->ng[2];
+#else
+    grid->nb[0] = grid->ng[0]; grid->nb[1] = grid->ng[1]; grid->nb[2] = grid->ng[2];
+#endif
   }
 }
 
@@ -531,7 +533,7 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
                const struct times_t *minTime,  const struct times_t *meanTime,  const struct times_t *maxTime, 
 	        double norm){
 
-  int gpu_header = (kernel_key == GPUBASE_KERNEL) || (kernel_key == GPUSHM_KERNEL);
+  int gpu_header = (kernel_key == GPUBASE_KERNEL) || (kernel_key == GPUSHM_KERNEL) || (kernel_key == GPUBANDWIDTH_KERNEL);
 
   if (pHeader){
     printf("# Last norm %22.15e\n",sqrt(norm));
@@ -568,7 +570,7 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
     printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",
 	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2],
 	   niter, minTime->comp, meanTime->comp, maxTime->comp);
-  else if (useGPU)
+  else if (g->gpuflag)
     printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
 	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2], niter, 
 	   minTime->comp, meanTime->comp, maxTime->comp,minTime->comm, meanTime->comm,
@@ -639,6 +641,7 @@ static void print_help( const struct grid_info_t *g, const char *s){
         wave num-waves threads-per-column \n \
         gpu-baseline\n \
         gpu-shm\n\n \
+        gpu-bandwidth\n\n \
         Note for wave model: if threads-per-column == 0 diagonal wave kernel is used.\n");               
     else
       printf(" print_help: unknown help request");
