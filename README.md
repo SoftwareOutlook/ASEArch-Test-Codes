@@ -1,5 +1,6 @@
-DL_HOMB: hybrid (MPI+OpenMP, or GPU) benchmark for 3D Jacobi solver
-  based on HOMB ( http://sourceforge.net/projects/homb/ )
+Jacobi Test Code (JTC): OpenMP and GPU benchmark for 3D Jacobi solver
+Version: 1.0.0
+
 
 Basic idea of the algorithm:
 
@@ -8,10 +9,11 @@ Basic idea of the algorithm:
                sin(pi*kx*x/L)*sin(pi*ky*y/L)sin(pi*kz*z/L)
 
 The code does a number o runs each over a given number of iterations.
-The time taken for each run is collected; the program outputs the minimum, the average and
-the maximum values per iteration over the runs. The output contains also the
-values of the grid size, block size ( if loops are blocked), MPI topology
-and the number of OpenMP thread used.
+The program collects the average time per iteration for each run and
+outputs the minimum, the average and the maximum values over the
+run. The output contains also the values of the grid size, block size
+( if loops are blocked), MPI topology and the number of OpenMP thread
+used.
         
 Build: Make can be customised with the help of platforms/*inc files.
        Use platforms/gcc.inc as a template for a quick test on local
@@ -20,16 +22,15 @@ Build: Make can be customised with the help of platforms/*inc files.
        system with multiple compilers accesible via module environment.
 
 
-
 Usage:
 
 The following flags can be used to set the grid sized and other run parameters:
 
 -ng <nx> <ny> <nz>       set the global gris sizes
 
--nb <bx> <by> <bz>       set the computational block size, relevant only for blocked model.
+-nb <bx> <by> <bz>       set the computational block size, relevant for blocked model and GPU kernels.
                          Notes: 1) no sanity checks tests are done, you are on your own.
-                                2) for blocked model the OpeNMP parallelism is done over
+                                2) for blocked model the OpenMP parallelism is done over
                                    computational blocks. One must ensure that there
                                    enough work for all threads by setting suitable 
                                    block sizes.
@@ -40,11 +41,12 @@ The following flags can be used to set the grid sized and other run parameters:
                                    However if nx*ny*nx/Nthreads is less that a few cache lines 
                                    probable is better to leave some threads unused rather than having 
                                    them fighting over the cache lines.
-                                3) For GPU runs <bx> and <by> are the dimension of the block threads,
-                                   <bz> is not used but it must be provided.
+                                3) For GPU runs <bx> and <by> are the dimension of the block of threads,
+                                   <bz> is the number of iteration for each loop in z direction.
+				4) GPU defaults 32,4,<nz>
                          
--nruns <n>               set the number of smoother runs ( default 5)
--niter <b>               set the number of iteration per run.
+-nruns <n>               set the number of smoother runs (default 5)
+-niter <b>               set the number of iteration per run (default 1).
                          Note: if wave model is activated niter is fixed to num-wave(see below) 
                                and this flag is ignored. 
 
@@ -73,6 +75,8 @@ The following flags can be used to set the grid sized and other run parameters:
                          gpu-baseline : uses basic CUDA implementation of Jacobi solver
                                         
                          gpu-shm : uses shared memory to store plane xy in a block of threads  
+			 gpu-bandwidth : measure the time for the simple update u[i] = const * v[i]
+			                 -t is meaningleas in this case
                           
                          NOTES: 1) For GPU runs transfer time between device and host is also implemented      
                                 2) Default model is baseline.
@@ -83,12 +87,18 @@ The following flags can be used to set the grid sized and other run parameters:
                          It may help vectorisation on certain systems.
                          Default allocation is done with malloc.
 
--np <px> <py> <pz>       set the MPI Cartesian topology
-                         the global  grid is partition approximately equal
-                         amongst the tasks ( i.e. the reminder  n<d> % p<d> is 
-                         spread over the first ranks in each direction)
 
 
+Run script:
+
+For sytematic data collection of execution times over a set of grid
+sizes the script utils/run_spectra.sh is provided.  The script adjusts
+the number of iterations function grid size such that the timings are
+meaningfull for small grids and run time is not unnecessarly large for
+large grids. The timing is collected in an output file suitable for
+gnuplot.
+
+Try for sh <path>/utils/run_spectra.sh -help for more details.
 
    
 
