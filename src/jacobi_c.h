@@ -26,6 +26,8 @@ machines.
   along with PGAF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define JTC_VERSION "1.0.0b (27th of March 2014)"
+
 /* Include Files */ 
 #ifdef USE_MPI
 #include <mpi.h>

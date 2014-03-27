@@ -203,6 +203,10 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       testComputation = 1;
       //printf(" i %d \n",i); 
     }
+    else if ( strcmp("-version",argv[i] ) == 0){
+      print_help(grid,"version");
+      //printf(" i %d \n",i); 
+    }
     /* Look for "verbose" standard out */
     else if ( strcmp("-help",argv[i]) == 0 )
       print_help(grid, "usage");
@@ -356,6 +360,7 @@ void printContext(const struct grid_info_t *g, int kernel_key){
       //sprintf(kernel_name, "Blocked GPU"); break;
     }
 
+  printf("\n This Jacobi Test Code v%s \n\n", JTC_VERSION);
   printf("Using %s kernel \n",kernel_name);
   printf("Global grid sizes   : %d %d %d \n", g->ng[0], g->ng[1], g->ng[2]);
   if ( (kernel_key == BLOCKED_KERNEL) && (kernel_key == WAVE_KERNEL) ) 
@@ -652,7 +657,9 @@ static void print_help( const struct grid_info_t *g, const char *s){
         gpu-baseline\n \
         gpu-shm\n\n \
         gpu-bandwidth\n\n \
-        Note for wave model: if threads-per-column == 0 diagonal wave kernel is used.\n");               
+        Note for wave model: if threads-per-column == 0 diagonal wave kernel is used.\n");  
+    else if (strcmp(s, "version") == 0)
+      printf("%s \n",JTC_VERSION);
     else
       printf(" print_help: unknown help request");
   }
