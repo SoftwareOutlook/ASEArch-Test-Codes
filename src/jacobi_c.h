@@ -98,6 +98,7 @@ struct times_t
 #define CCO_KERNEL      3 
 #define WAVE_KERNEL     4
 #define WAVE_DIAGONAL_KERNEL	5
-#define GPUBASE_KERNEL   6
-#define GPUSHM_KERNEL   7
-#define GPUBANDWIDTH_KERNEL   8
+#define GPU_BASE_KERNEL   6
+#define GPU_SHM_KERNEL   7
+#define GPU_BANDWIDTH_KERNEL   8
+#define GPU_MM_KERNEL 9

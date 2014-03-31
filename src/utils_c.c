@@ -161,7 +161,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       }
       else if (strcmp("gpu-baseline",argv[i]) == 0){
 #ifdef USE_GPU
-	  *kernel_key = grid->key = GPUBASE_KERNEL;
+	  *kernel_key = grid->key = GPU_BASE_KERNEL;
 	  grid->gpuflag = 1;
 #else
 	  error_abort("GPU model specified without gpu compilation", "");
@@ -169,7 +169,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       }
       else if (strcmp("gpu-shm",argv[i]) == 0){
 #ifdef USE_GPU
-	*kernel_key = grid->key = GPUSHM_KERNEL;
+	*kernel_key = grid->key = GPU_SHM_KERNEL;
 	grid->gpuflag = 1;
 #else
 	error_abort("GPU model specified without gpu compilation", "");
@@ -177,12 +177,20 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       }
       else if (strcmp("gpu-bandwidth",argv[i]) == 0){
 #ifdef USE_GPU
-	*kernel_key = grid->key = GPUBANDWIDTH_KERNEL;
+	*kernel_key = grid->key = GPU_BANDWIDTH_KERNEL;
 	grid->gpuflag = 1;
 #else
 	error_abort("GPU model specified without gpu compilation", "");
 #endif
 	}
+      else if (strcmp("gpu-mm",argv[i]) == 0){
+#ifdef USE_GPU
+	*kernel_key = grid->key = GPU_MM_KERNEL;
+	grid->gpuflag = 1;
+#else
+	error_abort("GPU model specified without gpu compilation", "");
+#endif
+      }
       /*
       else if (strcmp("blockedgpu",argv[i]) == 0){
 #ifdef USE_GPU
@@ -350,11 +358,11 @@ void printContext(const struct grid_info_t *g, int kernel_key){
       sprintf(kernel_name, "Wave"); break;
     case (WAVE_DIAGONAL_KERNEL) :
       sprintf(kernel_name, "Wave diagonal"); break;  
-    case(GPUBASE_KERNEL) :
+    case(GPU_BASE_KERNEL) :
       sprintf(kernel_name, "baseline GPU"); break;
-    case(GPUSHM_KERNEL) :
+    case(GPU_SHM_KERNEL) :
       sprintf(kernel_name, "shared memory GPU"); break;
-      //case(BASEGPUSHM_KERNEL) :
+      //case(BASEGPU_SHM_KERNEL) :
       //sprintf(kernel_name, "Titanium SharedMem"); break;
       //case(BLOCKEDGPU_KERNEL) :
       //sprintf(kernel_name, "Blocked GPU"); break;
@@ -537,7 +545,7 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
                const struct times_t *minTime,  const struct times_t *meanTime,  const struct times_t *maxTime, 
 	        double norm){
 
-  int gpu_header = (kernel_key == GPUBASE_KERNEL) || (kernel_key == GPUSHM_KERNEL) || (kernel_key == GPUBANDWIDTH_KERNEL);
+  int gpu_header = (kernel_key == GPU_BASE_KERNEL) || (kernel_key == GPU_SHM_KERNEL) || (kernel_key == GPU_BANDWIDTH_KERNEL || (kernel_key == GPU_MM_KERNEL));
 
   if (pHeader){
     printf("# Last norm %22.15e\n",sqrt(norm));

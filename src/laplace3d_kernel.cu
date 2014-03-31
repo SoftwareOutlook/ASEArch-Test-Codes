@@ -13,6 +13,8 @@ March 2014.
 #include<stdio.h>
 #include "cutil_inline.h"
 
+// thread blocks and grid parameters
+static int BlockX, BlockY, BlockZ, GridX, GridY, GridZ;
 
 //#include<cuda.h>
 //#include<cuda_runtime.h>
@@ -25,6 +27,49 @@ extern "C" {
 #include "gpu_laplace3d_wrapper.h"
 }
 
+__global__ void kernel_laplace3d_baseline(int NX, int NY, int NZ, const Real* __restrict__ d_u1,
+                                                            Real* __restrict__ d_u2)
+{
+  int  i, j, k, indg, IOFF, JOFF, KOFF, interior, boundary, active;
+   Real u2, sixth=1.0/6.0;
+
+  //
+  // define global indices and array offsets
+  //
+
+  i    = threadIdx.x + blockIdx.x*blockDim.x;
+  j    = threadIdx.y + blockIdx.y*blockDim.y;
+  indg = i + j*NX;
+
+  IOFF = 1;
+  JOFF = NX;
+  KOFF = NX*NY;
+
+  boundary = i==0 || i==NX-1 || j==0 || j==NY-1;
+  interior = i> 0 && i< NX-1 && j> 0 && j<NY-1;
+
+  active = boundary || interior;
+  
+  if ( active){
+    d_u2[indg] = d_u1[indg];
+    indg += KOFF;
+    
+    for (k=1; k<NZ-1; k++) {
+      if (boundary) {
+	u2 =  d_u1[indg];  // Dirichlet b.c.'s
+      }
+      else if (interior) {
+	u2 = ( d_u1[indg-IOFF] + d_u1[indg+IOFF]
+	       + d_u1[indg-JOFF] + d_u1[indg+JOFF]
+	       + d_u1[indg-KOFF] + d_u1[indg+KOFF] ) * sixth;
+      }
+      d_u2[indg] = u2;
+      indg += KOFF;
+    }
+    d_u2[indg] = d_u1[indg];
+    }
+}
+
 //
 // Notes:one thread per node in the 2D block;
 // after initialisation it marches in the k-direction
@@ -32,15 +77,33 @@ extern "C" {
 
 extern Real *d_u1, *d_u2;
 
-__global__ void kernel_laplace3d(int NX, int NY, int NZ, Real *d_u1, Real *d_u2)
-{
-  int   i, j, k, bz, ks, ke, indg, active, IOFF, JOFF, KOFF;
-  Real u2, sixth=1.0/6.0;
 
+__global__ void kernel_laplace3d_MarkMawson(int Nx, int Ny, int Nz, Real *d_u1, Real *d_u2)
+{
+  //int   i, j, k, bz, ks, ke, indg, active, IOFF, JOFF, KOFF;
+  Real sixth=1.0/6.0;
+
+	//Thread Indices
+  int x = blockIdx.x*blockDim.x+threadIdx.x;
+  int y = blockIdx.y*blockDim.y+threadIdx.y;
+  int z = blockIdx.z*blockDim.z+threadIdx.z;
+
+  if(x<(Nx)&&y<(Ny)&&z<(Nz)){
+    if(x!=0&&x!=(Nx-1)&&y!=0&&y!=(Ny-1)&&z!=0&&z!=(Nz-1)){
+      d_u2[z*Ny*Nx+y*Nx+x]= sixth*(d_u1[(z-1)*Ny*Nx+(y  )*Nx+(x  )]
+				  +d_u1[(z+1)*Ny*Nx+(y  )*Nx+(x  )]
+				  +d_u1[(z  )*Ny*Nx+(y-1)*Nx+(x  )]
+				  +d_u1[(z  )*Ny*Nx+(y+1)*Nx+(x  )]
+				  +d_u1[(z  )*Ny*Nx+(y  )*Nx+(x-1)]
+				  +d_u1[(z  )*Ny*Nx+(y  )*Nx+(x+1)]);
+    }else{
+      d_u2[z*Ny*Nx+y*Nx+x]=d_u1[z*Ny*Nx+y*Nx+x];
+    }
+  }	
   //
   // define global indices and array offsets
   //
-
+  /*
   // number of blocks that cover the grid in y dir
   int nby =  1 + (NY-1) / blockDim.y;
   // thickness in z direction
@@ -75,6 +138,7 @@ __global__ void kernel_laplace3d(int NX, int NY, int NZ, Real *d_u1, Real *d_u2)
       indg += KOFF;
     }
   }
+  */
 }
 
 
@@ -88,6 +152,7 @@ __global__ void kernel_laplace3d_shm(int NX, int NY, int NZ, Real *d_u1, Real *d
   // define global indices and array offsets
   //
 
+ 
   i    = threadIdx.x - 1 + blockIdx.x * (blockDim.x - 2);
   j    = threadIdx.y - 1 + blockIdx.y * (blockDim.y - 2);
   indg = i + j*NX;
@@ -231,8 +296,7 @@ void laplace3d_GPU(const int kernel_key, Real* uOld, int NX,int NY,int NZ,const 
   size_t shmsize;
   int threadperblock = 4;//for shared memory blocksize which is currently static
   
-  dim3 dimGrid(gridparams[0],gridparams[1]);
-  dim3 dimBlock(gridparams[2],gridparams[3]);
+ 
   //event timer
   cudaEvent_t compStart, compStop, commStart, commStop;
   
@@ -251,26 +315,39 @@ void laplace3d_GPU(const int kernel_key, Real* uOld, int NX,int NY,int NZ,const 
   cudaEventElapsedTime(&taux, commStart, commStop);
   *commTime += taux;
 
+  dim3 dimGrid(GridX,GridY), dimGrid_mm(GridX,GridY,GridZ) ;
+  dim3 dimBlock(BlockX,BlockY), dimBlock_mm(BlockX, BlockY,BlockZ) ;
+					
   cudaEventRecord(compStart,0);
   
   switch(kernel_key)
     {
-    case(GPUBASE_KERNEL):
+    case(GPU_BASE_KERNEL):
       for (iter = 0; iter < iter_block; ++iter){
-	kernel_laplace3d<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
-    	  aux=d_u1; d_u1=d_u2; d_u2=aux;
-      }
-      break;
-    case(GPUSHM_KERNEL):
-      shmsize=gridparams[2]*gridparams[3]*sizeof(Real);
-      for (iter = 0; iter < iter_block; ++iter){
-	kernel_laplace3d_shm<<<dimGrid, dimBlock, shmsize>>>(NX, NY, NZ, d_u1, d_u2);
+	kernel_laplace3d_baseline<<<dimGrid_mm, dimBlock_mm>>>(NX, NY, NZ, d_u1, d_u2);
+	cudaSafeCall(cudaPeekAtLastError());    	
 	aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
-    case(GPUBANDWIDTH_KERNEL):
+      case(GPU_MM_KERNEL):
+	for (iter = 0; iter < iter_block; ++iter){
+	  kernel_laplace3d_MarkMawson<<<dimGrid_mm, dimBlock_mm>>>(NX, NY, NZ, d_u1, d_u2);
+	  cudaSafeCall(cudaPeekAtLastError());    	
+	  aux=d_u1; d_u1=d_u2; d_u2=aux;
+      }
+      break;
+    case(GPU_SHM_KERNEL):
+      shmsize=gridparams[2]*gridparams[3]*sizeof(Real);
+      for (iter = 0; iter < iter_block; ++iter){
+	kernel_laplace3d_shm<<<dimGrid, dimBlock, shmsize>>>(NX, NY, NZ, d_u1, d_u2);
+	cudaSafeCall(cudaPeekAtLastError());
+	aux=d_u1; d_u1=d_u2; d_u2=aux;
+      }
+      break;
+    case(GPU_BANDWIDTH_KERNEL):
       for (iter = 0; iter < iter_block; ++iter){
         kernel_BandWidth<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
+	cudaSafeCall(cudaPeekAtLastError());
         aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
@@ -330,19 +407,32 @@ void calcGpuDims(int kernel_key, int blockXsize, int blockYsize, int blockZsize,
 
   switch (kernel_key)
     {
-    case (GPUSHM_KERNEL) :
-      gridsize[2] = blockXsize + 2; // halo
-      gridsize[3] = blockYsize + 2;
-      gridsize[0] = 1 + (NX-1)/blockXsize;
-      gridsize[1] = 1 + (NY-1)/blockYsize;
+    case(GPU_BASE_KERNEL):
+      GridX = 1 + (NX-1)/blockXsize;
+      GridY = (1 + (NY-1)/blockYsize); //* (1 + (NZ-1) / blockZsize);
+      GridZ = 1;
+      BlockX = blockXsize;
+      BlockY = blockYsize;
+      BlockZ = 1;
       break;
-    case(GPUBANDWIDTH_KERNEL):
-    case(GPUBASE_KERNEL):
-      gridsize[0] = 1 + (NX-1)/blockXsize;
-      gridsize[1] = (1 + (NY-1)/blockYsize) * (1 + (NZ-1) / blockZsize);
-      gridsize[2] = blockXsize;
-      gridsize[3] = blockYsize;
+    case (GPU_SHM_KERNEL) :
+      GridX = blockXsize + 2; // halo
+      GridY = blockYsize + 2;
+      GridZ = 1;
+      BlockX = 1 + (NX-1)/blockXsize;
+      BlockY = 1 + (NY-1)/blockYsize;
+      BlockZ = NZ;
       break;
+    case(GPU_BANDWIDTH_KERNEL):
+    case(GPU_MM_KERNEL):
+       GridX = 1 + (NX-1)/blockXsize;
+      GridY = (1 + (NY-1)/blockYsize); //* (1 + (NZ-1) / blockZsize);
+      GridZ = NZ;
+      BlockX = blockXsize;
+      BlockY = blockYsize;
+      BlockZ = 1;
+      break;
+   
     default:
       fprintf(stderr,"unkwon gpu kernel in calcGpuDims, quitting ...!");
       exit (1);
