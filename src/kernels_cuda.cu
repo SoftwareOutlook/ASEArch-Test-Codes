@@ -98,62 +98,24 @@ __global__ void kernel_laplace3d_MarkMawson(int Nx, int Ny, int Nz, Real *d_u1, 
       d_u2[z*Ny*Nx+y*Nx+x]=d_u1[z*Ny*Nx+y*Nx+x];
     }
   }	
-  //
-  // define global indices and array offsets
-  //
-  /*
-  // number of blocks that cover the grid in y dir
-  int nby =  1 + (NY-1) / blockDim.y;
-  // thickness in z direction
-  bz = 1 + (NZ-1) / (1 + (gridDim.y - 1) / nby); 
-
-  i    = threadIdx.x + blockIdx.x * blockDim.x;
-  j    = threadIdx.y + (blockIdx.y % nby) * blockDim.y;
-  ks   =  (blockIdx.y / nby) * bz;
-  //j    = threadIdx.y + blockIdx.y * blockDim.y;
-  indg = i + j*NX + ks*NX*NY;
-
-  IOFF = 1;
-  JOFF = NX;
-  KOFF = NX*NY;
-
-  active = i>=0 && i<=NX-1 && j>=0 && j<=NY-1;
-
-  ke = ( ks+bz > NZ ? NZ : ks+bz);
-  for (k=ks; k<ke; k++) {
-
-    if (active) {
-      if (i==0 || i==NX-1 || j==0 || j==NY-1 || k==0 || k==NZ-1) {
-        u2 = d_u1[indg];  // Dirichlet b.c.'s
-      }
-      else {
-        u2 = ( d_u1[indg-IOFF] + d_u1[indg+IOFF]
-             + d_u1[indg-JOFF] + d_u1[indg+JOFF]
-             + d_u1[indg-KOFF] + d_u1[indg+KOFF] ) * sixth;
-      }
-      d_u2[indg] = u2;
-
-      indg += KOFF;
-    }
-  }
-  */
 }
 
 
 __global__ void kernel_laplace3d_shm(int NX, int NY, int NZ, Real *d_u1, Real *d_u2)
 {
   extern __shared__ Real plane[];
-  int   i, j, k, indg, active, halo, indp, IOFF, JOFF, KOFF;
+  int indg, active, halo, indp, IOFF, JOFF, KOFF;
   Real u2, sixth=1.0/6.0;
 
   //
   // define global indices and array offsets
   //
 
- 
-  i    = threadIdx.x - 1 + blockIdx.x * (blockDim.x - 2);
-  j    = threadIdx.y - 1 + blockIdx.y * (blockDim.y - 2);
-  indg = i + j*NX;
+  int i = blockIdx.x*(blockDim.x-2)+threadIdx.x-1;
+  int j = blockIdx.y*(blockDim.y-2)+threadIdx.y-1;
+  int k = blockIdx.z*blockDim.z+threadIdx.z; 
+
+  indg = i + j*NX + k*NX*NY;
   indp = threadIdx.x + blockDim.x * threadIdx.y;
 
   IOFF = 1;
@@ -164,14 +126,8 @@ __global__ void kernel_laplace3d_shm(int NX, int NY, int NZ, Real *d_u1, Real *d
 
   halo = threadIdx.x == 0 || threadIdx.x == blockDim.x - 1 ||
     threadIdx.y == 0 || threadIdx.y == blockDim.y - 1;
-
-// populate plane with first layer
-//  if(active)
-//     plane[indp] = d_u1[indg+KOFF];  
-//  __syncthreads();	
-
-  for (k=0; k<NZ; k++) {
-     __syncthreads();
+  
+  // populate plane with first layer
      if(active)
         plane[indp] = d_u1[indg]; 
      __syncthreads();
@@ -193,16 +149,13 @@ __global__ void kernel_laplace3d_shm(int NX, int NY, int NZ, Real *d_u1, Real *d
       }
       if (!halo)
         d_u2[indg] = u2;
-
-      indg += KOFF;
-    }
+      }
   }
-}
 
 //This kernel can be used for a quick extimate of the bandwidth 
 __global__ void kernel_BandWidth(int NX, int NY, int NZ, Real *d_u1, Real *d_u2)
 {
-  int   i, j, k, ks, indg, active, IOFF, JOFF, KOFF;
+  int   i, j, k, ks, indg, KOFF;
   Real u2, sixth=1.0/6.0;
 
   //
@@ -313,8 +266,8 @@ void laplace3d_GPU(const int kernel_key, Real* uOld, int NX,int NY,int NZ,const 
   cudaEventElapsedTime(&taux, commStart, commStop);
   *commTime += taux;
 
-  dim3 dimGrid(GridX,GridY), dimGrid_mm(GridX,GridY,GridZ) ;
-  dim3 dimBlock(BlockX,BlockY), dimBlock_mm(BlockX, BlockY,BlockZ) ;
+  dim3 dimGrid(GridX,GridY,GridZ) ;
+  dim3 dimBlock(BlockX, BlockY,BlockZ) ;
 					
   cudaEventRecord(compStart,0);
   
@@ -322,20 +275,20 @@ void laplace3d_GPU(const int kernel_key, Real* uOld, int NX,int NY,int NZ,const 
     {
     case(GPU_BASE_KERNEL):
       for (iter = 0; iter < iter_block; ++iter){
-	kernel_laplace3d_baseline<<<dimGrid_mm, dimBlock_mm>>>(NX, NY, NZ, d_u1, d_u2);
+	kernel_laplace3d_baseline<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
 	cudaSafeCall(cudaPeekAtLastError());    	
 	aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
       case(GPU_MM_KERNEL):
 	for (iter = 0; iter < iter_block; ++iter){
-	  kernel_laplace3d_MarkMawson<<<dimGrid_mm, dimBlock_mm>>>(NX, NY, NZ, d_u1, d_u2);
+	  kernel_laplace3d_MarkMawson<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
 	  cudaSafeCall(cudaPeekAtLastError());    	
 	  aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
     case(GPU_SHM_KERNEL):
-      shmsize=gridparams[2]*gridparams[3]*sizeof(Real);
+      shmsize=BlockX*BlockY*sizeof(Real);
       for (iter = 0; iter < iter_block; ++iter){
 	kernel_laplace3d_shm<<<dimGrid, dimBlock, shmsize>>>(NX, NY, NZ, d_u1, d_u2);
 	cudaSafeCall(cudaPeekAtLastError());
@@ -414,12 +367,12 @@ void calcGpuDims(int kernel_key, int blockXsize, int blockYsize, int blockZsize,
       BlockZ = 1;
       break;
     case (GPU_SHM_KERNEL) :
-      GridX = blockXsize + 2; // halo
-      GridY = blockYsize + 2;
-      GridZ = 1;
-      BlockX = 1 + (NX-1)/blockXsize;
-      BlockY = 1 + (NY-1)/blockYsize;
-      BlockZ = NZ;
+      GridX = 1 + (NX-1)/blockXsize; 
+      GridY = 1 + (NY-1)/blockYsize;
+      GridZ = NZ;
+      BlockX = blockXsize + 2; // halo
+      BlockY = blockYsize + 2;
+      BlockZ = 1;
       break;
     case(GPU_BANDWIDTH_KERNEL):
     case(GPU_MM_KERNEL):
