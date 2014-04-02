@@ -13,7 +13,8 @@ BUILD=opt
 
 USE_OPENMP=yes
 USE_GPU=yes
-CUDAO=laplace3d_kernel.o
+
+CUDAO=kernels_cuda.o
 
 ifdef USE_MPI
   CC  := mpicc

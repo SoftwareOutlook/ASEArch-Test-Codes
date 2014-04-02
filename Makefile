@@ -52,7 +52,7 @@ vclean:
 %_c.o : src/%_c.c
 	$(CC) -c -o $@ $(OMPFLAGS) $(CFLAGS) $(INC) $<
 ifdef USE_GPU
-%_kernel.o : src/%_kernel.cu
+%_cuda.o : src/%_cuda.cu
 	$(NVCC) -c -o $@ $(NVCCFLAGS) $<
 endif
 homb_f90.o : functions_f90.o
@@ -62,5 +62,5 @@ kernels_c.o : src/kernels_c.c src/jacobi_c.h src/kernels_c.h src/utils_c.h src/c
 comm_mpi_c.o : src/comm_mpi_c.c src/jacobi_c.h src/comm_mpi_c.h 
 jacobi_c.o : src/jacobi_c.c src/jacobi_c.h src/utils_c.h src/kernels_c.h
 ifdef USE_GPU
-laplace3d_kernel.o : src/laplace3d_kernel.cu src/gpu_laplace3d_wrapper.h src/cutil_inline.h
+kernels_cuda.o : src/kernels_cuda.cu src/gpu_laplace3d_wrapper.h src/cutil_inline.h
 endif 

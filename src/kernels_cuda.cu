@@ -16,8 +16,6 @@ March 2014.
 // thread blocks and grid parameters
 static int BlockX, BlockY, BlockZ, GridX, GridY, GridZ;
 
-//#include<cuda.h>
-//#include<cuda_runtime.h>
 
 /** 
  * this notifies the compiler that the definitions are present in external file
