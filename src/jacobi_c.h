@@ -1,13 +1,17 @@
 /*
-This is the source for HOMB, the Hybrid OpemMP MPI Benchmark, a Laplace Solver.
-Data is distributed over MPI tasks and shared over OpenMP threads in a hybrid 
-implementation.  When there is only one MPI task, the problem looks like a pure 
-shared memory OpenMP implementation, and when there is only one OpenMP thread, 
-the problem looks like a distributed memory MPI implimentation.  This is useful 
-for testing Hybrid OpenMP/MPI performance on shared memory (NUMA) and multicore 
-machines.
-*/
-/*
+This is part of Jacobi Test Code (JTC) , a hybrid CUDA-OpenMP-MPI benchmark for
+Jacobi solver applied to a 3D Laplace equation.
+
+Iteration starts from a Jacobi iterator eigenvalue, boundary conditions are set to 0.
+
+Lucian Anton
+March 2014.
+
+This code started from v 1.0 of HOMB
+http://sourceforge.net/projects/homb/
+
+Below is the original copyright and licence.
+
   Copyright 2009 Maxwell Lipford Hutchinson
 
   This file is part of HOMB.
@@ -26,7 +30,7 @@ machines.
   along with PGAF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define JTC_VERSION "1.0.0b (27th of March 2014)"
+#define JTC_VERSION "1.0.1b (3rd of April 2014)"
 
 /* Include Files */ 
 #ifdef USE_MPI

@@ -42,8 +42,8 @@ The following flags can be used to set the grid sized and other run parameters:
                                    probable is better to leave some threads unused rather than having 
                                    them fighting over the cache lines.
                                 3) For GPU runs <bx> and <by> are the dimension of the block of threads,
-                                   <bz> is the number of iteration for each loop in z direction.
-				4) GPU defaults 32,4,<nz>
+                                   <bz> is irelevant in this version, the block of threads are 2D
+				4) GPU default: 32x4x1
                          
 -nruns <n>               set the number of smoother runs (default 5)
 -niter <b>               set the number of iteration per run (default 1).
@@ -72,13 +72,15 @@ The following flags can be used to set the grid sized and other run parameters:
                                  NOTE: the wave is applied in yz plane, the blocks have local
                                        domain length in x direction.      
 
-                         gpu-baseline : uses basic CUDA implementation of Jacobi solver
+                         gpu-2d-blockgrid : uses 2d CUDA grids, each block of threads loops in z direction
                                         
-                         gpu-shm : uses shared memory to store plane xy in a block of threads  
-			 gpu-bandwidth : measure the time for the simple update u[i] = const * v[i]
-			                 -t is meaningless in this case
+                         gpu-3d-blockgrid : uses 3d CUDA grids, the block of threads have size 1 in z
+                                            direction, hence grid size is <nz>.  
+			 gpu-bandwidth : measures the time for the simple update u[i] = const * v[i]
+                                         useful to measure the effective GPU bandwidth.
+			                 Note: -t is meaningless in this case
                           
-                         NOTES: 1) For GPU runs transfer time between device and host is also implemented      
+                         NOTES: 1) GPU runs report also the transfer time between device and host,
                                 2) Default model is baseline.
 
 -pc                      prints information on run parameters at the beginning of a calculation.
@@ -100,7 +102,7 @@ meaningful for small grids and run time is not unnecessarily large for
 large grids. The timing is collected in an output file suitable for
 gnuplot.
 
-Try for sh <path>/utils/run_spectra.sh -help for more details.
+Try sh <path>/utils/run_spectra.sh -help for more details.
 
    
 

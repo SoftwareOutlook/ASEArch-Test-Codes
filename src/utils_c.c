@@ -159,7 +159,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 	else
 	  error_abort("wrong value for threads per column parameter", argv[i]);
       }
-      else if (strcmp("gpu-baseline",argv[i]) == 0){
+      else if (strcmp("gpu-2d-blockgrid",argv[i]) == 0){
 #ifdef USE_GPU
 	  *kernel_key = grid->key = GPU_BASE_KERNEL;
 	  grid->gpuflag = 1;
@@ -183,7 +183,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 	error_abort("GPU model specified without gpu compilation", "");
 #endif
 	}
-      else if (strcmp("gpu-mm",argv[i]) == 0){
+      else if (strcmp("gpu-3d-blockgrid",argv[i]) == 0){
 #ifdef USE_GPU
 	*kernel_key = grid->key = GPU_MM_KERNEL;
 	grid->gpuflag = 1;
@@ -359,9 +359,13 @@ void printContext(const struct grid_info_t *g, int kernel_key){
     case (WAVE_DIAGONAL_KERNEL) :
       sprintf(kernel_name, "Wave diagonal"); break;  
     case(GPU_BASE_KERNEL) :
-      sprintf(kernel_name, "baseline GPU"); break;
+      sprintf(kernel_name, "GPU 2D block grid"); break;
+    case(GPU_MM_KERNEL) :
+      sprintf(kernel_name, "GPU 3D block grid"); break;
     case(GPU_SHM_KERNEL) :
       sprintf(kernel_name, "shared memory GPU"); break;
+    case(GPU_BANDWIDTH_KERNEL) :
+      sprintf(kernel_name, "GPU bandwidth"); break;
       //case(BASEGPU_SHM_KERNEL) :
       //sprintf(kernel_name, "Titanium SharedMem"); break;
       //case(BLOCKEDGPU_KERNEL) :
@@ -662,8 +666,8 @@ static void print_help( const struct grid_info_t *g, const char *s){
         baseline-opt\n \
         blocked\n \
         wave num-waves threads-per-column \n \
-        gpu-baseline\n \
-        gpu-shm\n\n \
+        gpu-2d-blockgrid\n \
+        gpu-3d-blockgrid\n\n \
         gpu-bandwidth\n\n \
         Note for wave model: if threads-per-column == 0 diagonal wave kernel is used.\n");  
     else if (strcmp(s, "version") == 0)
