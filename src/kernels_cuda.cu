@@ -28,7 +28,7 @@ extern "C" {
 __global__ void kernel_laplace3d_baseline(int NX, int NY, int NZ, const Real* __restrict__ d_u1,
                                                             Real* __restrict__ d_u2)
 {
-  int  i, j, k, indg, IOFF, JOFF, KOFF, interior, boundary, active;
+  int  i, j, k, indg, IOFF, JOFF, KOFF, interior, active;
    Real u2, sixth=1.0/6.0;
 
   //
@@ -43,29 +43,28 @@ __global__ void kernel_laplace3d_baseline(int NX, int NY, int NZ, const Real* __
   JOFF = NX;
   KOFF = NX*NY;
 
-  boundary = i==0 || i==NX-1 || j==0 || j==NY-1;
-  interior = i> 0 && i< NX-1 && j> 0 && j<NY-1;
-
-  active = boundary || interior;
+  interior = i >  0 && i< NX-1 && j> 0 && j<NY-1;
+  active   = i >= 0 && i<= NX-1 && j>= 0 && j <= NY-1;
   
   if ( active){
     d_u2[indg] = d_u1[indg];
     indg += KOFF;
     
     for (k=1; k<NZ-1; k++) {
-      if (boundary) {
-	u2 =  d_u1[indg];  // Dirichlet b.c.'s
-      }
-      else if (interior) {
+      if (interior) {
 	u2 = ( d_u1[indg-IOFF] + d_u1[indg+IOFF]
 	       + d_u1[indg-JOFF] + d_u1[indg+JOFF]
 	       + d_u1[indg-KOFF] + d_u1[indg+KOFF] ) * sixth;
       }
+      else {
+	u2 =  d_u1[indg];  // Dirichlet b.c.'s
+      }                    // the active flags selects only boundary points
       d_u2[indg] = u2;
       indg += KOFF;
     }
     d_u2[indg] = d_u1[indg];
-    }
+  }
+  
 }
 
 //
