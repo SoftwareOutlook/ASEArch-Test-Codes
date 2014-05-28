@@ -7,11 +7,21 @@
 
 LANG := C
 
-COMP=nvcc
+BUILD := opt
+
+COMP := nvcc
 
 USE_OPENMP=yes
 USE_GPU=yes
 CUDAO=kernels_cuda.o
+
+# upgrade arch flag for emerald keples cards
+# needs cuda/6.0.37 or newer for kepler
+
+GPU_ARCH := -arch=sm_20
+ifdef GPU_KEPLER
+  GPU_ARCH := -arch=sm_35
+endif
 
 ifdef USE_MPI
   CC  := mpicc
@@ -36,7 +46,7 @@ CFLAGS_opt = -O3
 CFLAGS_debug = -g -Wall -Wuninitialized -O1 
 CFLAGS := $(CPPFLAGS) $(CFLAGS_$(BUILD)) -std=c99
 #CFLAGS := $(CPPFLAGS) $(CFLAGS_debug) 
-NVCCFLAGS := $(PNVFLAGS) -arch=sm_20 --ptxas-options=-v --use_fast_math
+NVCCFLAGS := $(PNVFLAGS)  $(GPU_ARCH) --ptxas-options=-v --use_fast_math
 
 FFLAGS_opt := -O3
 FFLAGS_debug := -g -fbounds-check -Wall -fbacktrace -ffpe-trap=invalid,zero,overflow -fsignaling-nans -fdump-core 

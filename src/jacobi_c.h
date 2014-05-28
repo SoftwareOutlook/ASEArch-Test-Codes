@@ -30,7 +30,7 @@ Below is the original copyright and licence.
   along with PGAF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define JTC_VERSION "1.0.1b (3rd of April 2014)"
+#define JTC_VERSION "1.0.2b (28th of April 2014)"
 
 /* Include Files */ 
 #ifdef USE_MPI
@@ -77,8 +77,8 @@ struct grid_info_t
   int key;	// kernel identifier
   int malign; // allocate aligned memory to help vectorization
   int nwaves; // number of waves used in time skwed algorithm
-#ifdef USE_GPU
   int gpuflag; //gpu flag
+#ifdef USE_GPU
   float kernelTimer;
   float memoryTimer;
   int memoryCtr;
