@@ -34,7 +34,7 @@ for argument in $options
 	       echo "   -minsize=<start grid sizes> -maxsize=<end grid sizes> -step=<grid increase>"
 	       echo "   -exe=<executables list> -nthreads=<number of OpenMP threads list> "
 	       echo "   -test pass the -t flag to executable for testing"
-	       echo "   -malig=<val> use posix_memalign for main arrays, align memory with <va>"
+	       echo "   -malig=<val> use posix_memalign for main arrays, align memory with <val>"
 	       echo "   -system=<val> : select system <val> for bach execution" 
 	       exit 0
 	       ;;
@@ -69,7 +69,8 @@ fi
 index=0
 for exe in $exe_list
 do
-    echo "# $exe version "$( $exe -version )
+    # this might fail if login nodes cannot run executable compiled for compute nodes 
+    echo "# $exe version "$( $exe -version ) >> $fout
     for model in $model_list
     do
 	for nth in $threads_list 
