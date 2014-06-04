@@ -69,15 +69,16 @@ fi
 index=0
 for exe in $exe_list
 do
+    echo "# $exe version "$( $exe -version )
     for model in $model_list
     do
 	for nth in $threads_list 
 	do
 	    export OMP_NUM_THREADS=$nth
-	    #fout=out_"$model"_"${exe%.exe}"_t"$nth".txt
-	    #fspectra=${fout%.txt}_spectra.txt 
 	
-	    #[ -f "$fout" ] && cat /dev/null > $fout
+            # print context at the top of the file ?, Not yet
+            print_context=
+            #(( index == 0 )) && print_context=-pc
 
 	    echo "# $((index++)) model $model nth $nth exe $exe" >> $fout
 	    # $((++index))
@@ -98,7 +99,7 @@ do
 		    fi
 		fi
 		    
-		arguments="-ng $linsize $linsize $linsize -model $model $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign"
+		arguments="-ng $linsize $linsize $linsize -model $model $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign $print_context"
 		
 		# block flags are not not compulsory
 		if [ "$blk_val" ] 

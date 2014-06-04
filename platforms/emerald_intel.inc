@@ -5,13 +5,11 @@
 # created: 5/06/12
 #============================================================
 
-F90 := source /opt/intel/composerxe/bin/compilervars.sh intel64 && \
-      source /opt/intel/impi/4.1.0/intel64/bin/mpivars.sh && mpiifort
-
-CC := source /opt/intel/composerxe/bin/compilervars.sh intel64 && \
-      source /opt/intel/impi/4.1.0/intel64/bin/mpivars.sh && mpiicc
-
+COMP := intel
 LANG = C
+
+F90 := ifort
+CC := icc 
 
 ifdef USE_MIC
   FMIC = -mmic
@@ -26,17 +24,14 @@ ifdef USE_DOUBLE_PRECISION
 endif
 
 USE_VEC1D := on
-ifdef USE_VEC1D
+
+ifeq ($(strip $(USE_VEC1D)),on)
   CPPFLAGS += -DUSE_VEC1D
 endif
 
-#FC = module add intel/comp intel/mpi && mpiifort
-
-COMP := intel
-
 USE_OPENMP = yes
 
-FFLAGS_intel_opt   := -O3 $(FMIC) -opt-streaming-stores auto 
+FFLAGS_intel_opt   := -O3 $(FMIC) vec-report6 -opt-streaming-stores auto 
 FFLAGS_intel_debug  :=  -g -C  $(FMIC)  -fpe0 -check noarg_temp_created
 
 CFLAGS_intel_opt := $(VEC1D) $(FMPI) $(DOUBLE) -O3 -restrict -align -vec-report6 $(FMIC)

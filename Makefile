@@ -13,20 +13,38 @@ ifndef PLATFORM
    $(error PLATFORM needes to be defined)
 endif
 
-
 include platforms/$(PLATFORM).inc
 
+ifndef BUILD
+   $(error ERROR: BUILD needes to be defined)
+else
+   ifeq (,$(filter opt debug,$(BUILD)))
+     $(error ERROR: unknown value for BUILD, try 'opt' or 'debug')
+   endif
+endif
+
+# default target and name base
 JTC := $(JTC_$(LANG))
 
+# Build the executable name
 EXE := $(JTC)_$(COMP)_$(BUILD).exe
 
 ifdef USE_VEC1D
-  EXE := $(JTC)_$(COMP)_$(BUILD)_vec1d.exe 
+  EXE := $(basename $(EXE))_vec1d.exe
+else
+  ifndef USE_GPU
+    $(warning WARNING: using non-vectorised inner loop in kernels_c.c) 
+  endif
 endif
 
 ifdef USE_GPU
-  EXE := $(JTC)_$(COMP)_$(BUILD)_gpu.exe 
+  EXE := $(basename $(EXE))_gpu.exe 
 endif
+
+ifdef USE_DOUBLE_PRECISION
+  EXE := $(basename $(EXE))_dp.exe
+endif
+
 
 default: $(JTC)
 

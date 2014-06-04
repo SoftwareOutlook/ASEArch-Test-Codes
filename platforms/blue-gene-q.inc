@@ -24,6 +24,7 @@ ifeq ($(strip $(COMP)),ibm)
     endif
   endif
 
+  USE_VEC1D := 1
   ifdef USE_VEC1D
     VEC1D := -DUSE_VEC1D
     ifeq ($(strip $(LANG)),F90) 
