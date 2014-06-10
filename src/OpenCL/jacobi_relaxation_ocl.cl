@@ -1,10 +1,16 @@
 /** @file
  *This file contains the single and double precision kernel calls
- * \todo include the header to grab the typedef of Real
+ *\todo include the header to grab the typedef of Real
  */
 
-
-
+#include "../jacobi_c.h"
+/** jacobi_relaxation_ocl --
+ * @param Nx - The x size of the domain
+ * @param Ny - The y size of the domain
+ * @param Nz - The z size of the domain
+ * @param d_u1 - The input array
+ * @param d_u2 - The output array 
+ */
 __kernel void  jacobi_relaxation_ocl(const int Nx,
 				     const int Ny,
 				     const int Nz,

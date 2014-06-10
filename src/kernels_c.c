@@ -344,6 +344,7 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
    nxShift = (abs((int) (uNew - uOld))) / (NY*NZ); 
 
   switch (kernel_key)
+    //\todo add OpenCL kernel key
     {
     case (BASELINE_KERNEL) :
       taux = my_wtime();

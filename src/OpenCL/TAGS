@@ -1,0 +1,64 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+DEVICE	jacobi_opencl.c	/^#define DEVICE /;"	d	file:
+Data Fields	latex/struct_open_c_l_instance.tex	/^{\\ttfamily \\#include $<$jacobi\\-\\_\\-opencl.\\-h$>$}$/;"	b
+Data Structure Documentation	latex/refman.tex	/^\\input{files}$/;"	c
+Data Structure Index	latex/refman.tex	/^\\input{todo}$/;"	c
+Data Structures	latex/annotated.tex	/^\\section{Data Structures}$/;"	s
+Detailed Description	latex/struct_open_c_l_instance.tex	/^\\end{DoxyCompactItemize}$/;"	b
+Field Documentation	latex/struct_open_c_l_instance.tex	/^Definition at line 37 of file jacobi\\-\\_\\-opencl.\\-h.$/;"	b
+File Documentation	latex/refman.tex	/^\\input{struct_open_c_l_instance}$/;"	c
+File Index	latex/refman.tex	/^\\input{annotated}$/;"	c
+File List	latex/files.tex	/^\\section{File List}$/;"	s
+Introduction	latex/index.tex	/^This is the Open\\-C\\-L version of J\\-T\\-C extra stuff \\hypertarget{index_Introduction}{}\\section{Introduction}\\label{index_Introduction}$/;"	s
+Main Page	latex/refman.tex	/^\\hypersetup{pageanchor=true}$/;"	c
+OCLInst	jacobi_opencl.c	/^static struct OpenCLInstance OCLInst;$/;"	v	typeref:struct:OpenCLInstance	file:
+OPENCL_JACOBI	jacobi_opencl.h	/^#define  OPENCL_JACOBI$/;"	d
+Open C L Instance Struct Reference	latex/struct_open_c_l_instance.tex	/^\\hypertarget{struct_open_c_l_instance}{\\section{Open\\-C\\-L\\-Instance Struct Reference}$/;"	s
+OpenCLInstance	jacobi_opencl.h	/^struct OpenCLInstance{$/;"	s
+OpenCLInstance::commands	jacobi_opencl.h	/^  cl_command_queue commands;      \/**< Compute command queue *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::context	jacobi_opencl.h	/^  cl_context       context;       \/**< Compute context *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::d_u1	jacobi_opencl.h	/^  cl_mem d_u1;                     \/**< Device memory used for the input unknown 1 vector *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::d_u2	jacobi_opencl.h	/^  cl_mem d_u2;                     \/**< Device memory used for the input  unknown 2 vector *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::device_id	jacobi_opencl.h	/^  cl_device_id     device_id;     \/**< Compute device id *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::jacobi_ocl	jacobi_opencl.h	/^  cl_kernel        jacobi_ocl;    \/**< Compute kernel *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::program	jacobi_opencl.h	/^  cl_program       program;       \/**< Compute program *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::xDim	jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::yDim	jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::zDim	jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCL_Jacobi	jacobi_opencl.c	/^void OpenCL_Jacobi(int Nx, int Ny, int Nx, Real *unknown){$/;"	f	signature:(int Nx, int Ny, int Nx, Real *unknown)
+OpenCL_Jacobi	jacobi_opencl.h	/^void OpenCL_Jacobi(int Nx, int Ny, int Nx, Real *unknown);$/;"	p	signature:(int Nx, int Ny, int Nx, Real *unknown)
+OpenCL_Jacobi_Iteration	jacobi_opencl.c	/^void OpenCL_Jacobi_Iteration(int maxIters, int convergenceIters){$/;"	f	signature:(int maxIters, int convergenceIters)
+OpenCL_Jacobi_Iteration	jacobi_opencl.h	/^void OpenCL_Jacobi_Iteration(int maxIters, int convergenceIters);$/;"	p	signature:(int maxIters, int convergenceIters)
+Results	latex/index.tex	/^The rapid development of parallel hardware in the last decade requires a constant evaluation of the parallel algoritms used in large scale scientific applications . Iterative kernels are essential components of iterative solvers which are the preferred technique in a variety of large scale problems. Jacobi iteration for the second order discretisation of the Laplacian $ 3D$ operator\\-: \\begin{equation} u^{(new)}_{i,j,k}=\\frac{1}{6}(u^{(old)}_{i-1,j,k}+ u^{(old)}_{i+1,j,k}+u^{(old)}_{i,j-1,k}+ u^{(old)}_{i,j+1,k}+u^{(old)}_{i,j,k-1}+u^{(old)}_{i,j,k+1}) \\ , \\end{equation} is the one of the simplest, yet not trivial, example of iterative kernel. In its simple form it contains the features relevant to the performance for a large class of iterators\\-: i) stranded memory access and ii) low number of floating point operations per memory reference. \\hypertarget{index_Results}{}\\section{Results}\\label{index_Results}$/;"	s
+Todo List	latex/refman.tex	/^\\label{index}\\hypertarget{index}{}\\input{index}$/;"	c
+commands	jacobi_opencl.h	/^  cl_command_queue commands;      \/**< Compute command queue *\/$/;"	m	struct:OpenCLInstance	access:public
+commands	latex/struct_open_c_l_instance.tex	/^\\index{commands@{commands}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+context	jacobi_opencl.h	/^  cl_context       context;       \/**< Compute context *\/$/;"	m	struct:OpenCLInstance	access:public
+context	latex/struct_open_c_l_instance.tex	/^\\index{context@{context}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+d _ u1	latex/struct_open_c_l_instance.tex	/^\\index{d\\-\\_\\-u1@{d\\-\\_\\-u1}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+d _ u2	latex/struct_open_c_l_instance.tex	/^\\index{d\\-\\_\\-u2@{d\\-\\_\\-u2}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+d_u1	jacobi_opencl.h	/^  cl_mem d_u1;                     \/**< Device memory used for the input unknown 1 vector *\/$/;"	m	struct:OpenCLInstance	access:public
+d_u2	jacobi_opencl.h	/^  cl_mem d_u2;                     \/**< Device memory used for the input  unknown 2 vector *\/$/;"	m	struct:OpenCLInstance	access:public
+device _ id	latex/struct_open_c_l_instance.tex	/^\\index{device\\-\\_\\-id@{device\\-\\_\\-id}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+device_id	jacobi_opencl.h	/^  cl_device_id     device_id;     \/**< Compute device id *\/$/;"	m	struct:OpenCLInstance	access:public
+err_code	jacobi_opencl.c	/^char* err_code (cl_int);$/;"	p	file:
+jacobi _ ocl	latex/struct_open_c_l_instance.tex	/^\\index{jacobi\\-\\_\\-ocl@{jacobi\\-\\_\\-ocl}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+jacobi _ opencl c File Reference	latex/jacobi__opencl_8c.tex	/^\\hypertarget{jacobi__opencl_8c}{\\section{jacobi\\-\\_\\-opencl.\\-c File Reference}$/;"	s
+jacobi _ opencl h File Reference	latex/jacobi__opencl_8h.tex	/^\\hypertarget{jacobi__opencl_8h}{\\section{jacobi\\-\\_\\-opencl.\\-h File Reference}$/;"	s
+jacobi _ relaxation _ ocl cl File Reference	latex/jacobi__relaxation__ocl_8cl.tex	/^\\hypertarget{jacobi__relaxation__ocl_8cl}{\\section{jacobi\\-\\_\\-relaxation\\-\\_\\-ocl.\\-cl File Reference}$/;"	s
+jacobi_ocl	jacobi_opencl.h	/^  cl_kernel        jacobi_ocl;    \/**< Compute kernel *\/$/;"	m	struct:OpenCLInstance	access:public
+latex_count	latex/Makefile	/^	latex_count=8 ; \\$/;"	m
+output_device_info	jacobi_opencl.c	/^extern int output_device_info(cl_device_id );$/;"	p	file:
+program	jacobi_opencl.h	/^  cl_program       program;       \/**< Compute program *\/$/;"	m	struct:OpenCLInstance	access:public
+program	latex/struct_open_c_l_instance.tex	/^\\index{program@{program}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+x Dim	latex/struct_open_c_l_instance.tex	/^\\index{x\\-Dim@{x\\-Dim}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+xDim	jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+y Dim	latex/struct_open_c_l_instance.tex	/^\\index{y\\-Dim@{y\\-Dim}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+yDim	jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+z Dim	latex/struct_open_c_l_instance.tex	/^\\index{z\\-Dim@{z\\-Dim}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+zDim	jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public

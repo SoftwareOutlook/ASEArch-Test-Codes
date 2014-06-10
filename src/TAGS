@@ -1,0 +1,330 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+BASELINE_KERNEL	jacobi_c.h	/^#define BASELINE_KERNEL /;"	d
+BLOCKED_KERNEL	jacobi_c.h	/^#define BLOCKED_KERNEL /;"	d
+BOTTOM	comm_mpi_c.c	/^#define BOTTOM /;"	d	file:
+Blocked_laplace3d	kernels_c.c	/^static void Blocked_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, Real* u1, Real* u2) $/;"	f	file:	signature:(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, Real* u1, Real* u2)
+Blocked_laplace3d	kernels_c.c	/^static void Blocked_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, Real* u1, Real* u2);$/;"	p	file:	signature:(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, Real* u1, Real* u2)
+CCO_KERNEL	jacobi_c.h	/^#define CCO_KERNEL /;"	d
+CudaDeviceInit	gpu_laplace3d_wrapper.h	/^void CudaDeviceInit();$/;"	p	signature:()
+DEVICE	OpenCL/jacobi_opencl.c	/^#define DEVICE /;"	d	file:
+Data Fields	OpenCL/latex/struct_open_c_l_instance.tex	/^{\\ttfamily \\#include $<$jacobi\\-\\_\\-opencl.\\-h$>$}$/;"	b
+Data Structure Documentation	OpenCL/latex/refman.tex	/^\\input{files}$/;"	c
+Data Structure Index	OpenCL/latex/refman.tex	/^\\input{todo}$/;"	c
+Data Structures	OpenCL/latex/annotated.tex	/^\\section{Data Structures}$/;"	s
+Detailed Description	OpenCL/latex/struct_open_c_l_instance.tex	/^\\end{DoxyCompactItemize}$/;"	b
+EAST	comm_mpi_c.c	/^#define EAST /;"	d	file:
+Field Documentation	OpenCL/latex/struct_open_c_l_instance.tex	/^Definition at line 37 of file jacobi\\-\\_\\-opencl.\\-h.$/;"	b
+File Documentation	OpenCL/latex/refman.tex	/^\\input{struct_open_c_l_instance}$/;"	c
+File Index	OpenCL/latex/refman.tex	/^\\input{annotated}$/;"	c
+File List	OpenCL/latex/files.tex	/^\\section{File List}$/;"	s
+GPU_BANDWIDTH_KERNEL	jacobi_c.h	/^#define GPU_BANDWIDTH_KERNEL /;"	d
+GPU_BASE_KERNEL	jacobi_c.h	/^#define GPU_BASE_KERNEL /;"	d
+GPU_Blocked_Laplace3d	gpu_laplace3d_wrapper.h	/^void GPU_Blocked_Laplace3d(Real* dev1, Real* dev2,int NX,int NY,int NZ,int BX,int BY,int BZ);$/;"	p	signature:(Real* dev1, Real* dev2,int NX,int NY,int NZ,int BX,int BY,int BZ)
+GPU_MM_KERNEL	jacobi_c.h	/^#define GPU_MM_KERNEL /;"	d
+GPU_SHM_KERNEL	jacobi_c.h	/^#define GPU_SHM_KERNEL /;"	d
+GPU_Titanium_Laplace3d	gpu_laplace3d_wrapper.h	/^void GPU_Titanium_Laplace3d(Real* dev1, Real* dev2,int NX, int NY, int NZ,const int* gridparams,float* kernelTimer);$/;"	p	signature:(Real* dev1, Real* dev2,int NX, int NY, int NZ,const int* gridparams,float* kernelTimer)
+GPU_Titanium_Shmem	gpu_laplace3d_wrapper.h	/^void GPU_Titanium_Shmem(Real* dev1, Real* dev2, int NX, int NY, int NZ,float* kernelTimer);$/;"	p	signature:(Real* dev1, Real* dev2, int NX, int NY, int NZ,float* kernelTimer)
+Gold_laplace3d	kernels_c.c	/^static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2) $/;"	f	file:	signature:(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2)
+Gold_laplace3d	kernels_c.c	/^static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2);$/;"	p	file:	signature:(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2)
+IN	comm_mpi_c.h	/^#define IN /;"	d
+Introduction	OpenCL/latex/index.tex	/^This is the Open\\-C\\-L version of J\\-T\\-C extra stuff \\hypertarget{index_Introduction}{}\\section{Introduction}\\label{index_Introduction}$/;"	s
+JTC_VERSION	jacobi_c.h	/^#define JTC_VERSION /;"	d
+LAPLACE3D_GPU_h	gpu_laplace3d_wrapper.h	/^#define LAPLACE3D_GPU_h$/;"	d
+MAX	jacobi_c.h	/^#define MAX(/;"	d
+MIN	jacobi_c.h	/^#define MIN(/;"	d
+Main Page	OpenCL/latex/refman.tex	/^\\hypersetup{pageanchor=true}$/;"	c
+NORTH	comm_mpi_c.c	/^#define NORTH /;"	d	file:
+NO_UPDATE	comm_mpi_c.h	/^#define NO_UPDATE /;"	d
+NstdvTime	homb_f90.f90	/^    maxTime = 0.d0 , stdvTime = 0.0d0, NstdvTime /;"	v	program:main
+OCLInst	OpenCL/jacobi_opencl.c	/^static struct OpenCLInstance OCLInst;$/;"	v	typeref:struct:OpenCLInstance	file:
+OPENCL_JACOBI	OpenCL/jacobi_opencl.h	/^#define  OPENCL_JACOBI$/;"	d
+OPTBASE_KERNEL	jacobi_c.h	/^#define OPTBASE_KERNEL /;"	d
+OUT	comm_mpi_c.h	/^#define OUT /;"	d
+Open C L Instance Struct Reference	OpenCL/latex/struct_open_c_l_instance.tex	/^\\hypertarget{struct_open_c_l_instance}{\\section{Open\\-C\\-L\\-Instance Struct Reference}$/;"	s
+OpenCLInstance	OpenCL/jacobi_opencl.h	/^struct OpenCLInstance{$/;"	s
+OpenCLInstance::commands	OpenCL/jacobi_opencl.h	/^  cl_command_queue commands;      \/**< Compute command queue *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::context	OpenCL/jacobi_opencl.h	/^  cl_context       context;       \/**< Compute context *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::d_u1	OpenCL/jacobi_opencl.h	/^  cl_mem d_u1;                     \/**< Device memory used for the input unknown 1 vector *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::d_u2	OpenCL/jacobi_opencl.h	/^  cl_mem d_u2;                     \/**< Device memory used for the input  unknown 2 vector *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::device_id	OpenCL/jacobi_opencl.h	/^  cl_device_id     device_id;     \/**< Compute device id *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::jacobi_ocl	OpenCL/jacobi_opencl.h	/^  cl_kernel        jacobi_ocl;    \/**< Compute kernel *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::program	OpenCL/jacobi_opencl.h	/^  cl_program       program;       \/**< Compute program *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::xDim	OpenCL/jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::yDim	OpenCL/jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCLInstance::zDim	OpenCL/jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+OpenCL_Jacobi	OpenCL/jacobi_opencl.c	/^void OpenCL_Jacobi(int Nx, int Ny, int Nx, Real *unknown){$/;"	f	signature:(int Nx, int Ny, int Nx, Real *unknown)
+OpenCL_Jacobi	OpenCL/jacobi_opencl.h	/^void OpenCL_Jacobi(int Nx, int Ny, int Nx, Real *unknown);$/;"	p	signature:(int Nx, int Ny, int Nx, Real *unknown)
+OpenCL_Jacobi_Iteration	OpenCL/jacobi_opencl.c	/^void OpenCL_Jacobi_Iteration(int maxIters, int convergenceIters){$/;"	f	signature:(int maxIters, int convergenceIters)
+OpenCL_Jacobi_Iteration	OpenCL/jacobi_opencl.h	/^void OpenCL_Jacobi_Iteration(int maxIters, int convergenceIters);$/;"	p	signature:(int maxIters, int convergenceIters)
+PI	jacobi_c.h	/^#define PI /;"	d
+REAL_MPI	jacobi_c.h	/^    #define REAL_MPI /;"	d
+ROOT	functions_f90.f90	/^  integer, parameter :: ROOT /;"	v	module:functions
+ROOT	jacobi_c.h	/^#define ROOT /;"	d
+Real	jacobi_c.h	/^typedef double Real;$/;"	t
+Real	jacobi_c.h	/^typedef float Real;$/;"	t
+Results	OpenCL/latex/index.tex	/^The rapid development of parallel hardware in the last decade requires a constant evaluation of the parallel algoritms used in large scale scientific applications . Iterative kernels are essential components of iterative solvers which are the preferred technique in a variety of large scale problems. Jacobi iteration for the second order discretisation of the Laplacian $ 3D$ operator\\-: \\begin{equation} u^{(new)}_{i,j,k}=\\frac{1}{6}(u^{(old)}_{i-1,j,k}+ u^{(old)}_{i+1,j,k}+u^{(old)}_{i,j-1,k}+ u^{(old)}_{i,j+1,k}+u^{(old)}_{i,j,k-1}+u^{(old)}_{i,j,k+1}) \\ , \\end{equation} is the one of the simplest, yet not trivial, example of iterative kernel. In its simple form it contains the features relevant to the performance for a large class of iterators\\-: i) stranded memory access and ii) low number of floating point operations per memory reference. \\hypertarget{index_Results}{}\\section{Results}\\label{index_Results}$/;"	s
+SOUTH	comm_mpi_c.c	/^#define SOUTH /;"	d	file:
+TOP	comm_mpi_c.c	/^#define TOP /;"	d	file:
+Titanium_laplace3d	kernels_c.c	/^static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2) $/;"	f	file:	signature:(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2)
+Titanium_laplace3d	kernels_c.c	/^static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2);$/;"	p	file:	signature:(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2)
+Todo List	OpenCL/latex/refman.tex	/^\\label{index}\\hypertarget{index}{}\\input{index}$/;"	c
+UPDATE	comm_mpi_c.h	/^#define UPDATE /;"	d
+WAVE_DIAGONAL_KERNEL	jacobi_c.h	/^#define WAVE_DIAGONAL_KERNEL	/;"	d
+WAVE_KERNEL	jacobi_c.h	/^#define WAVE_KERNEL /;"	d
+WEST	comm_mpi_c.c	/^#define WEST /;"	d	file:
+Wave_diagonal_laplace3d	kernels_c.c	/^static void Wave_diagonal_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, Real* u1, Real* u2) $/;"	f	file:	signature:(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, Real* u1, Real* u2)
+Wave_laplace3d	kernels_c.c	/^static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, int threads_per_column, Real* u1, Real* u2) $/;"	f	file:	signature:(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, int threads_per_column, Real* u1, Real* u2)
+Wave_laplace3d	kernels_c.c	/^static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, int threads_per_column, Real* u1, Real* u2);$/;"	p	file:	signature:(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, int threads_per_column, Real* u1, Real* u2)
+__cudaCheckMsg	cutil_inline.h	/^inline void __cudaCheckMsg(const char *errorMessage,$/;"	f	signature:(const char *errorMessage, const char *file, const int line)
+__cudaSafeCall	cutil_inline.h	/^inline void __cudaSafeCall(cudaError_t err,$/;"	f	signature:(cudaError_t err, const char *file, const int line)
+bt_tag	comm_mpi_c.c	/^static const int ns_tag = 221, sn_tag=222, we_tag = 231, ew_tag=232, bt_tag = 241, tb_tag=242;$/;"	v	file:
+bt_tag	functions_f90.f90	/^                        we_tag = 231, ew_tag=232, &$/;"	v	module:functions
+buffer_halo_transfers	comm_mpi_c.c	/^void buffer_halo_transfers(const struct grid_info_t *g, int dir, int update){$/;"	f	signature:(const struct grid_info_t *g, int dir, int update)
+buffer_halo_transfers	comm_mpi_c.h	/^void buffer_halo_transfers(const struct grid_info_t *g, int dir, int update);$/;"	p	signature:(const struct grid_info_t *g, int dir, int update)
+buffs_halos_transfers	functions_f90.f90	/^     subroutine buffs_halos_transfers(/;"	s	subroutine:jacobi_smoother
+buffs_halos_transfers	functions_f90.f90	/^     subroutine buffs_halos_transfers(/;"	s	subroutine:jacobi_smoother_cco
+calcGpuDims	gpu_laplace3d_wrapper.h	/^void calcGpuDims(int kernel_key, int blockXsize, int blockYsize, int blockZsize, int NX, int NY, int NZ, int* gridsize);$/;"	p	signature:(int kernel_key, int blockXsize, int blockYsize, int blockZsize, int NX, int NY, int NZ, int* gridsize)
+cco_laplace3d	kernels_c.c	/^static void cco_laplace3d(const struct grid_info_t *g, int iteration);$/;"	p	file:	signature:(const struct grid_info_t *g, int iteration)
+cco_laplace3d	kernels_c.c	/^static void cco_laplace3d(const struct grid_info_t *g, int iteration){$/;"	f	file:	signature:(const struct grid_info_t *g, int iteration)
+check_norm	functions_f90.f90	/^   subroutine check_norm(/;"	s	module:functions
+check_norm	utils_c.c	/^void check_norm(const struct grid_info_t *g, int irun, double norm){$/;"	f	signature:(const struct grid_info_t *g, int irun, double norm)
+check_norm	utils_c.h	/^void check_norm(const struct grid_info_t *g, int iter, double norm);$/;"	p	signature:(const struct grid_info_t *g, int iter, double norm)
+comm	jacobi_c.h	/^  MPI_Comm comm;$/;"	m	struct:grid_info_t	access:public
+comm	jacobi_c.h	/^  double comp, comm;$/;"	m	struct:times_t	access:public
+commands	OpenCL/jacobi_opencl.h	/^  cl_command_queue commands;      \/**< Compute command queue *\/$/;"	m	struct:OpenCLInstance	access:public
+commands	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{commands@{commands}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+comp	jacobi_c.h	/^  double comp, comm;$/;"	m	struct:times_t	access:public
+compute_local_grid_ranges	comm_mpi_c.c	/^void compute_local_grid_ranges( struct grid_info_t * g ){$/;"	f	signature:( struct grid_info_t * g )
+compute_local_grid_ranges	comm_mpi_c.h	/^void compute_local_grid_ranges( struct grid_info_t * g );$/;"	p	signature:( struct grid_info_t * g )
+compute_local_grid_ranges	functions_f90.f90	/^     subroutine compute_local_grid_ranges$/;"	s	subroutine:setPEsParams
+context	OpenCL/jacobi_opencl.h	/^  cl_context       context;       \/**< Compute context *\/$/;"	m	struct:OpenCLInstance	access:public
+context	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{context@{context}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+coords	functions_f90.f90	/^  integer, private :: grid_comm, dims(3), coords(/;"	v	module:functions
+cp	jacobi_c.h	/^  int cp[3]; \/\/ grid coordinated of this ranks$/;"	m	struct:grid_info_t	access:public
+cudaCheckMsg	cutil_inline.h	/^#define cudaCheckMsg(/;"	d
+cudaSafeCall	cutil_inline.h	/^#define cudaSafeCall(/;"	d
+cutilDeviceInit	cutil_inline.h	/^inline void cutilDeviceInit() {$/;"	f	signature:()
+d _ u1	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{d\\-\\_\\-u1@{d\\-\\_\\-u1}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+d _ u2	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{d\\-\\_\\-u2@{d\\-\\_\\-u2}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+d_foo	utils_c.c	/^Real *d_u1, *d_u2, *d_foo;$/;"	v
+d_u1	OpenCL/jacobi_opencl.h	/^  cl_mem d_u1;                     \/**< Device memory used for the input unknown 1 vector *\/$/;"	m	struct:OpenCLInstance	access:public
+d_u1	utils_c.c	/^Real *d_u1, *d_u2, *d_foo;$/;"	v
+d_u2	OpenCL/jacobi_opencl.h	/^  cl_mem d_u2;                     \/**< Device memory used for the input  unknown 2 vector *\/$/;"	m	struct:OpenCLInstance	access:public
+d_u2	utils_c.c	/^Real *d_u1, *d_u2, *d_foo;$/;"	v
+device _ id	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{device\\-\\_\\-id@{device\\-\\_\\-id}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+device_id	OpenCL/jacobi_opencl.h	/^  cl_device_id     device_id;     \/**< Compute device id *\/$/;"	m	struct:OpenCLInstance	access:public
+dims	functions_f90.f90	/^  integer, private :: grid_comm, dims(/;"	v	module:functions
+endTime	homb_f90.f90	/^  real(kind(0.d0)) :: startTime, endTime$/;"	v	program:main
+err_code	OpenCL/jacobi_opencl.c	/^char* err_code (cl_int);$/;"	p	file:
+error_abort	utils_c.c	/^void error_abort( const char *s1, const char *s2){$/;"	f	signature:( const char *s1, const char *s2)
+error_abort	utils_c.h	/^void error_abort(const char *s1, const char *s2);$/;"	p	signature:(const char *s1, const char *s2)
+ew_tag	comm_mpi_c.c	/^static const int ns_tag = 221, sn_tag=222, we_tag = 231, ew_tag=232, bt_tag = 241, tb_tag=242;$/;"	v	file:
+ew_tag	functions_f90.f90	/^                        we_tag = 231, ew_tag=/;"	v	module:functions
+ex	functions_f90.f90	/^           sx, ex,/;"	v	module:functions
+ex	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+exchange_halos	comm_mpi_c.c	/^void exchange_halos(const struct grid_info_t *g){$/;"	f	signature:(const struct grid_info_t *g)
+exchange_halos	comm_mpi_c.h	/^void exchange_halos(const struct grid_info_t *g);$/;"	p	signature:(const struct grid_info_t *g)
+exchange_halos	functions_f90.f90	/^     subroutine exchange_halos$/;"	s	subroutine:jacobi_smoother
+exchange_halos	functions_f90.f90	/^     subroutine exchange_halos$/;"	s	subroutine:jacobi_smoother_cco
+ey	functions_f90.f90	/^           sx, ex, sy, ey,/;"	v	module:functions
+ey	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+ez	functions_f90.f90	/^           sx, ex, sy, ey, sz, ez,/;"	v	module:functions
+ez	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+freeDeviceMemory	utils_c.c	/^void freeDeviceMemory(){$/;"	f
+freeDeviceMemory	utils_c.h	/^void freeDeviceMemory();$/;"	p	signature:()
+functions	functions_f90.f90	/^module functions$/;"	m
+getUpdatedArray	gpu_laplace3d_wrapper.h	/^void getUpdatedArray(float* host,float* dev,int NX,int NY,int NZ,float* memoryTimer,int* memoryCtr);$/;"	p	signature:(float* host,float* dev,int NX,int NY,int NZ,float* memoryTimer,int* memoryCtr)
+gnorm	homb_f90.f90	/^  real(wp) norm, gnorm$/;"	v	program:main
+gpuflag	jacobi_c.h	/^  int gpuflag; \/\/gpu flag$/;"	m	struct:grid_info_t	access:public
+grid_comm	functions_f90.f90	/^  integer, private :: grid_comm,/;"	v	module:functions
+grid_info_t	jacobi_c.h	/^struct grid_info_t$/;"	s
+grid_info_t::comm	jacobi_c.h	/^  MPI_Comm comm;$/;"	m	struct:grid_info_t	access:public
+grid_info_t::cp	jacobi_c.h	/^  int cp[3]; \/\/ grid coordinated of this ranks$/;"	m	struct:grid_info_t	access:public
+grid_info_t::ex	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+grid_info_t::ey	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+grid_info_t::ez	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+grid_info_t::gpuflag	jacobi_c.h	/^  int gpuflag; \/\/gpu flag$/;"	m	struct:grid_info_t	access:public
+grid_info_t::kernelTimer	jacobi_c.h	/^  float kernelTimer;$/;"	m	struct:grid_info_t	access:public
+grid_info_t::key	jacobi_c.h	/^  int key;	\/\/ kernel identifier$/;"	m	struct:grid_info_t	access:public
+grid_info_t::malign	jacobi_c.h	/^  int malign; \/\/ allocate aligned memory to help vectorization$/;"	m	struct:grid_info_t	access:public
+grid_info_t::memoryCtr	jacobi_c.h	/^  int memoryCtr;$/;"	m	struct:grid_info_t	access:public
+grid_info_t::memoryTimer	jacobi_c.h	/^  float memoryTimer;$/;"	m	struct:grid_info_t	access:public
+grid_info_t::myrank	jacobi_c.h	/^  int nproc, myrank; \/\/ MPI rank$/;"	m	struct:grid_info_t	access:public
+grid_info_t::nb	jacobi_c.h	/^  int ng[3], nb[3]; \/\/ global grid and computational blocks$/;"	m	struct:grid_info_t	access:public
+grid_info_t::ng	jacobi_c.h	/^  int ng[3], nb[3]; \/\/ global grid and computational blocks$/;"	m	struct:grid_info_t	access:public
+grid_info_t::nlx	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+grid_info_t::nly	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+grid_info_t::nlz	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+grid_info_t::np	jacobi_c.h	/^  int np[3]; \/\/ MPI topology size$/;"	m	struct:grid_info_t	access:public
+grid_info_t::nproc	jacobi_c.h	/^  int nproc, myrank; \/\/ MPI rank$/;"	m	struct:grid_info_t	access:public
+grid_info_t::nwaves	jacobi_c.h	/^  int nwaves; \/\/ number of waves used in time skwed algorithm$/;"	m	struct:grid_info_t	access:public
+grid_info_t::sx	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+grid_info_t::sy	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+grid_info_t::sz	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+grid_info_t::threads_per_column	jacobi_c.h	/^  int threads_per_column; \/\/ number of threads per column in wave algorithm$/;"	m	struct:grid_info_t	access:public
+ierr	homb_f90.f90	/^  integer  iter, ierr,/;"	v	program:main
+initContext	functions_f90.f90	/^   subroutine initContext$/;"	s	module:functions
+initContext	utils_c.c	/^void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_key){$/;"	f	signature:(int argc, char *argv[], struct grid_info_t * grid, int *kernel_key)
+initContext	utils_c.h	/^void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_key);$/;"	p	signature:(int argc, char *argv[], struct grid_info_t * grid, int *kernel_key)
+initial_field	functions_f90.f90	/^   subroutine initial_field$/;"	s	module:functions
+initialiseGPUData	utils_c.c	/^void initialiseGPUData(int NX,int NY,int NZ)$/;"	f	signature:(int NX,int NY,int NZ)
+initialiseGPUData	utils_c.h	/^void initialiseGPUData(int NX,int NY,int NZ);$/;"	p	signature:(int NX,int NY,int NZ)
+initialise_grid	utils_c.c	/^void initialise_grid( const struct grid_info_t *g) {$/;"	f	signature:( const struct grid_info_t *g)
+initialise_grid	utils_c.h	/^void initialise_grid( const struct grid_info_t *g);$/;"	p	signature:( const struct grid_info_t *g)
+inv6	functions_f90.f90	/^  real(wp), parameter :: pi = 4.0_wp*atan(1.0_wp), inv6 /;"	v	module:functions
+istat	homb_f90.f90	/^  integer  iter, ierr, istat$/;"	v	program:main
+iter	homb_f90.f90	/^  integer  iter,/;"	v	program:main
+jacobi _ ocl	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{jacobi\\-\\_\\-ocl@{jacobi\\-\\_\\-ocl}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+jacobi _ opencl c File Reference	OpenCL/latex/jacobi__opencl_8c.tex	/^\\hypertarget{jacobi__opencl_8c}{\\section{jacobi\\-\\_\\-opencl.\\-c File Reference}$/;"	s
+jacobi _ opencl h File Reference	OpenCL/latex/jacobi__opencl_8h.tex	/^\\hypertarget{jacobi__opencl_8h}{\\section{jacobi\\-\\_\\-opencl.\\-h File Reference}$/;"	s
+jacobi _ relaxation _ ocl cl File Reference	OpenCL/latex/jacobi__relaxation__ocl_8cl.tex	/^\\hypertarget{jacobi__relaxation__ocl_8cl}{\\section{jacobi\\-\\_\\-relaxation\\-\\_\\-ocl.\\-cl File Reference}$/;"	s
+jacobi_ocl	OpenCL/jacobi_opencl.h	/^  cl_kernel        jacobi_ocl;    \/**< Compute kernel *\/$/;"	m	struct:OpenCLInstance	access:public
+jacobi_smoother	functions_f90.f90	/^   subroutine jacobi_smoother(/;"	s	module:functions
+jacobi_smoother_cco	functions_f90.f90	/^   subroutine jacobi_smoother_cco(/;"	s	module:functions
+kernelTimer	jacobi_c.h	/^  float kernelTimer;$/;"	m	struct:grid_info_t	access:public
+key	jacobi_c.h	/^  int key;	\/\/ kernel identifier$/;"	m	struct:grid_info_t	access:public
+kx	functions_f90.f90	/^  real(wp) :: kx /;"	v	module:functions
+kx	utils_c.c	/^static Real kx=1.0, ky=1.0, kz=1.0;$/;"	v	file:
+ky	functions_f90.f90	/^  real(wp) :: kx = 1.0_wp, ky /;"	v	module:functions
+ky	utils_c.c	/^static Real kx=1.0, ky=1.0, kz=1.0;$/;"	v	file:
+kz	functions_f90.f90	/^  real(wp) :: kx = 1.0_wp, ky = 1.0_wp, kz /;"	v	module:functions
+kz	utils_c.c	/^static Real kx=1.0, ky=1.0, kz=1.0;$/;"	v	file:
+laplace3d	kernels_c.c	/^void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp, double *tcomm){$/;"	f	signature:(const struct grid_info_t *g, const int kernel_key, double *tcomp, double *tcomm)
+laplace3d	kernels_c.h	/^void laplace3d(const struct grid_info_t *g, int kernel_key, double *tstart, double *tend);$/;"	p	signature:(const struct grid_info_t *g, int kernel_key, double *tstart, double *tend)
+laplace3d_GPU	gpu_laplace3d_wrapper.h	/^void laplace3d_GPU(const int kernel_key, Real* uOld,int NX,int NY,int NZ,const int* gridparams, int iteration_block, float *compTime, float *commTime);$/;"	p	signature:(const int kernel_key, Real* uOld,int NX,int NY,int NZ,const int* gridparams, int iteration_block, float *compTime, float *commTime)
+latex_count	OpenCL/latex/Makefile	/^	latex_count=8 ; \\$/;"	m
+local_norm	utils_c.c	/^double local_norm(const struct grid_info_t *g){$/;"	f	signature:(const struct grid_info_t *g)
+local_norm	utils_c.h	/^double local_norm(const struct grid_info_t *g);$/;"	p	signature:(const struct grid_info_t *g)
+main	homb_f90.f90	/^program main /;"	p
+main	jacobi_c.c	/^int main(int argc, char *argv[]) {$/;"	f	signature:(int argc, char *argv[])
+malign	jacobi_c.h	/^  int malign; \/\/ allocate aligned memory to help vectorization$/;"	m	struct:grid_info_t	access:public
+maxTime	homb_f90.f90	/^  real(kind(0.d0)) :: meanTime = 0.0d0, minTime = huge(0.d0), &$/;"	v	program:main
+meanTime	homb_f90.f90	/^  real(kind(0.d0)) :: meanTime /;"	v	program:main
+memoryCtr	jacobi_c.h	/^  int memoryCtr;$/;"	m	struct:grid_info_t	access:public
+memoryTimer	jacobi_c.h	/^  float memoryTimer;$/;"	m	struct:grid_info_t	access:public
+minTime	homb_f90.f90	/^  real(kind(0.d0)) :: meanTime = 0.0d0, minTime /;"	v	program:main
+my_wtime	utils_c.c	/^double my_wtime(){$/;"	f
+my_wtime	utils_c.h	/^double my_wtime();$/;"	p	signature:()
+myrank	functions_f90.f90	/^integer myrank,/;"	v	module:functions
+myrank	jacobi_c.h	/^  int nproc, myrank; \/\/ MPI rank$/;"	m	struct:grid_info_t	access:public
+nb	jacobi_c.h	/^  int ng[3], nb[3]; \/\/ global grid and computational blocks$/;"	m	struct:grid_info_t	access:public
+ng	jacobi_c.h	/^  int ng[3], nb[3]; \/\/ global grid and computational blocks$/;"	m	struct:grid_info_t	access:public
+ngb_b	comm_mpi_c.c	/^static int ngb_n, ngb_s, ngb_w, ngb_e, ngb_b, ngb_t;$/;"	v	file:
+ngb_b	functions_f90.f90	/^  integer, private :: ngb_n, ngb_s, ngb_w, ngb_e, ngb_b,/;"	v	module:functions
+ngb_e	comm_mpi_c.c	/^static int ngb_n, ngb_s, ngb_w, ngb_e, ngb_b, ngb_t;$/;"	v	file:
+ngb_e	functions_f90.f90	/^  integer, private :: ngb_n, ngb_s, ngb_w, ngb_e,/;"	v	module:functions
+ngb_n	comm_mpi_c.c	/^static int ngb_n, ngb_s, ngb_w, ngb_e, ngb_b, ngb_t;$/;"	v	file:
+ngb_n	functions_f90.f90	/^  integer, private :: ngb_n,/;"	v	module:functions
+ngb_s	comm_mpi_c.c	/^static int ngb_n, ngb_s, ngb_w, ngb_e, ngb_b, ngb_t;$/;"	v	file:
+ngb_s	functions_f90.f90	/^  integer, private :: ngb_n, ngb_s,/;"	v	module:functions
+ngb_t	comm_mpi_c.c	/^static int ngb_n, ngb_s, ngb_w, ngb_e, ngb_b, ngb_t;$/;"	v	file:
+ngb_t	functions_f90.f90	/^  integer, private :: ngb_n, ngb_s, ngb_w, ngb_e, ngb_b, ngb_t$/;"	v	module:functions
+ngb_w	comm_mpi_c.c	/^static int ngb_n, ngb_s, ngb_w, ngb_e, ngb_b, ngb_t;$/;"	v	file:
+ngb_w	functions_f90.f90	/^  integer, private :: ngb_n, ngb_s, ngb_w,/;"	v	module:functions
+ngxyz	functions_f90.f90	/^  integer  ngxyz(/;"	v	module:functions
+niter	functions_f90.f90	/^           sx, ex, sy, ey, sz, ez, &$/;"	v	module:functions
+niter	utils_c.c	/^int nruns, niter;$/;"	v
+nlx	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+nly	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+nlz	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+norm	homb_f90.f90	/^  real(wp) norm,/;"	v	program:main
+np	jacobi_c.h	/^  int np[3]; \/\/ MPI topology size$/;"	m	struct:grid_info_t	access:public
+nproc	functions_f90.f90	/^integer myrank, nproc,/;"	v	module:functions
+nproc	jacobi_c.h	/^  int nproc, myrank; \/\/ MPI rank$/;"	m	struct:grid_info_t	access:public
+npxyz	functions_f90.f90	/^  integer  ngxyz(3), npxyz(/;"	v	module:functions
+nruns	utils_c.c	/^int nruns, niter;$/;"	v
+ns_tag	comm_mpi_c.c	/^static const int ns_tag = 221, sn_tag=222, we_tag = 231, ew_tag=232, bt_tag = 241, tb_tag=242;$/;"	v	file:
+ns_tag	functions_f90.f90	/^  integer, private, parameter :: ns_tag /;"	v	module:functions
+nthreads	functions_f90.f90	/^integer myrank, nproc, nthreads$/;"	v	module:functions
+nthreads	utils_c.c	/^int nthreads;$/;"	v
+nwaves	jacobi_c.h	/^  int nwaves; \/\/ number of waves used in time skwed algorithm$/;"	m	struct:grid_info_t	access:public
+output_device_info	OpenCL/jacobi_opencl.c	/^extern int output_device_info(cl_device_id );$/;"	p	file:
+pContext	functions_f90.f90	/^logical vOut, test_computation, pHeader, pContext /;"	v	module:functions
+pContext	utils_c.c	/^int pContext, testComputation; $/;"	v
+pHeader	functions_f90.f90	/^logical vOut, test_computation, pHeader,/;"	v	module:functions
+pHeader	utils_c.c	/^static int vOut, pHeader;$/;"	v	file:
+pi	functions_f90.f90	/^  real(wp), parameter :: pi /;"	v	module:functions
+post_recv	comm_mpi_c.c	/^void post_recv(const struct grid_info_t *g){$/;"	f	signature:(const struct grid_info_t *g)
+post_recv	comm_mpi_c.h	/^void post_recv(const struct grid_info_t *g);$/;"	p	signature:(const struct grid_info_t *g)
+post_recv	functions_f90.f90	/^     subroutine post_recv$/;"	s	subroutine:jacobi_smoother
+post_recv	functions_f90.f90	/^     subroutine post_recv$/;"	s	subroutine:jacobi_smoother_cco
+post_send	comm_mpi_c.c	/^void post_send(const struct grid_info_t *g){$/;"	f	signature:(const struct grid_info_t *g)
+post_send	comm_mpi_c.h	/^void post_send(const struct grid_info_t *g);$/;"	p	signature:(const struct grid_info_t *g)
+printContext	functions_f90.f90	/^   subroutine printContext /;"	s	module:functions
+printContext	utils_c.c	/^void printContext(const struct grid_info_t *g, int kernel_key){$/;"	f	signature:(const struct grid_info_t *g, int kernel_key)
+printContext	utils_c.h	/^void printContext(const struct grid_info_t *g, int kernel_key);$/;"	p	signature:(const struct grid_info_t *g, int kernel_key)
+print_help	utils_c.c	/^static void print_help( const struct grid_info_t *g, const char *s){$/;"	f	file:	signature:( const struct grid_info_t *g, const char *s)
+print_help	utils_c.c	/^static void print_help(const struct grid_info_t *g, const char *s);$/;"	p	file:	signature:(const struct grid_info_t *g, const char *s)
+program	OpenCL/jacobi_opencl.h	/^  cl_program       program;       \/**< Compute program *\/$/;"	m	struct:OpenCLInstance	access:public
+program	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{program@{program}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+provided_mpi_safety	homb_f90.f90	/^  integer provided_mpi_safety$/;"	v	program:main
+rbuff_bt	comm_mpi_c.c	/^static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;$/;"	v	file:
+rbuff_ns	comm_mpi_c.c	/^static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;$/;"	v	file:
+rbuff_we	comm_mpi_c.c	/^static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;$/;"	v	file:
+request	comm_mpi_c.c	/^static MPI_Request request[12];$/;"	v	file:
+requested_mpi_safety	homb_f90.f90	/^  integer, parameter :: requested_mpi_safety /;"	v	program:main
+sbuff_bt	comm_mpi_c.c	/^static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;$/;"	v	file:
+sbuff_ns	comm_mpi_c.c	/^static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;$/;"	v	file:
+sbuff_we	comm_mpi_c.c	/^static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;$/;"	v	file:
+setInitialData	gpu_laplace3d_wrapper.h	/^void setInitialData(float* device,float* host,int NX,int NY,int NZ,float* memoryTimer,int* memoryCtr);$/;"	p	signature:(float* device,float* host,int NX,int NY,int NZ,float* memoryTimer,int* memoryCtr)
+setPEsParams	functions_f90.f90	/^ subroutine setPEsParams /;"	s	module:functions
+setPEsParams	utils_c.c	/^void setPEsParams(struct grid_info_t *g, int kernel_key) {$/;"	f	signature:(struct grid_info_t *g, int kernel_key)
+setPEsParams	utils_c.h	/^void setPEsParams(struct grid_info_t *g, int kernel_key);$/;"	p	signature:(struct grid_info_t *g, int kernel_key)
+sides_buff	comm_mpi_c.c	/^static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;$/;"	v	file:
+sixth	kernels_c.c	/^static const Real sixth=1.0\/6.0;$/;"	v	file:
+sn_tag	comm_mpi_c.c	/^static const int ns_tag = 221, sn_tag=222, we_tag = 231, ew_tag=232, bt_tag = 241, tb_tag=242;$/;"	v	file:
+sn_tag	functions_f90.f90	/^  integer, private, parameter :: ns_tag = 221, sn_tag=/;"	v	module:functions
+startTime	homb_f90.f90	/^  real(kind(0.d0)) :: startTime,/;"	v	program:main
+statistics	functions_f90.f90	/^   subroutine statistics(/;"	s	module:functions
+statistics	utils_c.c	/^void statistics(const struct grid_info_t *g, const struct times_t *times,  $/;"	f	signature:(const struct grid_info_t *g, const struct times_t *times, struct times_t *minTime, struct times_t *meanTime, struct times_t *maxTime)
+statistics	utils_c.h	/^void statistics(const struct grid_info_t *g, const struct times_t *times,  $/;"	p	signature:(const struct grid_info_t *g, const struct times_t *times, struct times_t *minTime, struct times_t *meanTime, struct times_t *maxTime)
+stdoutIO	functions_f90.f90	/^   subroutine stdoutIO(/;"	s	module:functions
+stdoutIO	utils_c.c	/^void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct times_t *times,  $/;"	f	signature:( const struct grid_info_t *g, const int kernel_key, const struct times_t *times, const struct times_t *minTime, const struct times_t *meanTime, const struct times_t *maxTime, double norm)
+stdoutIO	utils_c.h	/^void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct times_t *times,  $/;"	p	signature:( const struct grid_info_t *g, const int kernel_key, const struct times_t *times, const struct times_t *minTime, const struct times_t *meanTime, const struct times_t *maxTime, double norm)
+stdvTime	homb_f90.f90	/^    maxTime = 0.d0 , stdvTime /;"	v	program:main
+stencil_update	kernels_c.c	/^void stencil_update(const struct grid_info_t * g, int s1, int e1, int s2, int e2, int s3, int e3){$/;"	f	signature:(const struct grid_info_t * g, int s1, int e1, int s2, int e2, int s3, int e3)
+stencil_update	kernels_c.h	/^void stencil_update(const struct grid_info_t *grid, int s1, int e1, int s2, int e2, int s3, int e3);$/;"	p	signature:(const struct grid_info_t *grid, int s1, int e1, int s2, int e2, int s3, int e3)
+sx	functions_f90.f90	/^  integer  ngxyz(3), npxyz(3),&$/;"	v	module:functions
+sx	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+sy	functions_f90.f90	/^           sx, ex, sy,/;"	v	module:functions
+sy	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+sz	functions_f90.f90	/^           sx, ex, sy, ey, sz,/;"	v	module:functions
+sz	jacobi_c.h	/^  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz; \/\/ start end indices for local grids ( used with MPI runs)$/;"	m	struct:grid_info_t	access:public
+tb_tag	comm_mpi_c.c	/^static const int ns_tag = 221, sn_tag=222, we_tag = 231, ew_tag=232, bt_tag = 241, tb_tag=242;$/;"	v	file:
+tb_tag	functions_f90.f90	/^                        bt_tag = 241, tb_tag=/;"	v	module:functions
+testComputation	utils_c.c	/^int pContext, testComputation; $/;"	v
+test_computation	functions_f90.f90	/^logical vOut, test_computation,/;"	v	module:functions
+threads_per_column	jacobi_c.h	/^  int threads_per_column; \/\/ number of threads per column in wave algorithm$/;"	m	struct:grid_info_t	access:public
+timeUpdate	functions_f90.f90	/^   subroutine timeUpdate(/;"	s	module:functions
+timeUpdate	utils_c.c	/^void timeUpdate(struct times_t *times){$/;"	f	signature:(struct times_t *times)
+timeUpdate	utils_c.h	/^void timeUpdate(struct times_t *times);$/;"	p	signature:(struct times_t *times)
+times	homb_f90.f90	/^  real(kind(0.d0)),allocatable :: times(/;"	v	program:main
+times_t	jacobi_c.h	/^struct times_t$/;"	s
+times_t::comm	jacobi_c.h	/^  double comp, comm;$/;"	m	struct:times_t	access:public
+times_t::comp	jacobi_c.h	/^  double comp, comm;$/;"	m	struct:times_t	access:public
+transfer_data	comm_mpi_c.c	/^void transfer_data(const struct grid_info_t *g, const int dir, int side);$/;"	p	file:	signature:(const struct grid_info_t *g, const int dir, int side)
+transfer_data	comm_mpi_c.c	/^void transfer_data(const struct grid_info_t *g, const int dir, int side){$/;"	f	signature:(const struct grid_info_t *g, const int dir, int side)
+u	functions_f90.f90	/^real(wp), allocatable :: u(/;"	v	module:functions
+uNew	utils_c.c	/^Real  *udata, *uOld, *uNew;$/;"	v
+uOld	utils_c.c	/^Real  *udata, *uOld, *uNew;$/;"	v
+udata	utils_c.c	/^Real  *udata, *uOld, *uNew;$/;"	v
+uindex	kernels_c.c	/^int uindex(const struct grid_info_t *g, const int i, const int j, const int k){$/;"	f	signature:(const struct grid_info_t *g, const int i, const int j, const int k)
+uindex	kernels_c.h	/^int uindex(const struct grid_info_t *grid, const int i, const int j, const int k);$/;"	p	signature:(const struct grid_info_t *grid, const int i, const int j, const int k)
+use_cco	functions_f90.f90	/^logical use_cco$/;"	v	module:functions
+vOut	functions_f90.f90	/^logical vOut,/;"	v	module:functions
+vOut	utils_c.c	/^static int vOut, pHeader;$/;"	v	file:
+vec_oneD_loop	kernels_c.c	/^static void vec_oneD_loop(const int n, const Real * restrict uNorth, const Real *restrict uSouth, const Real *restrict uWest, $/;"	f	file:	signature:(const int n, const Real * restrict uNorth, const Real *restrict uSouth, const Real *restrict uWest, const Real *restrict uEast, const Real *restrict uBottom, const Real *restrict uTop, Real *restrict w )
+we_tag	comm_mpi_c.c	/^static const int ns_tag = 221, sn_tag=222, we_tag = 231, ew_tag=232, bt_tag = 241, tb_tag=242;$/;"	v	file:
+we_tag	functions_f90.f90	/^  integer, private, parameter :: ns_tag = 221, sn_tag=222, &$/;"	v	module:functions
+wp	functions_f90.f90	/^  integer, parameter :: wp /;"	v	module:functions
+x Dim	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{x\\-Dim@{x\\-Dim}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+xDim	OpenCL/jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+y Dim	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{y\\-Dim@{y\\-Dim}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+yDim	OpenCL/jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public
+z Dim	OpenCL/latex/struct_open_c_l_instance.tex	/^\\index{z\\-Dim@{z\\-Dim}!OpenCLInstance@{Open\\-C\\-L\\-Instance}}$/;"	b
+zDim	OpenCL/jacobi_opencl.h	/^  unsigned int xDim, yDim, zDim; \/**< Grid dimensions *\/$/;"	m	struct:OpenCLInstance	access:public

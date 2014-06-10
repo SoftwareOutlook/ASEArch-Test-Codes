@@ -3,9 +3,10 @@
  * Copyright (C) 2014 Mark Mawson
  *
  * Author: Mark Mawson <mark.mawson@stfc.ac.uk>
- * \todo Include header files to grab typename Real
+ * 
  */
 #include "jacobi_opencl.h"
+#include "../jacobi_c.h"
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -23,18 +24,18 @@
 extern int output_device_info(cl_device_id );
 char* err_code (cl_int);
 
-void OpenCL_Jacobi(int Nx, int Ny, int Nx, int maxIters,Real tolerance, Real *unknown){
-  cl_device_id     device_id;     // compute device id 
-  cl_context       context;       // compute context
-  cl_command_queue commands;      // compute command queue
-  cl_program       program;       // compute program
-  cl_kernel        jacobi_ocl;       // compute kernel
-    
-  cl_mem d_u1;                     // device memory used for the input unknown 1 vector
-  cl_mem d_u2;                     // device memory used for the input  unknown 2 vector
+static struct OpenCLInstance OCLInst;
+
+
+//OpenCL setup code
+void OpenCL_Jacobi(int Nx, int Ny, int Nx, Real *unknown){
+
+  //Initialise an opencl instance
+  OCLInst.xDim=Nx;
+  OCLInst.yDim=Ny;
+  OCLInst.zDim=Nz;
 
   // Set up platform and GPU device
-
   cl_uint numPlatforms;
 
   // Find number of platforms
@@ -57,23 +58,23 @@ void OpenCL_Jacobi(int Nx, int Ny, int Nx, int maxIters,Real tolerance, Real *un
   // Secure a GPU
   for (i = 0; i < numPlatforms; i++)
     {
-      err = clGetDeviceIDs(Platform[i], DEVICE, 1, &device_id, NULL);
+      err = clGetDeviceIDs(Platform[i], DEVICE, 1, &OCLInst.device_id, NULL);
       if (err == CL_SUCCESS)
         {
 	  break;
         }
     }
 
-  if (device_id == NULL)
+  if (OCLInst.device_id == NULL)
     {
       printf("Error: Failed to create a device group!\n%s\n",err_code(err));
       return EXIT_FAILURE;
     }
 
-  err = output_device_info(device_id);
+  err = output_device_info(OCLInst.device_id);
   
   // Create a compute context 
-  context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
+  OCLInst.context = clCreateContext(0, 1, &OCLInst.device_id, NULL, NULL, &err);
   if (!context)
     {
       printf("Error: Failed to create a compute context!\n%s\n", err_code(err));
@@ -81,76 +82,85 @@ void OpenCL_Jacobi(int Nx, int Ny, int Nx, int maxIters,Real tolerance, Real *un
     }
 
   // Create a command queue
-  commands = clCreateCommandQueue(context, device_id, 0, &err);
-  if (!commands)
+  OCLInst.commands = clCreateCommandQueue(OCLInst.context, OCLInst.device_id, 0, &err);
+  if (!OCLInst.commands)
     {
       printf("Error: Failed to create a command commands!\n%s\n", err_code(err));
       return EXIT_FAILURE;
     }
 
-   char *source;
-   const char *sourceFile = "jacobi_relaxation_ocl.cl";
-   // This function reads in the source code of the program
-   source = readSource(sourceFile);
+  char *source;
+  const char *sourceFile = "jacobi_relaxation_ocl.cl";
+  // This function reads in the source code of the program
+  source = readSource(sourceFile);
   // Create the compute program from the source buffer
-  program = clCreateProgramWithSource(context, 1, (const char **) &source, NULL, &err);
-  if (!program)
+  OCLInst.program = OCLInst.clCreateProgramWithSource(OCLInst.context, 1, (const char **) &source, NULL, &err);
+  if (!OCLInst.program)
     {
       printf("Error: Failed to create compute program!\n%s\n", err_code(err));
       return EXIT_FAILURE;
     }
 
   // Build the program  
-  err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+  err = clBuildProgram(OCLInst.program, 0, NULL, NULL, NULL, NULL);
   if (err != CL_SUCCESS)
     {
       size_t len;
       char buffer[2048];
 
       printf("Error: Failed to build program executable!\n%s\n", err_code(err));
-      clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+      clGetProgramBuildInfo(OCLInst.program, OCLInst.device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
       printf("%s\n", buffer);
       return EXIT_FAILURE;
     }
 
   // Create the compute kernel from the program 
-  jacobi_ocl = clCreateKernel(program, "vadd", &err);
-  if (!jacobi_ocl || err != CL_SUCCESS)
+  OCLInst.jacobi_ocl = clCreateKernel(OCLInst.program, "jacobi_relaxation_ocl", &err);
+  if (!OCLInst.jacobi_ocl || err != CL_SUCCESS)
     {
       printf("Error: Failed to create compute kernel!\n%s\n", err_code(err));
       return EXIT_FAILURE;
     }
 
   // Create the input (u1, u2) arrays in device memory
-  d_u1  = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(Real) * count, NULL, NULL);
-  d_u2  = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(Real) * count, NULL, NULL);
-  if (!d_u1 || !d_u2)
+  OCLInst.d_u1  = clCreateBuffer(context,  CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_POINTER,  sizeof(Real) * count, unknown, NULL);
+  OCLInst.d_u2  = clCreateBuffer(context,  CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_POINTER,  sizeof(Real) * count, unknown, NULL);
+  if (!OCLInst.d_u1 || !OCLInst.d_u2)
     {
       printf("Error: Failed to allocate device memory!\n");
       exit(1);
     }    
     
   // Write u1 and u2 vectors into compute device memory 
-  err = clEnqueueWriteBuffer(commands, d_u1, CL_TRUE, 0, sizeof(Real) * count, unknown, 0, NULL, NULL);
+  err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u1, CL_TRUE, 0, sizeof(Real) * count, unknown, 0, NULL, NULL);
   if (err != CL_SUCCESS)
     {
       printf("Error: Failed to write the d_u1 to opencl buffer!\n%s\n", err_code(err));
       exit(1);
     }
 
-  err = clEnqueueWriteBuffer(commands, d_u2, CL_TRUE, 0, sizeof(Real) * count, unknown, 0, NULL, NULL);
+  err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u2, CL_TRUE, 0, sizeof(Real) * count, unknown, 0, NULL, NULL);
   if (err != CL_SUCCESS)
     {
       printf("Error: Failed to write d_u2 to opencl buffer!\n%s\n", err_code(err));
       exit(1);
     }
-	
+}
+//////////////////////////////END "CONSTRUCTOR" HERE/////////////////////////////////////"
+
+
+
+
+
+//OpenCL execution code
+void OpenCL_Jacobi_Iteration(int maxIters, int convergenceIters){
+
   // Set the arguments to our compute kernel
-  err  = clSetKernelArg(jacobi_ocl, 0, sizeof(int), Nx);
-  err |= clSetKernelArg(jacobi_ocl, 1, sizeof(int), Ny);
-  err |= clSetKernelArg(jacobi_ocl, 2, sizeof(int), Nz);
-  err |= clSetKernelArg(jacobi_ocl, 3, sizeof(cl_mem), &d_u1);
-  err |= clSetKernelArg(jacobi_ocl, 4, sizeof(cl_mem), &d_u2);
+  err  = clSetKernelArg(OCLInst.jacobi_ocl, 0, sizeof(int), OCLInst.xDim);
+  err |= clSetKernelArg(OCLInst.jacobi_ocl, 1, sizeof(int), OCLInst.yDim);
+  err |= clSetKernelArg(OCLInst.jacobi_ocl, 2, sizeof(int), OCLInst.zDim);
+  err |= clSetKernelArg(OCLInst.jacobi_ocl, 3, sizeof(cl_mem), &OCLInst.d_u1);
+  err |= clSetKernelArg(OCLInst.jacobi_ocl, 4, sizeof(cl_mem), &OCLInst.d_u2);
   
   if (err != CL_SUCCESS)
     {
@@ -159,8 +169,8 @@ void OpenCL_Jacobi(int Nx, int Ny, int Nx, int maxIters,Real tolerance, Real *un
     }
   // Execute the kernel over the entire range of our 1d input data set
   // letting the OpenCL runtime choose the work-group size
-  global = {Nx,Ny,Nz};
-  err = clEnqueueNDRangeKernel(commands, jacobi_ocl, 3, NULL, &global, NULL, 0, NULL, NULL);
+  global = {OCLInst.xDim, OCLInst.yDim, OCLInst.zDim};
+  err = clEnqueueNDRangeKernel(OCLInst.commands, OCLInst.jacobi_ocl, 3, NULL, &global, NULL, 0, NULL, NULL);
   if (err)
     {
       printf("Error: Failed to execute kernel!\n%s\n", err_code(err));
@@ -168,12 +178,12 @@ void OpenCL_Jacobi(int Nx, int Ny, int Nx, int maxIters,Real tolerance, Real *un
     }
 
   // Wait for the commands to complete before stopping the timer
-  clFinish(commands);
+  clFinish(OCLInst.commands);
 
 
   // Read back the results from the compute device
   /** \todo Fix this memory transfer */
-  err = clEnqueueReadBuffer( commands, d_u1, CL_TRUE, 0, sizeof(Real) * count, unknown, 0, NULL, NULL );  
+  err = clEnqueueReadBuffer(OCLInst.commands,OCLInst.d_u1, CL_TRUE, 0, sizeof(Real) * count, unknown, 0, NULL, NULL );  
   if (err != CL_SUCCESS)
     {
       printf("Error: Failed to read output array!\n%s\n", err_code(err));
@@ -184,12 +194,12 @@ void OpenCL_Jacobi(int Nx, int Ny, int Nx, int maxIters,Real tolerance, Real *un
 
     
   // cleanup then shutdown
-  clReleaseMemObject(d_u1);
-  clReleaseMemObject(d_u2);
-  clReleaseProgram(program);
-  clReleaseKernel(jacobi_ocl);
-  clReleaseCommandQueue(commands);
-  clReleaseContext(context);
+  clReleaseMemObject(OCLInst.d_u1);
+  clReleaseMemObject(OCLInst.d_u2);
+  clReleaseProgram(OCLInst.program);
+  clReleaseKernel(OCLInst.jacobi_ocl);
+  clReleaseCommandQueue(OCLInst.commands);
+  clReleaseContext(OCLInst.context);
 
 }
 
