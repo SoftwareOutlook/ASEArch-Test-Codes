@@ -28,24 +28,9 @@
  * \todo Include header files to grab typename Real
  */
 
-#include "../"
 #ifndef OPENCL_JACOBI 
 #define  OPENCL_JACOBI
-
-/** OpenCLInstance - A struct containing the device ide, context, command queue, program, kernel and problem size for OpenCL
- */
-struct OpenCLInstance{
-  cl_device_id     device_id;     /**< Compute device id */
-  cl_context       context;       /**< Compute context */
-  cl_command_queue commands;      /**< Compute command queue */
-  cl_program       program;       /**< Compute program */
-  cl_kernel        jacobi_ocl;    /**< Compute kernel */
-    
-  cl_mem d_u1;                     /**< Device memory used for the input unknown 1 vector */
-  cl_mem d_u2;                     /**< Device memory used for the input  unknown 2 vector */
-
-  unsigned int xDim, yDim, zDim; /**< Grid dimensions */
-};  
+#include "../jacobi_c.h"
 
 
 /** OpenCLJacobi -- Initialise the OpenCL runtime and perform memcopies
@@ -54,13 +39,14 @@ struct OpenCLInstance{
  * @param Nz - The z size of the domain.
  * @param unknown - The initial conditions
  */
-void OpenCL_Jacobi(int Nx, int Ny, int Nx, Real *unknown);
+int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown);
 
 
 /** OpenCL_Jacobi_Iteration --
  * @param maxIters - The maximum number of iterations to perform
- * @param convegenceIters - the number of iteration between convergence checks
+ * @param compTime - An accumulated count of the time spent in computational kernels
+ * @param commTime - An accumulated count of the time spent performing OpenCL communication
  */
-void OpenCL_Jacobi_Iteration(int maxIters, int convergenceIters);
+int  OpenCL_Jacobi_Iteration(int maxIters, double *compTime, double *commTime, Real *unknown);
 
 #endif 

@@ -13,6 +13,11 @@
 #include "gpu_laplace3d_wrapper.h"
 #endif
 
+//#ifdef USE_OPENCL
+#include"OpenCL/jacobi_opencl.h"
+//#endif
+
+
 static const Real sixth=1.0/6.0;
 
 static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2);
@@ -41,8 +46,8 @@ static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* 
         }
         else {
           u2[ind] = ( u1[ind-1    ] + u1[ind+1    ]
-                    + u1[ind-nxShift   ] + u1[ind+nxShift   ]
-                    + u1[ind-nxShift*NY] + u1[ind+nxShift*NY] ) * sixth;
+		      + u1[ind-nxShift   ] + u1[ind+nxShift   ]
+		      + u1[ind-nxShift*NY] + u1[ind+nxShift*NY] ) * sixth;
         }
       }
     }
@@ -50,8 +55,7 @@ static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* 
 }
 
 // 1D loop that helps the compiler to vectorize
-static void vec_oneD_loop(const int n, const Real * restrict uNorth, const Real *restrict uSouth, const Real *restrict uWest, 
-   const Real *restrict uEast, const Real *restrict uBottom, const Real *restrict uTop, Real *restrict w ){
+static void vec_oneD_loop(const int n, const Real *restrict uNorth, const Real *restrict uSouth, const Real *restrict uWest,const Real *restrict uEast, const Real *restrict uBottom, const Real *restrict uTop, Real *restrict w ){
   int i;
   //static Real inv6=1.0f/6.0f;
   //#pragma unroll(4)
@@ -79,25 +83,25 @@ static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Re
 
   NXY = nxShift*NY;
 #pragma omp parallel for default(none) shared(u1,u2,NX,NY,NZ,NXY, nxShift) private(i,j,k,ind,indmj,indpj,indmk,indpk) schedule(static) collapse(2)
-    for (k=1; k<NZ-1; k++) {
-      for (j=1; j<NY-1; j++) {
-	ind = j*nxShift + k*NXY;
-	indmj = ind - nxShift;
-	indpj = ind + nxShift;
-	indmk = ind - NXY;
-	indpk = ind + NXY;
+  for (k=1; k<NZ-1; k++) {
+    for (j=1; j<NY-1; j++) {
+      ind = j*nxShift + k*NXY;
+      indmj = ind - nxShift;
+      indpj = ind + nxShift;
+      indmk = ind - NXY;
+      indpk = ind + NXY;
 #ifdef USE_VEC1D
-	vec_oneD_loop(NX-2, &u1[ind], & u1[ind+2], &u1[indmj+1], &u1[indpj+1], &u1[indmk+1],&u1[indpk+1], &u2[ind+1]);
+      vec_oneD_loop(NX-2, &u1[ind], & u1[ind+2], &u1[indmj+1], &u1[indpj+1], &u1[indmk+1],&u1[indpk+1], &u2[ind+1]);
 #else
-	for (i=1; i<NX-1; i++) {   // i loop innermost for sequential memory access
-          u2[ind+i] = ( u1[ind+i-1] + u1[ind+i+1]
-			+   u1[indmj+i] + u1[indpj+i]
-			+   u1[indmk+i] + u1[indpk+i] ) * sixth;
+      for (i=1; i<NX-1; i++) {   // i loop innermost for sequential memory access
+	u2[ind+i] = ( u1[ind+i-1] + u1[ind+i+1]
+		      +   u1[indmj+i] + u1[indpj+i]
+		      +   u1[indmk+i] + u1[indpk+i] ) * sixth;
 	  
-	}
-#endif
       }
+#endif
     }
+  }
 }
 
 
@@ -120,7 +124,7 @@ static void Blocked_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int B
 	      indmk = ind - NXY;
 	      indpk = ind + NXY;
 #ifdef USE_VEC1D
-	vec_oneD_loop( MIN(ii+BX,NX-1)-ii, &u1[ind+ii-1], &u1[ind+ii+1], &u1[indmj+ii], &u1[indpj+ii], &u1[indmk+ii], &u1[indpk+ii], &u2[ind+ii]);
+	      vec_oneD_loop( MIN(ii+BX,NX-1)-ii, &u1[ind+ii-1], &u1[ind+ii+1], &u1[indmj+ii], &u1[indpj+ii], &u1[indmk+ii], &u1[indpk+ii], &u2[ind+ii]);
 #else
 	      for (i=ii; i<MIN(ii+BX,NX-1); i++) {   // i loop innermost for sequential memory access
 		u2[ind+i] = ( u1[ind+i-1] + u1[ind+i+1]
@@ -211,25 +215,25 @@ static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, 
 // assigns set of threads columnwise accros the wave
 //
 /*
-       --------------------------------
-           |   |   |   |   |   |    | 
-        4  |   |   |   |   |   |    |
-       --------------------------------
-           | t0|   |   |   |   |    |
-        3  |   |   |   |   |   |    |
-       --------------------------------
-           |   | t2|   |   |   |    |
-        2  |   |   |   |   |   |    |
-       --------------------------------
-           | t1|   | t4|   |   |    |
-        1  |   |   |   |   |   |    |
-       --------------------------------
-           |   | t3|   | t6|   |    |
-        0  |   |   |   |   |   |    |
-       --------------------------------
-             0   1   2   3   4    5
+  --------------------------------
+  |   |   |   |   |   |    | 
+  4  |   |   |   |   |   |    |
+  --------------------------------
+  | t0|   |   |   |   |    |
+  3  |   |   |   |   |   |    |
+  --------------------------------
+  |   | t2|   |   |   |    |
+  2  |   |   |   |   |   |    |
+  --------------------------------
+  | t1|   | t4|   |   |    |
+  1  |   |   |   |   |   |    |
+  --------------------------------
+  |   | t3|   | t6|   |    |
+  0  |   |   |   |   |   |    |
+  --------------------------------
+  0   1   2   3   4    5
 
-       Two waves with two threads per colomn	     
+  Two waves with two threads per colomn	     
 
 */    
 {
@@ -251,18 +255,18 @@ static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, 
     // the threads are partition in threads_per_column rows, max_thread_column columns
     // k is the fast direction
 #ifdef _OPENMP
-     int jth = omp_get_thread_num()/threads_per_column;
-     int kth = omp_get_thread_num()%threads_per_column;
+    int jth = omp_get_thread_num()/threads_per_column;
+    int kth = omp_get_thread_num()%threads_per_column;
 #else
-     int jth = 0; int kth = 0;
+    int jth = 0; int kth = 0;
 #endif       
-     // loop over the grid blocks in diagonal planes
-     for (iplane = 0; iplane <= (nby - 1 + nbz - 1) + 2 * (nwaves - 1); ++iplane){  
+    // loop over the grid blocks in diagonal planes
+    for (iplane = 0; iplane <= (nby - 1 + nbz - 1) + 2 * (nwaves - 1); ++iplane){  
 
-       // set the left and right limits for wave
-       // tricky here, its easy to loose some tiles
-       // add more explanation
-       if ( iplane - 2 * (nwaves - 1) < nbz ) 
+      // set the left and right limits for wave
+      // tricky here, its easy to loose some tiles
+      // add more explanation
+      if ( iplane - 2 * (nwaves - 1) < nbz ) 
 	left_y = 0;
       else
 	left_y = iplane - 2 * (nwaves - 1) - nbz + 1;
@@ -336,15 +340,14 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
   int gridxy[4]; //for blocks and grid dims
 #endif
 
- // set shift for x direction, this is differs from NX if posix malign is used
- // assumes that uOld > uNew
- if ( g->malign < 0) 
-   nxShift = NX;
- else
-   nxShift = (abs((int) (uNew - uOld))) / (NY*NZ); 
+  // set shift for x direction, this is differs from NX if posix malign is used
+  // assumes that uOld > uNew
+  if ( g->malign < 0) 
+    nxShift = NX;
+  else
+    nxShift = (abs((int) (uNew - uOld))) / (NY*NZ); 
 
   switch (kernel_key)
-    //\todo add OpenCL kernel key
     {
     case (BASELINE_KERNEL) :
       taux = my_wtime();
@@ -415,14 +418,28 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       }
       *tcomp = my_wtime() - taux;
       break;
+#ifdef USE_OPENCL
+      //OpenCL functionality
+    case(OPENCL_KERNEL):
+      /** \todo Generate timing detail for initialisation */
+      //Initialise the OpenCL context/program/kernel
+      OpenCL_Jacobi(NX,NY,NZ,uOld);
+      //Call the OpenCL kernel
+      OpenCL_Jacobi_Iteration(niter, tcomp, tcomm, uOld);
+      break;
+#endif
     default :     
 #ifdef USE_GPU
+
+
+     
       calcGpuDims( kernel_key, BX, BY, BZ, NX,NY,NZ, gridxy);
       float taux_comp, taux_comm;
       //invoke GPU function
       laplace3d_GPU(kernel_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
       *tcomp = 0.001 * taux_comp; // CUDA timer works with ms
       *tcomm = 0.001 * taux_comm;
+      
 #else 
       error_abort("unkown kernel key", "");
 #endif
@@ -433,41 +450,41 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
 
 /* MPI versions */
 /*
-void blocked_laplace3d(int iteration, double *norm){
+  void blocked_laplace3d(int iteration, double *norm){
 
   Real * tmp;
   double x = 0.0;
   
-#pragma omp parallel if (nthreads > 1) default(none) shared(sx, ex, sy, ey, sz, ez, nthreads) reduction(+:x)
+  #pragma omp parallel if (nthreads > 1) default(none) shared(sx, ex, sy, ey, sz, ez, nthreads) reduction(+:x)
   {
-#ifdef USE_MPI
-    post_recv();
-    buffer_halo_transfers(OUT, &x, 0);
-    exchange_halos();
-    buffer_halo_transfers(IN, &x, 0);
-#pragma omp barrier
+  #ifdef USE_MPI
+  post_recv();
+  buffer_halo_transfers(OUT, &x, 0);
+  exchange_halos();
+  buffer_halo_transfers(IN, &x, 0);
+  #pragma omp barrier
     
-#endif
-    // explicit work placement equivalent to static schedule
-    // could be done in initalisation with threadprivate variables 
-    int tid = omp_get_thread_num();
-    int s3, e3, dt, d1;
-    int blk = (ez - sz + 1) / nthreads; 
-    int r = (ez - sz + 1) % nthreads;
+  #endif
+  // explicit work placement equivalent to static schedule
+  // could be done in initalisation with threadprivate variables 
+  int tid = omp_get_thread_num();
+  int s3, e3, dt, d1;
+  int blk = (ez - sz + 1) / nthreads; 
+  int r = (ez - sz + 1) % nthreads;
     
-    if (tid < r ){ 
-      dt = tid; d1 = 1;}
-    else{
-      dt = r; d1 = 0;}
+  if (tid < r ){ 
+  dt = tid; d1 = 1;}
+  else{
+  dt = r; d1 = 0;}
 
-    s3 = sz + tid * blk + dt;
-    e3 = s3 - 1 + blk + d1 ;
+  s3 = sz + tid * blk + dt;
+  e3 = s3 - 1 + blk + d1 ;
 
-    stencil_update(sx, ex, sy, ey, s3, e3, &x);
+  stencil_update(sx, ex, sy, ey, s3, e3, &x);
   }
   *norm = x;
   tmp = uNew; uNew = uOld; uOld = tmp;  
-}
+  }
 */
 
 static void cco_laplace3d(const struct grid_info_t *g, int iteration){
@@ -554,6 +571,6 @@ int uindex(const struct grid_info_t *g, const int i, const int j, const int k){
     nxShift = (abs((int) (uNew - uOld))) / (g->nly * g->nlz); 
 
  
- return (i - (g->sx - 1) + (j - (g->sy - 1)) * nxShift + (k - (g->sz - 1)) * nxShift * g->nly );
+  return (i - (g->sx - 1) + (j - (g->sy - 1)) * nxShift + (k - (g->sz - 1)) * nxShift * g->nly );
 }
 

@@ -52,7 +52,7 @@ all: $(JTC)
 
 
 
-$(JTC_C):  kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO)
+$(JTC_C):  kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO) jacobi_opencl.o
 	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE) $^ $(LIB) 
 
 # Fortran build is inactive in this version
@@ -73,13 +73,28 @@ ifdef USE_GPU
 %_cuda.o : src/%_cuda.cu
 	$(NVCC) -c -o $@ $(NVCCFLAGS) $<
 endif
+
+ifdef USE_OPENCL
+%cl.o : src/OpenCL/%cl.c
+	$(CC) -c -o $@ $(OMPFLAGS) $(CFLAGS) $(INC) $<
+
+
+endif
+
+
 homb_f90.o : functions_f90.o
 
 utils_c.o : src/utils_c.c src/jacobi_c.h src/utils_c.h src/kernels_c.h src/comm_mpi_c.h 
-kernels_c.o : src/kernels_c.c src/jacobi_c.h src/kernels_c.h src/utils_c.h src/comm_mpi_c.h
+kernels_c.o : src/kernels_c.c src/jacobi_c.h src/kernels_c.h src/utils_c.h src/comm_mpi_c.h 
 comm_mpi_c.o : src/comm_mpi_c.c src/jacobi_c.h src/comm_mpi_c.h 
 jacobi_c.o : src/jacobi_c.c src/jacobi_c.h src/utils_c.h src/kernels_c.h
 ifdef USE_GPU
 utils_c.o : src/cutil_inline.h
 kernels_cuda.o : src/kernels_cuda.cu src/gpu_laplace3d_wrapper.h src/cutil_inline.h
 endif 
+
+#Need to add in ifdef for opencl
+ifdef USE_OPENCL
+kernels_c.o : src/OpenCL/jacobi_opencl.h
+jacobi_opencl.o : src/OpenCL/jacobi_opencl.c src/OpenCL/jacobi_opencl.h src/OpenCL/err_code_cl.c src/OpenCL/device_info_cl.c 
+endif

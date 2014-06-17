@@ -22,9 +22,10 @@ LANG = C
 COMP := OpenCL
 
 USE_OPENMP=yes
+USE_OPENCL=yes
 
 OMPFLAGS= -openmp
-CFLAGS_OpenCL_opt := $(DOUBLE) -O3  -lOpenCL -DUSE_OPENCL
+CFLAGS_OpenCL_opt := $(DOUBLE) -O3  -lOpenCL -DUSE_OPENCL -restrict -std=c99
 CFLAGS_OpenCL_debug := $(DOUBLE) -g -lOpenCL -DUSE_OPENCL
 
 
