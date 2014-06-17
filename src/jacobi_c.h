@@ -29,6 +29,8 @@ Below is the original copyright and licence.
   You should have received a copy of the GNU General Public License
   along with PGAF.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifndef JACOBI_C
+#define JACOBI_C
 
 #define JTC_VERSION "1.0.2b (28th of April 2014)"
 
@@ -108,3 +110,6 @@ struct times_t
 #define GPU_SHM_KERNEL   7
 #define GPU_BANDWIDTH_KERNEL   8
 #define GPU_MM_KERNEL 9
+#define OPENCL_KERNEL 10
+
+#endif
