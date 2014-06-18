@@ -52,7 +52,7 @@ all: $(JTC)
 
 
 
-$(JTC_C):  kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO) jacobi_opencl.o
+$(JTC_C):  kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO) jacobi_opencl.o device_info_cl.o err_code_cl.o
 	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE) $^ $(LIB) 
 
 # Fortran build is inactive in this version
@@ -96,5 +96,7 @@ endif
 #Need to add in ifdef for opencl
 ifdef USE_OPENCL
 kernels_c.o : src/OpenCL/jacobi_opencl.h
+device_info_cl.o : src/OpenCL/device_info_cl.c 
+err_code_cl.o: src/OpenCL/err_code_cl.c
 jacobi_opencl.o : src/OpenCL/jacobi_opencl.c src/OpenCL/jacobi_opencl.h src/OpenCL/err_code_cl.c src/OpenCL/device_info_cl.c 
 endif
