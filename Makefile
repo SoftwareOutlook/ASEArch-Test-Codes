@@ -34,7 +34,7 @@ all: $(JTC)
 
 
 
-$(JTC_C):  kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO) jacobi_opencl.o device_info_cl.o err_code_cl.o
+$(JTC_C):  kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO) $(OPENCLO)
 	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE) $^ $(LIB) 
 
 # Fortran build is inactive in this version

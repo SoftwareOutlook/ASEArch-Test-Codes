@@ -191,6 +191,13 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 	error_abort("GPU model specified without gpu compilation", "");
 #endif
       }
+      else if (strcmp("OpenCL",argv[i]) == 0){
+#ifdef USE_OPENCL
+	*kernel_key = grid->key = OPENCL_KERNEL;
+	#else
+	error_abort("OpenCL model specified without OpenCL compilation", "");
+#endif
+      }
       /*
       else if (strcmp("blockedgpu",argv[i]) == 0){
 #ifdef USE_GPU
@@ -366,6 +373,8 @@ void printContext(const struct grid_info_t *g, int kernel_key){
       sprintf(kernel_name, "shared memory GPU"); break;
     case(GPU_BANDWIDTH_KERNEL) :
       sprintf(kernel_name, "GPU bandwidth"); break;
+    case(OPENCL_KERNEL) :
+    sprintf(kernel_name, "OpenCL Kernel"); break;
       //case(BASEGPU_SHM_KERNEL) :
       //sprintf(kernel_name, "Titanium SharedMem"); break;
       //case(BLOCKEDGPU_KERNEL) :
@@ -549,7 +558,7 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
                const struct times_t *minTime,  const struct times_t *meanTime,  const struct times_t *maxTime, 
 	        double norm){
 
-  int gpu_header = (kernel_key == GPU_BASE_KERNEL) || (kernel_key == GPU_SHM_KERNEL) || (kernel_key == GPU_BANDWIDTH_KERNEL || (kernel_key == GPU_MM_KERNEL));
+  int gpu_header = (kernel_key == GPU_BASE_KERNEL) || (kernel_key == GPU_SHM_KERNEL) || (kernel_key == GPU_BANDWIDTH_KERNEL || (kernel_key == GPU_MM_KERNEL) || (kernel_key == OPENCL_KERNEL));
 
   if (pHeader){
     printf("# Last norm %22.15e\n",sqrt(norm));
