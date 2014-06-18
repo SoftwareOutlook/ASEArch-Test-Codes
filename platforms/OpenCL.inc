@@ -1,3 +1,4 @@
+
 #============================================================
 # Makefile variable for  OpenCL
 # Lucian Anton 
@@ -13,11 +14,11 @@ LANG = C
 
 #need to add a correction here for double precision, for now it is deprecated
 #ifdef USE_DOUBLE_PRECISION
-#  DOUBLE=-DUSE_DOUBLE_PRECISION
+ # DOUBLE=-DUSE_DOUBLE_PRECISION
 #endif
 
 
-
+OPENCLO =  jacobi_opencl.o device_info_cl.o err_code_cl.o
 
 COMP := OpenCL
 

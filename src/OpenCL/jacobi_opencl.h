@@ -47,6 +47,8 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown);
  * @param compTime - An accumulated count of the time spent in computational kernels
  * @param commTime - An accumulated count of the time spent performing OpenCL communication
  */
-int  OpenCL_Jacobi_Iteration(int maxIters, double *compTime, double *commTime, Real *unknown);
+int  OpenCL_Jacobi_Iteration(int maxIters, Real *unknown);
+
+int OpenCL_Jacobi_Tidy(Real *unknown);
 
 #endif 

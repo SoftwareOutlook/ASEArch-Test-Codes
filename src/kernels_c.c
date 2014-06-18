@@ -423,9 +423,17 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
     case(OPENCL_KERNEL):
       /** \todo Generate timing detail for initialisation */
       //Initialise the OpenCL context/program/kernel
+      taux = my_wtime();
       OpenCL_Jacobi(NX,NY,NZ,uOld);
+      *tcomm=my_wtime()-taux;
       //Call the OpenCL kernel
-      OpenCL_Jacobi_Iteration(niter, tcomp, tcomm, uOld);
+      taux = my_wtime();
+      OpenCL_Jacobi_Iteration(niter, uOld);
+      *tcomp = my_wtime() - taux;
+      //Tidy up
+      taux=my_wtime();
+      OpenCL_Jacobi_Tidy(uOld);
+      *tcomm+=my_wtime()-taux;
       break;
 #endif
     default :     
