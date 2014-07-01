@@ -80,13 +80,19 @@ The following flags can be used to set the grid sized and other run parameters:
 			 gpu-bandwidth : measures the time for the simple update u[i] = const * v[i]
                                          useful to measure the effective GPU bandwidth.
 			                 Note: -t is meaningless in this case
-                          
+
+		                                
                          NOTES: 1) GPU runs report also the transfer time between device and host,
                                 2) Default model is baseline.
 
--pc                      prints information on run parameters at the beginning of calculation.
 
--malign <n>     use posix_memalign to allocate working array with an address alignment of <n> bytes. 
+			Opencl : Uses an OpenCL kernel similar to the gpu-3d-blockgrid model. If the DEVICE flag
+			 is not set then it takes on the type CL_DEVICE_TYPE_DEFAULT. See your OpenCL documentation 
+			 for valid values for DEVICE                           	
+				
+-pc                   prints information on run parameters at the beginning of a calculation.
+
+-malign <n>    use posix_memalign to allocate working array with an address alignment of <n> bytes. 
                          It may help vectorisation on certain systems.
                          Default allocation is done with malloc.
 

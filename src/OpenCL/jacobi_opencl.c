@@ -39,22 +39,17 @@ struct OpenCLInstance{
   unsigned int xDim, yDim, zDim; /**< Grid dimensions */
   size_t global[3];//Setting the glboal kernel size
 
+
 }; 
 
 
-/**\todo Need to add ifdefs for single/double precision versions of code*/
-/** jacobi_relaxation_ocl --
- * @param Nx - The x size of the domain
- * @param Ny - The y size of the domain
- * @param Nz - The z size of the domain
- * @param d_u1 - The input array
- * @param d_u2 - The output array 
+/** Single and double precision OpenCL kernels, switched using the USE_DOUBLE_PRECISION preprocessor flag
  */
 #ifdef USE_DOUBLE_PRECISION
 
 const char *KernelSource = "\n" \
   "#pragma OPENCL EXTENSION cl_khr_fp64 : enable \n"
-  "__kernel void  jacobi_relaxation_ocl(const int Nx, \n"	\
+  "__kernel __attribute__(( work_group_size_hint(32,4,1))) void  jacobi_relaxation_ocl(const int Nx, \n"	\
   "				     const int Ny, \n"		\
   "				     const int Nz, \n"			\
   "				     global const double* restrict d_u1, \n" \
@@ -72,12 +67,12 @@ const char *KernelSource = "\n" \
   "\n";
 #else
 const char *KernelSource = "\n" \
-  "__kernel void  jacobi_relaxation_ocl(const int Nx, \n"	\
+  "__kernel __attribute__(( work_group_size_hint(32,4,1))) void  jacobi_relaxation_ocl(const int Nx, \n" \
   "				     const int Ny, \n"		\
   "				     const int Nz, \n"			\
   "				     global const float* restrict d_u1, \n" \
   "				     global float* restrict d_u2){ \n"	\
-  "  const float sixth=1.0/6.0; \n"					\
+  "  const float sixth=1.0f/6.0f; \n"					\
   "  //Thread Indices \n"						\
   "  const int x =get_global_id(0); \n" \
   "  const int y =get_global_id(1); \n" \
@@ -108,89 +103,89 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown){
   OCLInst.global[1]=(size_t)OCLInst.yDim;
   OCLInst.global[2]=(size_t)OCLInst.zDim;
 
-// Set up platform and GPU device
-cl_uint numPlatforms;
+  // Set up platform and GPU device
+  cl_uint numPlatforms;
 
-// Find number of platforms
-err = clGetPlatformIDs(0, NULL, &numPlatforms);
-if (err != CL_SUCCESS || numPlatforms <= 0)
-  {
-    printf("Error: Failed to find a platform!\n%s\n",err_code(err));
-    return EXIT_FAILURE;
-  }
+  // Find number of platforms
+  err = clGetPlatformIDs(0, NULL, &numPlatforms);
+  if (err != CL_SUCCESS || numPlatforms <= 0)
+    {
+      printf("Error: Failed to find a platform!\n%s\n",err_code(err));
+      return EXIT_FAILURE;
+    }
 
-// Get all platforms
-cl_platform_id Platform[numPlatforms];
-err = clGetPlatformIDs(numPlatforms, Platform, NULL);
-if (err != CL_SUCCESS || numPlatforms <= 0)
-  {
-    printf("Error: Failed to get the platform!\n%s\n",err_code(err));
-    return EXIT_FAILURE;
-  }
+  // Get all platforms
+  cl_platform_id Platform[numPlatforms];
+  err = clGetPlatformIDs(numPlatforms, Platform, NULL);
+  if (err != CL_SUCCESS || numPlatforms <= 0)
+    {
+      printf("Error: Failed to get the platform!\n%s\n",err_code(err));
+      return EXIT_FAILURE;
+    }
 
-// Secure a GPU
-for (i = 0; i < numPlatforms; i++)
-  {
-    err = clGetDeviceIDs(Platform[i], DEVICE, 1, &OCLInst.device_id, NULL);
-    if (err == CL_SUCCESS)
-      {
-	break;
-      }
-  }
+  // Secure a GPU
+  for (i = 0; i < numPlatforms; i++)
+    {
+      err = clGetDeviceIDs(Platform[i], DEVICE, 1, &OCLInst.device_id, NULL);
+      if (err == CL_SUCCESS)
+	{
+	  break;
+	}
+    }
 
-if (OCLInst.device_id == NULL)
-  {
-    printf("Error: Failed to create a device group!\n%s\n",err_code(err));
-    return EXIT_FAILURE;
-  }
+  if (OCLInst.device_id == NULL)
+    {
+      printf("Error: Failed to create a device group!\n%s\n",err_code(err));
+      return EXIT_FAILURE;
+    }
 
-err = output_device_info(OCLInst.device_id);
+  //err = output_device_info(OCLInst.device_id);
   
-// Create a compute context 
-OCLInst.context = clCreateContext(0, 1, &OCLInst.device_id, NULL, NULL, &err);
-if (!OCLInst.context)
-  {
-    printf("Error: Failed to create a compute context!\n%s\n", err_code(err));
-    return EXIT_FAILURE;
-  }
+  // Create a compute context 
+  OCLInst.context = clCreateContext(0, 1, &OCLInst.device_id, NULL, NULL, &err);
+  if (!OCLInst.context)
+    {
+      printf("Error: Failed to create a compute context!\n%s\n", err_code(err));
+      return EXIT_FAILURE;
+    }
 
-// Create a command queue
-OCLInst.commands = clCreateCommandQueue(OCLInst.context, OCLInst.device_id, 0, &err);
-if (!OCLInst.commands)
-  {
-    printf("Error: Failed to create a command commands!\n%s\n", err_code(err));
-    return EXIT_FAILURE;
-  }
+  // Create a command queue
+  OCLInst.commands = clCreateCommandQueue(OCLInst.context, OCLInst.device_id, 0, &err);
+  if (!OCLInst.commands)
+    {
+      printf("Error: Failed to create a command commands!\n%s\n", err_code(err));
+      return EXIT_FAILURE;
+    }
 
 
-// Create the compute program from the source buffer
-OCLInst.program = clCreateProgramWithSource(OCLInst.context, 1, (const char **) &KernelSource, NULL, &err);
-if (!OCLInst.program)
-  {
-    printf("Error: Failed to create compute program!\n%s\n", err_code(err));
-    return EXIT_FAILURE;
-  }
+  // Create the compute program from the source buffer
+  OCLInst.program = clCreateProgramWithSource(OCLInst.context, 1, (const char **) &KernelSource, NULL, &err);
+  if (!OCLInst.program)
+    {
+      printf("Error: Failed to create compute program!\n%s\n", err_code(err));
+      return EXIT_FAILURE;
+    }
 
-// Build the program  
-err = clBuildProgram(OCLInst.program, 0, NULL, NULL, NULL, NULL);
-if (err != CL_SUCCESS)
-  {
-    size_t len;
-    char buffer[2048];
+  // Build the program 
+  err = clBuildProgram(OCLInst.program, 0, NULL, NULL, NULL, NULL);
+  if (err != CL_SUCCESS)
+    {
+      size_t len;
+      char buffer[2048];
 
-    printf("Error: Failed to build program executable!\n%s\n", err_code(err));
-    clGetProgramBuildInfo(OCLInst.program, OCLInst.device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
-    printf("%s\n", buffer);
-    return EXIT_FAILURE;
-  }
+      printf("Error: Failed to build program executable!\n%s\n", err_code(err));
+      clGetProgramBuildInfo(OCLInst.program, OCLInst.device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+      printf("%s\n", buffer);
+      return EXIT_FAILURE;
+    }
 
-// Create the compute kernel from the program 
-OCLInst.jacobi_ocl = clCreateKernel(OCLInst.program, "jacobi_relaxation_ocl", &err);
-if (!OCLInst.jacobi_ocl || err != CL_SUCCESS)
-  {
-    printf("Error: Failed to create compute kernel!\n%s\n", err_code(err));
-    return EXIT_FAILURE;
-  }
+  // Create the compute kernel from the program 
+  OCLInst.jacobi_ocl = clCreateKernel(OCLInst.program, "jacobi_relaxation_ocl", &err);
+  if (!OCLInst.jacobi_ocl || err != CL_SUCCESS)
+    {
+      printf("Error: Failed to create compute kernel!\n%s\n", err_code(err));
+      return EXIT_FAILURE;
+    }
 
 
   // Set the arguments to our compute kernel
@@ -205,31 +200,31 @@ if (!OCLInst.jacobi_ocl || err != CL_SUCCESS)
       exit(1);
     }
 
-// Create the input (u1, u2) arrays in device memory
-OCLInst.d_u1  = clCreateBuffer(OCLInst.context,  CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,  sizeof(Real) *OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, NULL);
-OCLInst.d_u2  = clCreateBuffer(OCLInst.context,  CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,  sizeof(Real) *OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, NULL);
-if (!OCLInst.d_u1 || !OCLInst.d_u2)
-  {
-    printf("Error: Failed to allocate device memory!\n");
-    exit(1);
-  }    
+  // Create the input (u1, u2) arrays in device memory
+  OCLInst.d_u1  = clCreateBuffer(OCLInst.context,  CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,  sizeof(Real) *OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, NULL);
+  OCLInst.d_u2  = clCreateBuffer(OCLInst.context,  CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,  sizeof(Real) *OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, NULL);
+  if (!OCLInst.d_u1 || !OCLInst.d_u2)
+    {
+      printf("Error: Failed to allocate device memory!\n");
+      exit(1);
+    }    
     
-// Write u1 and u2 vectors into compute device memory 
-err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u1, CL_TRUE, 0, sizeof(Real) * OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL);
-if (err != CL_SUCCESS)
-  {
-    printf("Error: Failed to write the d_u1 to opencl buffer!\n%s\n", err_code(err));
-    exit(1);
-  }
+  // Write u1 and u2 vectors into compute device memory 
+  err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u1, CL_TRUE, 0, sizeof(Real) * OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL);
+  if (err != CL_SUCCESS)
+    {
+      printf("Error: Failed to write the d_u1 to opencl buffer!\n%s\n", err_code(err));
+      exit(1);
+    }
 
 
-err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u2, CL_TRUE, 0, sizeof(Real) * OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL);
-if (err != CL_SUCCESS)
-  {
-    printf("Error: Failed to write d_u2 to opencl buffer!\n%s\n", err_code(err));
-    exit(1);
-  }
-return 0;
+  err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u2, CL_TRUE, 0, sizeof(Real) * OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL);
+  if (err != CL_SUCCESS)
+    {
+      printf("Error: Failed to write d_u2 to opencl buffer!\n%s\n", err_code(err));
+      exit(1);
+    }
+  return 0;
 }
 //////////////////////////////END "CONSTRUCTOR" HERE/////////////////////////////////////"
 
@@ -262,7 +257,7 @@ int OpenCL_Jacobi_Iteration(int maxIters, Real *unknown){
     err |= clSetKernelArg(OCLInst.jacobi_ocl, 3, sizeof(cl_mem), &OCLInst.d_u2);
     err |= clSetKernelArg(OCLInst.jacobi_ocl, 4, sizeof(cl_mem), &OCLInst.d_u1);
     //Execute the kernel a second time
-    err = clEnqueueNDRangeKernel(OCLInst.commands, OCLInst.jacobi_ocl, 3, NULL, OCLInst.global, NULL, 0, NULL, NULL);
+    err = clEnqueueNDRangeKernel(OCLInst.commands, OCLInst.jacobi_ocl, 3, NULL, OCLInst.global, NULL,0, NULL, NULL);
     if (err)
       {
 	printf("Error: Failed to execute kernel!\n%s\n", err_code(err));
