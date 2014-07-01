@@ -1,0 +1,8 @@
+/** @file jacobi_opencl.c --- 
+ *
+ * Copyright (C) 2014 Mark Mawson
+ *
+ * Author: Mark Mawson <mark.mawson@stfc.ac.uk>
+ * \todo Include header files to grab typename Real
+ */
+
