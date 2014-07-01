@@ -1,0 +1,37 @@
+/** OpenCL Kernel
+ *This file contains the single and double precision kernel calls
+ * 
+ */
+
+
+
+__kernel void __attribute__((vec_type_hint(float))) jacobi_relaxation_ocl(const int Nx,
+   									  const int Ny,
+									  const int Nz,
+									  global const float* restrict d_u1,
+									  global float* restrict d_u2){
+  const float sixth=1.0f/6.0f;
+
+  //Thread Indices
+  const int x =get_global_id(0);
+  const int y =get_global_id(1);
+  const int z =get_global_id(2);
+  const int loc=z*Ny*Nx+y*Nx+x;
+  
+ 
+  if(x!=0&&x!=(Nx-1)&&y!=0&&y!=(Ny-1)&&z!=0&&z!=(Nz-1)){
+    float t1=d_u1[loc-Ny*Nx];
+    float t2=d_u1[loc+Nx*Ny];
+    float t3=d_u1[loc-Nx];
+    float t4=d_u1[loc+Nx];
+    //float t5=d_u1[loc-1];
+    //float t6=d_u1[loc+1];
+    d_u2[loc]= sixth*(t1+t2+t3+t4);//+t5+t6);
+		     
+		      
+		    
+     
+  }
+    
+
+}
