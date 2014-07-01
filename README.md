@@ -83,8 +83,13 @@ The following flags can be used to set the grid sized and other run parameters:
 
 		                                
                          NOTES: 1) GPU runs report also the transfer time between device and host,
-                                2) Default model is baseline.
+                                     2) Default model is baseline.
 
+ 			Opencl : Uses an OpenCL kernel similar to the gpu-3d-blockgrid model. If the DEVICE flag
+			 is not set then it takes on the type CL_DEVICE_TYPE_DEFAULT. See your OpenCL documentation 
+			 for valid values for DEVICE                           	
+				
+-pc                      prints information on run parameters at the beginning of a calculation.
 
 			Opencl : Uses an OpenCL kernel similar to the gpu-3d-blockgrid model. If the DEVICE flag
 			 is not set then it takes on the type CL_DEVICE_TYPE_DEFAULT. See your OpenCL documentation 
