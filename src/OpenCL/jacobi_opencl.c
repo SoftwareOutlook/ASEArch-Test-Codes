@@ -6,7 +6,7 @@
  * 
  */
 #include "jacobi_opencl.h"
-//#include "../jacobi_c.h"
+
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -18,7 +18,7 @@
 //pick up device type from compiler command line or from 
 //the default type
 #ifndef DEVICE
-#define DEVICE CL_DEVICE_TYPE_DEFAULT
+#define DEVICE CL_DEVICE_TYPE_GPU
 #endif
 
 extern int output_device_info(cl_device_id );
@@ -139,7 +139,7 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown){
       return EXIT_FAILURE;
     }
 
-  //err = output_device_info(OCLInst.device_id);
+  // err = output_device_info(OCLInst.device_id);
   
   // Create a compute context 
   OCLInst.context = clCreateContext(0, 1, &OCLInst.device_id, NULL, NULL, &err);
