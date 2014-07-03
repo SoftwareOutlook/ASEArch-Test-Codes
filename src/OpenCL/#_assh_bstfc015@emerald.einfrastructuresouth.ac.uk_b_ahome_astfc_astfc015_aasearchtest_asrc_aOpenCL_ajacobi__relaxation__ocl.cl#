@@ -1,6 +1,0 @@
-/** @file
- *This file contains the single and double precision kernel calls
- *\todo include the header to grab the typedef of Real
- */
-
-#include "../jacobi_c.h"

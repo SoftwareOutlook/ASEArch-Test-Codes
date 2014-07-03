@@ -1,16 +1,16 @@
 /*
-This is the C driver for Jacobi Test Code (JTC) , a hybrid CUDA-OpenMP-MPI benchmark for
-Jacobi solver applied to a 3D Laplace equation.
+  This is the C driver for Jacobi Test Code (JTC) , a hybrid CUDA-OpenMP-MPI benchmark for
+  Jacobi solver applied to a 3D Laplace equation.
 
-Iteration starts from a Jacobi iterator eigenvalue, boundary conditions are set to 0.
+  Iteration starts from a Jacobi iterator eigenvalue, boundary conditions are set to 0.
 
-Lucian Anton
-March 2014.
+  Lucian Anton
+  March 2014.
 
-This code started from v 1.0 of HOMB
-http://sourceforge.net/projects/homb/
+  This code started from v 1.0 of HOMB
+  http://sourceforge.net/projects/homb/
 
-Below is the original copyright and licence.
+  Below is the original copyright and licence.
 
 */
 /*
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   /* grid info */
   struct grid_info_t grid;
 
-   /* L2 norms */
+  /* L2 norms */
   double gnorm, norm;
 
   /* Timing measurements */
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   /* MPI thread safety level parameters */
   int requested_mpi_safety = MPI_THREAD_FUNNELED, provided_mpi_safety;
 
- /* Initialize MPI, check the thread safety level */
+  /* Initialize MPI, check the thread safety level */
   MPI_Init_thread(&argc, &argv, requested_mpi_safety, &provided_mpi_safety);
 #endif
 
@@ -92,6 +92,9 @@ int main(int argc, char *argv[]) {
 #ifdef USE_GPU
     times[irun].comm = commTime;
 #endif
+#ifdef USE_OPENCL
+    times[irun].comm = commTime;
+#endif
 
     if (testComputation) {
       norm = local_norm(&grid);
@@ -99,7 +102,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-  /* Gather iteration runtimes to ROOT's matrix */
+    /* Gather iteration runtimes to ROOT's matrix */
     timeUpdate(times);
   }//end for loop
 
@@ -112,14 +115,14 @@ int main(int argc, char *argv[]) {
   if (!testComputation) norm = local_norm(&grid);
 #ifdef USE_MPI
   MPI_Reduce(&norm, &gnorm, 1, MPI_DOUBLE,
-		  MPI_SUM, ROOT, MPI_COMM_WORLD);
+	     MPI_SUM, ROOT, MPI_COMM_WORLD);
 #else
   gnorm = norm;
 #endif
 
   /* Output */
   if (grid.myrank == ROOT) 
-     stdoutIO(&grid, kernel_key, times, &minTime, &meanTime, &maxTime, gnorm);
+    stdoutIO(&grid, kernel_key, times, &minTime, &meanTime, &maxTime, gnorm);
   
   /* MPI Finalize */
 #ifdef USE_MPI
@@ -128,7 +131,7 @@ int main(int argc, char *argv[]) {
   
 #ifdef USE_GPU
   if(grid.gpuflag==1)
-	  freeDeviceMemory();
+    freeDeviceMemory();
 #endif
   return(EXIT_SUCCESS);
 
