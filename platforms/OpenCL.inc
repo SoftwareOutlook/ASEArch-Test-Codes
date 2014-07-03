@@ -17,7 +17,8 @@ DEVICE=-DCL_DEVICE_TYPE_GPU
  # DOUBLE=-DUSE_DOUBLE_PRECISION
 #endif
 
- #DOUBLE=-DUSE_DOUBLE_PRECISION
+
+
 OPENCLO =  jacobi_opencl.o device_info_cl.o err_code_cl.o
 
 COMP := OpenCL

@@ -140,6 +140,7 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown){
     }
 
   // err = output_device_info(OCLInst.device_id);
+
   
   // Create a compute context 
   OCLInst.context = clCreateContext(0, 1, &OCLInst.device_id, NULL, NULL, &err);
