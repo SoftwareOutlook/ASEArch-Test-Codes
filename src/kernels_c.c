@@ -428,7 +428,7 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       *tcomm=my_wtime()-taux;
       //Call the OpenCL kernel
       taux = my_wtime();
-      OpenCL_Jacobi_Iteration(niter, uOld);
+      OpenCL_Jacobi_Iteration(niter);
       *tcomp = my_wtime() - taux;
       //Tidy up
       taux=my_wtime();
