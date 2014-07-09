@@ -41,7 +41,16 @@ struct OpenCLInstance{
 
 
 }; 
-
+/** swap -- A swap function for cl_mem variables
+ * 
+ */
+ void swap(cl_mem *a, cl_mem *b)
+ {
+      cl_mem temp;
+      temp=*a;
+      *a = *b;
+      *b = temp;
+ }
 
 /** Single and double precision OpenCL kernels, switched using the USE_DOUBLE_PRECISION preprocessor flag
  */
@@ -93,17 +102,17 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown){
   int err; //An error tracking integer
   int i;// A generic counting variable
 
-  //Initialise an opencl instance
+  //Set the dimensions of the domain
   OCLInst.xDim=Nx;
   OCLInst.yDim=Ny;
   OCLInst.zDim=Nz;
 
-  //Set up global grid size
+  //Set up the OpenCL global grid size to match the domain size
   OCLInst.global[0]=(size_t)OCLInst.xDim;
   OCLInst.global[1]=(size_t)OCLInst.yDim;
   OCLInst.global[2]=(size_t)OCLInst.zDim;
 
-  // Set up platform and GPU device
+  //The OpenCL platforns
   cl_uint numPlatforms;
 
   // Find number of platforms
@@ -123,7 +132,7 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown){
       return EXIT_FAILURE;
     }
 
-  // Secure a GPU
+  // Secure a device
   for (i = 0; i < numPlatforms; i++)
     {
       err = clGetDeviceIDs(Platform[i], DEVICE, 1, &OCLInst.device_id, NULL);
@@ -139,6 +148,7 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown){
       return EXIT_FAILURE;
     }
 
+  //Uncomment the following line to print out the device name
   // err = output_device_info(OCLInst.device_id);
 
   
@@ -227,61 +237,48 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown){
     }
   return 0;
 }
-//////////////////////////////END "CONSTRUCTOR" HERE/////////////////////////////////////"
 
 
 
 
 
-//OpenCL execution code
-/** \todo Add comms timing for argument setting and cleanup, then comp timing for kernel execution */
-int OpenCL_Jacobi_Iteration(int maxIters, Real *unknown){
+
+
+int OpenCL_Jacobi_Iteration(int maxIters){
   int err;//Error checking integer
   int i;//Generic loop counting variable
  
 
-  for(i=0;i<maxIters/2;++i){
-    //Allcoate the buffers to the kernel/swap the buffers bacl
+  for(i=0;i<maxIters;++i){
+    //Allcoate the buffers to the kernel (Needs to be done at every iteration as the addresses are swapped to "flip-flop" the arrays)
     err |= clSetKernelArg(OCLInst.jacobi_ocl, 3, sizeof(cl_mem), &OCLInst.d_u1);
     err |= clSetKernelArg(OCLInst.jacobi_ocl, 4, sizeof(cl_mem), &OCLInst.d_u2);
     // Execute the kernel
     // letting the OpenCL runtime choose the work-group size
-   
-    err = clEnqueueNDRangeKernel(OCLInst.commands, OCLInst.jacobi_ocl, 3, NULL, OCLInst.global, NULL, 0, NULL, NULL);
+     err = clEnqueueNDRangeKernel(OCLInst.commands, OCLInst.jacobi_ocl, 3, NULL, OCLInst.global, NULL, 0, NULL, NULL);
     if (err)
       {
 	printf("Error: Failed to execute kernel!\n%s\n", err_code(err));
 	return EXIT_FAILURE;
       }
-
-    //Swap the buffers around
-    err |= clSetKernelArg(OCLInst.jacobi_ocl, 3, sizeof(cl_mem), &OCLInst.d_u2);
-    err |= clSetKernelArg(OCLInst.jacobi_ocl, 4, sizeof(cl_mem), &OCLInst.d_u1);
-    //Execute the kernel a second time
-    err = clEnqueueNDRangeKernel(OCLInst.commands, OCLInst.jacobi_ocl, 3, NULL, OCLInst.global, NULL,0, NULL, NULL);
-    if (err)
-      {
-	printf("Error: Failed to execute kernel!\n%s\n", err_code(err));
-	return EXIT_FAILURE;
-      }
-
-  }
+    swap(&OCLInst.d_u1,&OCLInst.d_u2);
 
   // Wait for the commands to complete
   clFinish(OCLInst.commands);
+
+  }
+
+
 
 			  
   return 0;
 }
 
-/** OpenCL_Jacobi_Tidy --
- * 
- */
+
 int OpenCL_Jacobi_Tidy(Real *unknown){
   int err;
   // Read back the results from the compute device
-  /** \todo Fix this memory transfer */
-  err = clEnqueueReadBuffer(OCLInst.commands,OCLInst.d_u1, CL_TRUE, 0, sizeof(Real) *  OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL );  
+  err = clEnqueueReadBuffer(OCLInst.commands,OCLInst.d_u2, CL_TRUE, 0, sizeof(Real) *  OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL );  
   if (err != CL_SUCCESS)
     {
       printf("Error: Failed to read output array!\n%s\n", err_code(err));
@@ -295,4 +292,5 @@ int OpenCL_Jacobi_Tidy(Real *unknown){
   clReleaseKernel(OCLInst.jacobi_ocl);
   clReleaseCommandQueue(OCLInst.commands);
   clReleaseContext(OCLInst.context);
+  return 0;
 }
