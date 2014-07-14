@@ -30,7 +30,7 @@ Below is the original copyright and licence.
   along with PGAF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define JTC_VERSION "1.0.2b (28th of April 2014)"
+#define JTC_VERSION "1.0.3b (14th of July 2014)"
 
 /* Include Files */ 
 #ifdef USE_MPI

@@ -154,26 +154,19 @@ __global__ void kernel_laplace3d_shm(int NX, int NY, int NZ, Real *d_u1, Real *d
 //This kernel can be used for a quick extimate of the bandwidth 
 __global__ void kernel_BandWidth(int NX, int NY, int NZ, Real *d_u1, Real *d_u2)
 {
-  int   i, j, k, ks, indg, KOFF;
-  Real u2, sixth=1.0/6.0;
+  Real sixth=1.0/6.0;
 
   //
   // define global indices and array offsets
   //
-  int nby = 1 + (NY-1) / blockDim.y;
-  int  bz = 1 + (NZ-1) / (1 + (gridDim.y - 1) / nby); 
-  i    = threadIdx.x + blockIdx.x * blockDim.x;
-  j    = threadIdx.y + (blockIdx.y % nby) * blockDim.y;
-  ks   =  (blockIdx.y / nby) * bz;
-  indg = i + j*NX + ks*NX*NY;
-
-  KOFF = NX*NY;
+  int i = blockIdx.x*blockDim.x + threadIdx.x;
+  int j = blockIdx.y*blockDim.y + threadIdx.y;
+  int k = blockIdx.z*blockDim.z + threadIdx.z;
   
-  int  ke = ( ks+bz > NZ ? NZ : ks+bz);
-  for (k=ks; k < ke; k++) {
-      d_u2[indg] = d_u1[indg] * sixth;
-      indg += KOFF;
-    }
+  // WARNING: no checks for the interior, grid sizes need to multiple of blocks
+
+  int indg = i + j * NY + k * NX * NY;
+  d_u2[indg] = d_u1[indg] * sixth;
 }
 
 
@@ -375,8 +368,8 @@ void calcGpuDims(int kernel_key, int blockXsize, int blockYsize, int blockZsize,
       break;
     case(GPU_BANDWIDTH_KERNEL):
     case(GPU_MM_KERNEL):
-       GridX = 1 + (NX-1)/blockXsize;
-      GridY = (1 + (NY-1)/blockYsize); //* (1 + (NZ-1) / blockZsize);
+      GridX = 1 + (NX-1)/blockXsize;
+      GridY = 1 + (NY-1)/blockYsize; //* (1 + (NZ-1) / blockZsize);
       GridZ = NZ;
       BlockX = blockXsize;
       BlockY = blockYsize;

@@ -1,34 +1,27 @@
 #============================================================
-# Makefile variable for  intel mpi
+# Makefile settings for IDataPlex Blue Wonder (Daresbury) 
 #    
 # Lucian Anton 
 # created: 5/06/12
 #============================================================
 
-F90 := source /opt/intel/composerxe/bin/compilervars.sh intel64 && \
-      source /opt/intel/impi/4.1.0/intel64/bin/mpivars.sh && mpiifort
-
-CC := source /opt/intel/composerxe/bin/compilervars.sh intel64 && \
-      source /opt/intel/impi/4.1.0/intel64/bin/mpivars.sh && mpiicc
+CC := module add intel/comp && icc 
 
 LANG = C
-
-ifdef USE_MIC
-  FMIC = -mmic 
-# -no-opt-prefetch
-endif
+BUILD = opt
+USE_OPENMP = yes 
 
 ifdef USE_MPI
-  FMPI=-DUSE_MPI
+  FMPI = -DUSE_MPI
 endif
 
 ifdef USE_DOUBLE_PRECISION
-  DOUBLE=-DUSE_DOUBLE_PRECISION
+  DOUBLE = -DUSE_DOUBLE_PRECISION
 endif
 
 USE_VEC1D := on
 ifdef USE_VEC1D
-  FVEC1D := -DUSE_VEC1D
+  VEC1D = -DUSE_VEC1D
 endif
 
 #FC = module add intel/comp intel/mpi && mpiifort
@@ -40,8 +33,8 @@ USE_OPENMP = yes
 FFLAGS_intel_opt   := -O3 $(FMIC) -opt-streaming-stores auto 
 FFLAGS_intel_debug  :=  -g -C  $(FMIC)  -fpe0 -check noarg_temp_created
 
-CFLAGS_intel_opt := $(FVEC1D) $(FMPI) $(DOUBLE) -O3 -restrict -align -vec-report6 $(FMIC)
-CFLAGS_intel_debug := $(FVEC1D) $(FMPI) $(DOUBLE) -g -restrict $(FMIC)  
+CFLAGS_intel_opt := $(VEC1D) $(FMPI) $(DOUBLE) -O3 -xHost -restrict -align -vec-report6 $(FMIC) -opt-streaming-stores auto
+CFLAGS_intel_debug := $(VEC1D) $(FMPI) $(DOUBLE) -g $(FMIC)  
 
 MPIFLAGS         :=
 OMPFLAGS_intel_yes := -openmp

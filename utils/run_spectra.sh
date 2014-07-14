@@ -34,8 +34,8 @@ for argument in $options
 	       echo "   -minsize=<start grid sizes> -maxsize=<end grid sizes> -step=<grid increase>"
 	       echo "   -exe=<executables list> -nthreads=<number of OpenMP threads list> "
 	       echo "   -test pass the -t flag to executable for testing"
-	       echo "   -malig=<val> use posix_memalign for main arrays, align memory with <va>"
-	       echo "   -system=<val> : select system <val> for bach execution" 
+	       echo "   -malig=<val> use posix_memalign for main arrays, align memory with <val>"
+	       echo "   -system=<val> : select system <val> for batch execution" 
 	       exit 0
 	       ;;
         *)  echo "unknown flag $argument" ; exit  1;;
@@ -69,21 +69,25 @@ fi
 index=0
 for exe in $exe_list
 do
+    # this might fail if login nodes cannot run executable compiled for compute nodes 
+    echo "# $exe version "$( $exe -version ) >> $fout
     for model in $model_list
     do
 	for nth in $threads_list 
 	do
 	    export OMP_NUM_THREADS=$nth
-	    #fout=out_"$model"_"${exe%.exe}"_t"$nth".txt
-	    #fspectra=${fout%.txt}_spectra.txt 
 	
-	    #[ -f "$fout" ] && cat /dev/null > $fout
+            # print context at the top of the file ?, Not yet
+            print_context=
+            #(( index == 0 )) && print_context=-pc
 
 	    echo "# $((index++)) model $model nth $nth exe $exe" >> $fout
 	    # $((++index))
 	    for ((linsize=min_linsize; linsize <= max_linsize; linsize += step)) 
 	    do
-		niter=$(((10*max_linsize)/linsize))
+                nitermax=10
+                nitersize=$(((10*max_linsize)/linsize))
+		niter=$nitersize #$((nitersize>nitermax?nitermax:nitersize))
 		nruns=5
 		if [ "$model" = wave ] 
 		then
@@ -98,7 +102,7 @@ do
 		    fi
 		fi
 		    
-		arguments="-ng $linsize $linsize $linsize -model $model $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign"
+		arguments="-ng $linsize $linsize $linsize -model $model $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign $print_context"
 		
 		# block flags are not not compulsory
 		if [ "$blk_val" ] 
@@ -114,7 +118,8 @@ do
 		    mic)
 		    # mic on csemic2
 			export I_MPI_MIC=1
-			mpirun -n 1 -host mic0  -env LD_LIBRARY_PATH /lib -env OMP_NUM_THREADS $nth -env KMP_AFFINITY verbose,balanced "$exe" $arguments  >> $fout
+                        # -env KMP_AFFINITY balanced
+			mpirun -n 1 -host mic0  -env LD_LIBRARY_PATH /lib -env OMP_NUM_THREADS $nth -env KMP_AFFINITY balanced "$exe" $arguments  >> $fout
 			;;
 		    bgq)
 		    # blue joule
@@ -122,7 +127,7 @@ do
 			;;
                     idp)
 		    # IdataPlex
-			mpiexec.hydra -np 1 -env OMP_NUM_THREADS $nth  -env KMP_AFFINITY verbose,granularity=core,scatter "$exe" $arguments  >> $fout
+			mpiexec.hydra -np 1 -env OMP_NUM_THREADS $nth "$exe" $arguments  >> $fout
                         ;;
 		    *)
 		    # interactive shell 

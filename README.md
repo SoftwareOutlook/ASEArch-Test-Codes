@@ -1,25 +1,24 @@
 Jacobi Test Code (JTC): OpenMP and GPU benchmark for 3D Jacobi solver
-Version: 1.0.0
+Version: 1.0.3b
 
 
 Basic idea of the algorithm:
 
 	- Iterates the 6 points stencil on a cuboid grid.
-	- Initial value is a eigenvalue of the Jacobi smoother
+	- The initial grid state is an eigenvector of the Jacobi smoother
                sin(pi*kx*x/L)*sin(pi*ky*y/L)sin(pi*kz*z/L)
 
-The code does a number o runs each over a given number of iterations.
-The program collects the average time per iteration for each run and
-outputs the minimum, the average and the maximum values over the
-run. The output contains also the values of the grid size, block size
-( if loops are blocked), MPI topology and the number of OpenMP thread
-used.
+The code does a number of runs each over a given number of iterations.
+The average time per iteration is collected for each run and
+the minimum, the average and the maximum values over the
+runs are reported. The output contains also the values of the grid sizes, block sizes
+(if the loops are blocked), and the number of used OpenMP threads.
         
-Build: Make can be customised with the help of platforms/*inc files.
-       Use platforms/gcc.inc as a template for a quick test on local
-       machine. 
+Build: The Makefile is customised with the help of platforms/*inc files.
+       Use platforms/gcc.inc as a template for a quick test on local machine. 
        platforms/cray-xe6.inc shows a customisation for a
        system with multiple compilers accesible via module environment.
+       Select the desired platform by passing a value to PLATFORM variable (without .inc suffix)
 
 
 Usage:
@@ -29,9 +28,10 @@ The following flags can be used to set the grid sized and other run parameters:
 -ng <nx> <ny> <nz>       set the global gris sizes
 
 -nb <bx> <by> <bz>       set the computational block size, relevant for blocked model and GPU kernels.
-                         Notes: 1) no sanity checks tests are done, you are on your own.
-                                2) for blocked model the OpenMP parallelism is done over
-                                   computational blocks. One must ensure that there
+                         Notes: 1) only a few sanity checks tests are done, you are on your own.
+                                2) for the blocked algorithm the OpenMP parallelism is done over
+                                   computational blocks, i.e. a block is updated by one threads. 
+				   One must ensure that there is
                                    enough work for all threads by setting suitable 
                                    block sizes.
                                    The basic rule for block size should be 
@@ -42,8 +42,9 @@ The following flags can be used to set the grid sized and other run parameters:
                                    probable is better to leave some threads unused rather than having 
                                    them fighting over the cache lines.
                                 3) For GPU runs <bx> and <by> are the dimension of the block of threads,
-                                   <bz> is irelevant in this version, the block of threads are 2D
-				4) GPU default: 32x4x1
+                                   <bz> is irrelevant in this version, the block of threads are 2D or 3D 
+				   with size 1 in z direction.
+				4) Default sizes for GPU block of threads: 32x4x1
                          
 -nruns <n>               set the number of smoother runs (default 5)
 -niter <b>               set the number of iteration per run (default 1).
@@ -83,9 +84,9 @@ The following flags can be used to set the grid sized and other run parameters:
                          NOTES: 1) GPU runs report also the transfer time between device and host,
                                 2) Default model is baseline.
 
--pc                      prints information on run parameters at the beginning of a calculation.
+-pc                      prints information on run parameters at the beginning of calculation.
 
--malign <n>              use posix_memalign to allocate working array with an address alignment of <n> bytes. 
+-malign <n>     use posix_memalign to allocate working array with an address alignment of <n> bytes. 
                          It may help vectorisation on certain systems.
                          Default allocation is done with malloc.
 
@@ -102,7 +103,7 @@ meaningful for small grids and run time is not unnecessarily large for
 large grids. The timing is collected in an output file suitable for
 gnuplot.
 
-Try sh <path>/utils/run_spectra.sh -help for more details.
+Try `sh <path>/utils/run_spectra.sh -help` for more details.
 
    
 

@@ -9,7 +9,6 @@ LANG := C
 
 COMP=gcc
 
-
 USE_OPENMP=yes
 
 ifdef USE_MPI
@@ -17,12 +16,13 @@ ifdef USE_MPI
   F90 := mpif90
   CPPFLAGS := -DUSE_MPI
 else
-	CC  := gcc
-	F90 := gfortran
+  CC  := gcc
+  F90 := gfortran
 endif
 
+
 NVCC := nvcc
-CPPFLAGS := -DUSE_GPU
+CPPFLAGS += -DUSE_GPU
 INC	:= -I/usr/local/cuda-5.0/include 
 LIB	:= -L/usr/local/cuda-5.0/lib64 -lcuda -lcudart
 
@@ -40,6 +40,10 @@ FFLAGS_opt := -O3
 FFLAGS_debug := -g -fbounds-check -Wall -fbacktrace -ffpe-trap=invalid,zero,overflow -fsignaling-nans -fdump-core 
 FFLAGS := $(CPPFLAGS) $(FFLAGS_$(BUILD))
 
+# this is for CPU
+ifdef USE_VEC1D
+  CPPFLAGS += -DUSE_VEC1D
+endif
 ifdef USE_OPENMP
   OMPFLAGS := -fopenmp 
 endif
