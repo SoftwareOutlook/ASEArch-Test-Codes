@@ -129,6 +129,10 @@ do
 		    # IdataPlex
 			mpiexec.hydra -np 1 -env OMP_NUM_THREADS $nth "$exe" $arguments  >> $fout
                         ;;
+                    cray)
+	            # Cray systems use aprun
+                        aprun -n 1 -d $OMP_NUM_THREADS "$exe" $arguments  >> $fout
+                        ;;
 		    *)
 		    # interactive shell 
 			$exe $arguments  >> $fout

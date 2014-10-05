@@ -4,11 +4,11 @@ Version: 1.0.3b
 
 Basic idea of the algorithm:
 
-	- Iterates the 6 points stencil on a cuboid grid.
+	- Iterates a 6 points Laplacian stencil on a cuboid grid.
 	- The initial grid state is an eigenvector of the Jacobi smoother
                sin(pi*kx*x/L)*sin(pi*ky*y/L)sin(pi*kz*z/L)
 
-The code does a number of runs each over a given number of iterations.
+The code does a number of runs, each of them over a given number of iterations.
 The average time per iteration is collected for each run and
 the minimum, the average and the maximum values over the
 runs are reported. The output contains also the values of the grid sizes, block sizes
@@ -16,7 +16,7 @@ runs are reported. The output contains also the values of the grid sizes, block 
         
 Build: The Makefile is customised with the help of platforms/*inc files.
        Use platforms/gcc.inc as a template for a quick test on local machine. 
-       platforms/cray-xe6.inc shows a customisation for a
+       platforms/cray-xc30.inc shows a customisation for a
        system with multiple compilers accesible via module environment.
        Select the desired platform by passing a value to PLATFORM variable (without .inc suffix)
 
@@ -46,8 +46,8 @@ The following flags can be used to set the grid sized and other run parameters:
 				   with size 1 in z direction.
 				4) Default sizes for GPU block of threads: 32x4x1
                          
--nruns <n>               set the number of smoother runs (default 5)
--niter <b>               set the number of iteration per run (default 1).
+-nruns <n>      set the number of smoother runs (default 5)
+-niter <b>        set the number of iteration per run (default 1).
                          Note: if wave model is activated niter is fixed to num-wave(see below) 
                                and this flag is ignored. 
 
@@ -96,14 +96,14 @@ The following flags can be used to set the grid sized and other run parameters:
 
 Run script:
 
-For systematic data collection of execution times over a set of grid
-sizes the script utils/run_spectra.sh is provided.  The script adjusts
-the number of iterations function grid size such that the timings are
+The script utils/run_spectra.sh is provide to help with systematic collection
+of execution times over a set of grid sizes.  The script adjusts
+the number of iterations function of the grid size such that the timings are
 meaningful for small grids and run time is not unnecessarily large for
 large grids. The timing is collected in an output file suitable for
 gnuplot.
 
-Try `sh <path>/utils/run_spectra.sh -help` for more details.
+See `sh <path>/utils/run_spectra.sh -help` for more details.
 
    
 
