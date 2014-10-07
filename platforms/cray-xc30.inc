@@ -61,11 +61,10 @@ OMPFLAGS_intel_no  :=
 
 
 # Cray flags
-OMPFLAGS_cray     :=  $(VEC1D) $(DOUBLE)
-FFLAGS_cray_opt   := -rm 
-FFLAGS_cray_debug := -g
-CFLAGS_cray   :=  
-CFLAGS_cray_debug := -g $(VEC1D) $(DOUBLE)
+FFLAGS_cray_opt   := $(VEC1D) $(DOUBLE) -rm 
+FFLAGS_cray_debug := $(VEC1D) $(DOUBLE) -g
+CFLAGS_cray_opt   := $(VEC1D) $(DOUBLE) -h report=fisv 
+CFLAGS_cray_debug := $(VEC1D) $(DOUBLE) -g
 OMPFLAGS_cray_yes := 
 OMPFLAGS_cray_no  := -h noomp
 
