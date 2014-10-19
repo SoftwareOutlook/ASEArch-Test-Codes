@@ -34,7 +34,7 @@ USE_OPENMP = yes
 FFLAGS_intel_opt   := -O3 $(FMIC) vec-report6 -opt-streaming-stores auto 
 FFLAGS_intel_debug  :=  -g -C  $(FMIC)  -fpe0 -check noarg_temp_created
 
-CFLAGS_intel_opt := $(VEC1D) $(FMPI) $(DOUBLE) -O3 -restrict -align -vec-report6 $(FMIC) -xHost
+CFLAGS_intel_opt := $(VEC1D) $(FMPI) $(DOUBLE) -O3 -restrict -align -vec-report6 $(FMIC) -xHost -opt-streaming-stores never
 CFLAGS_intel_debug := $(VEC1D) $(FMPI) $(DOUBLE) -g -restrict $(FMIC)  
 
 MPIFLAGS         :=
