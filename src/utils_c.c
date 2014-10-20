@@ -1,14 +1,14 @@
 /*
-This is part of JTC, a CUDA-OpenMP-MPI Benchmark for
-Jacobi solver applied to a 3D Laplace equation.
+  This is part of JTC, a CUDA-OpenMP-MPI Benchmark for
+  Jacobi solver applied to a 3D Laplace equation.
 
-Lucian Anton 
-March 2014.
+  Lucian Anton 
+  March 2014.
 
-This file originates from v 1.0 of HOMB
-http://sourceforge.net/projects/homb/
+  This file originates from v 1.0 of HOMB
+  http://sourceforge.net/projects/homb/
 
-The original copyright and licence is below.
+  The original copyright and licence is below.
 
   Copyright 2009 Maxwell Lipford Hutchinson
 
@@ -159,12 +159,21 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 	else
 	  error_abort("wrong value for threads per column parameter", argv[i]);
       }
+      //OpenACC switch - Mark Mawson 20/10/2014
+      else if (strcmp("openacc",argv[i]) == 0){
+#ifdef OPENACC
+	*kernel_key = grid->key = OPENACC_KERNEL;
+
+#else
+	error_abort("GPU model specified without gpu compilation", "");
+#endif
+      }
       else if (strcmp("gpu-2d-blockgrid",argv[i]) == 0){
 #ifdef USE_GPU
-	  *kernel_key = grid->key = GPU_BASE_KERNEL;
-	  grid->gpuflag = 1;
+	*kernel_key = grid->key = GPU_BASE_KERNEL;
+	grid->gpuflag = 1;
 #else
-	  error_abort("GPU model specified without gpu compilation", "");
+	error_abort("GPU model specified without gpu compilation", "");
 #endif
       }
       else if (strcmp("gpu-shm",argv[i]) == 0){
@@ -182,7 +191,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 #else
 	error_abort("GPU model specified without gpu compilation", "");
 #endif
-	}
+      }
       else if (strcmp("gpu-3d-blockgrid",argv[i]) == 0){
 #ifdef USE_GPU
 	*kernel_key = grid->key = GPU_MM_KERNEL;
@@ -191,15 +200,16 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 	error_abort("GPU model specified without gpu compilation", "");
 #endif
       }
+
       /*
-      else if (strcmp("blockedgpu",argv[i]) == 0){
-#ifdef USE_GPU
-    	  *kernel_key = grid->key = BLOCKEDGPU_KERNEL;
-    	  grid->gpuflag = 1;
-#else
+	else if (strcmp("blockedgpu",argv[i]) == 0){
+	#ifdef USE_GPU
+	*kernel_key = grid->key = BLOCKEDGPU_KERNEL;
+	grid->gpuflag = 1;
+	#else
 	error_abort("GPU model specified without gpu compilation", "");
-#endif
-      }
+	#endif
+	}
       */
       else if (strcmp("help",argv[i]) == 0) 
 	print_help(grid, "model");
@@ -312,8 +322,8 @@ void initialise_grid( const struct grid_info_t *g) {
   else{
     n = 2 * g->nlx * g->nly * g->nlz;
     s =  (size_t)n * sizeof(Real);
-      udata = malloc(s);
-      //printf("no maling %d \n", n*sizeof(Real));
+    udata = malloc(s);
+    //printf("no maling %d \n", n*sizeof(Real));
   }
 
   uOld = &udata[n/2]; uNew = &udata[0];
@@ -323,19 +333,19 @@ void initialise_grid( const struct grid_info_t *g) {
     for (j = g->sy - 1; j <= g->ey + 1; ++j)
       for (i = g->sx - 1; i <= g->ex + 1; ++i){
 	ijk = uindex(g,i,j,k);
-	  uOld[ijk] = sin((PI * i * kx) / (g->ng[0] - 1)) * sin((PI * j * ky) / (g->ng[1] - 1)) * sin((PI * k * kz) / (g->ng[2] - 1));
-	  uNew[ijk]=0.0;
+	uOld[ijk] = sin((PI * i * kx) / (g->ng[0] - 1)) * sin((PI * j * ky) / (g->ng[1] - 1)) * sin((PI * k * kz) / (g->ng[2] - 1));
+	uNew[ijk]=0.0;
       }
 #ifdef USE_GPU
   /**
-     * check if GPU model is requested in command arguments
-     * if its requested then relevant GPU information is initialized by invoking
-     * initialiseGPUData function
-     */
+   * check if GPU model is requested in command arguments
+   * if its requested then relevant GPU information is initialized by invoking
+   * initialiseGPUData function
+   */
     
-    if(g->gpuflag==1)
+  if(g->gpuflag==1)
     {
-    	initialiseGPUData(g->ng[0],g->ng[1],g->ng[2]);
+      initialiseGPUData(g->ng[0],g->ng[1],g->ng[2]);
     }
 #endif
 }
@@ -366,6 +376,8 @@ void printContext(const struct grid_info_t *g, int kernel_key){
       sprintf(kernel_name, "shared memory GPU"); break;
     case(GPU_BANDWIDTH_KERNEL) :
       sprintf(kernel_name, "GPU bandwidth"); break;
+ case(OPENACC_KERNEL) :
+      sprintf(kernel_name, "OpenACC"); break;
       //case(BASEGPU_SHM_KERNEL) :
       //sprintf(kernel_name, "Titanium SharedMem"); break;
       //case(BLOCKEDGPU_KERNEL) :
@@ -420,7 +432,7 @@ void printContext(const struct grid_info_t *g, int kernel_key){
 
 
 void check_norm(const struct grid_info_t *g, int irun, double norm){
-/* test ration of to consecutive norm agains the smoother eigenvalue for the chosen mode */
+  /* test ration of to consecutive norm agains the smoother eigenvalue for the chosen mode */
 
 
 
@@ -453,7 +465,7 @@ void check_norm(const struct grid_info_t *g, int irun, double norm){
 
 
 double local_norm(const struct grid_info_t *g){
- //compute the L2 norm (squared)
+  //compute the L2 norm (squared)
   int i, j, k;
   int nxShift, NX = g->nlx, NY = g->nly, NZ = g->nlz;
   double norm = 0.0;
@@ -502,54 +514,54 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
 
   /* Compute mean, max, min of times */
   ii = 0;
-    for (iPE = 0; iPE < nproc; iPE++){
-      for (irun = 0; irun < nruns; irun++){
-	meanTime->comp += times[ii].comp;
-	maxTime->comp = MAX(maxTime->comp, times[ii].comp);
-	minTime->comp = MIN(minTime->comp, times[ii].comp);
-#ifdef USE_GPU
-	meanTime->comm += times[ii].comm;
-	maxTime->comm = MAX(maxTime->comm, times[ii].comm);
-	minTime->comm = MIN(minTime->comm, times[ii].comm);
+  for (iPE = 0; iPE < nproc; iPE++){
+    for (irun = 0; irun < nruns; irun++){
+      meanTime->comp += times[ii].comp;
+      maxTime->comp = MAX(maxTime->comp, times[ii].comp);
+      minTime->comp = MIN(minTime->comp, times[ii].comp);
+#if defined USE_GPU || defined OPENACC
+      meanTime->comm += times[ii].comm;
+      maxTime->comm = MAX(maxTime->comm, times[ii].comm);
+      minTime->comm = MIN(minTime->comm, times[ii].comm);
 #endif
-	++ii;
-      }
+      ++ii;
     }
-    meanTime->comp = meanTime->comp / (double) nruns / (double) nproc;
-#ifdef USE_GPU
-    meanTime->comm = meanTime->comm / (double) nruns / (double) nproc;
+  }
+  meanTime->comp = meanTime->comp / (double) nruns / (double) nproc;
+#if defined USE_GPU || defined OPENACC
+  meanTime->comm = meanTime->comm / (double) nruns / (double) nproc;
 #endif
 
     
   /* Compute standard deviation of times */
-    /*
+  /*
     ii = 0;
     for (iPE = 0; iPE < nproc; iPE++){
 
-      for (iter = shift; iter < ntimes; iter++){
+    for (iter = shift; iter < ntimes; iter++){
 
-	*stdvTime += (times[ii] - *meanTime) *
-	  (times[ii] - *meanTime);
-	++ii;
-      }
-      ii += shift;
+    *stdvTime += (times[ii] - *meanTime) *
+    (times[ii] - *meanTime);
+    ++ii;
     }
-  *stdvTime = sqrt(*stdvTime / ((ntimes - shift)* nproc-1.0));
-  */
+    ii += shift;
+    }
+    *stdvTime = sqrt(*stdvTime / ((ntimes - shift)* nproc-1.0));
+    */
   /* Normalized standard deviation (stdv / mean) */
   //*NstdvTime = *stdvTime / *meanTime;
   /* normalise averages to 1 iteration step */
-    meanTime->comp /= niter;
-    maxTime->comp /= niter;
-    minTime->comp /= niter;
+  meanTime->comp /= niter;
+  maxTime->comp /= niter;
+  minTime->comp /= niter;
 }
 
 
 void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct times_t *times,  
                const struct times_t *minTime,  const struct times_t *meanTime,  const struct times_t *maxTime, 
-	        double norm){
+	       double norm){
 
-  int gpu_header = (kernel_key == GPU_BASE_KERNEL) || (kernel_key == GPU_SHM_KERNEL) || (kernel_key == GPU_BANDWIDTH_KERNEL || (kernel_key == GPU_MM_KERNEL));
+  int gpu_header = (kernel_key == GPU_BASE_KERNEL) || (kernel_key == GPU_SHM_KERNEL) || (kernel_key == GPU_BANDWIDTH_KERNEL) || (kernel_key == GPU_MM_KERNEL) || (kernel_key == OPENACC_KERNEL);
 
   if (pHeader){
     printf("# Last norm %22.15e\n",sqrt(norm));
@@ -560,9 +572,9 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
 #else
     if ( (kernel_key == BLOCKED_KERNEL) || (kernel_key == WAVE_KERNEL)){
 
-    printf("#==================================================================================================================================#\n");
-    printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tminTime\tmeanTime \tmaxTime    #\n");
-    printf("#==================================================================================================================================#\n");
+      printf("#==================================================================================================================================#\n");
+      printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tminTime\tmeanTime \tmaxTime    #\n");
+      printf("#==================================================================================================================================#\n");
     }
     else if ( gpu_header)
       {
@@ -593,26 +605,26 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
 	   maxTime->comm);
   else
     printf("\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",
-	 nthreads, g->ng[0], g->ng[1], g->ng[2], niter, minTime->comp,
+	   nthreads, g->ng[0], g->ng[1], g->ng[2], niter, minTime->comp,
 	   meanTime->comp, maxTime->comp);
 
 #endif
   /* Only if "Verbose Output" asked for */
-/*
-  if (vOut){ 
+  /*
+    if (vOut){ 
     printf("\n"); printf("\n");
     printf("# Full Time Output (rows are times, cols are tasks)\n");
     ii = 0;
     int nproc = g->np[0] * g->np[1] * g->np[2];
     for (iter = 0; iter < niter; iter++){ 
-      for (i = 0; i < nproc; i++){
-        printf("%e \t",times[ii]);
-	++ii;
-      }
-      printf("\n");
+    for (i = 0; i < nproc; i++){
+    printf("%e \t",times[ii]);
+    ++ii;
     }
-  }
-*/
+    printf("\n");
+    }
+    }
+  */
 }
 
 #ifndef USE_MPI

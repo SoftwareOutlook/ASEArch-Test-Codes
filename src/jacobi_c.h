@@ -108,3 +108,5 @@ struct times_t
 #define GPU_SHM_KERNEL   7
 #define GPU_BANDWIDTH_KERNEL   8
 #define GPU_MM_KERNEL 9
+#define OPENACC_KERNEL 10
+
