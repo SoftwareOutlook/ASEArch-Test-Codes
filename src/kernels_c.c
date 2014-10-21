@@ -12,7 +12,7 @@
 #ifdef USE_GPU
 #include "gpu_laplace3d_wrapper.h"
 #endif
-#ifdef OPENACC
+#ifdef _OPENACC
 #include "openacc.h"
 #endif 
 static const Real sixth=1.0/6.0;
@@ -33,7 +33,7 @@ static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* 
  
 
            
-#ifdef OPENACC
+#ifdef _OPENACC
 #pragma acc data deviceptr(u1,u2)
 #pragma acc kernels loop collapse(3) independent private(i,j,k,ind)
 #endif
@@ -54,7 +54,7 @@ static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* 
       }
     }
   }
-#ifdef OPENACC 
+#ifdef _OPENACC 
 
 #endif
 }
@@ -428,14 +428,14 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       //OpenACC case added by Mark Mawson - 20/10/2014
 
     case (OPENACC_KERNEL):
-#ifdef OPENACC
+#ifdef _OPENACC
        
- taux = my_wtime();
-#pragma acc enter data copyin(uOld[0:nxShift*NY*NZ],uNew[0:nxShift*NY*NZ])
- *tcomm = my_wtime() - taux;
+      taux = my_wtime();
+#pragma acc enter data copyin(uOld[0:nxShift*NY*NZ]) create(uNew[0:nxShift*NY*NZ])
+      *tcomm = my_wtime() - taux;
       Real* u1_device =acc_deviceptr(uOld);
       Real* u2_device =acc_deviceptr(uNew);
- taux = my_wtime();
+      taux = my_wtime();
       for (step = 0; step < niter; ++step){
 #ifdef USE_MPI
 	exchange_halos(g);
@@ -444,10 +444,12 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
 	tmp = u2_device; u2_device = u1_device; u1_device = tmp;
       } 
       *tcomp = my_wtime() - taux;
+      uOld = acc_hostptr(u1_device);
+      uNew = acc_hostptr(u2_device);
       taux = my_wtime();
-#pragma acc exit data copyout(uOld[0:nxShift*NY*NZ],uNew[0:nxShift*NY*NZ])
-       *tcomm += my_wtime() - taux;
-
+#pragma acc exit data copyout(uOld[0:nxShift*NY*NZ]) delete(uNew)
+      *tcomm += my_wtime() - taux;
+      
 #else 
       error_abort("unkown kernel key", "");
 #endif
@@ -467,7 +469,7 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
 #endif
       
     }
-    }
+}
 
 
       /* MPI versions */

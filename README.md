@@ -76,7 +76,9 @@ The following flags can be used to set the grid sized and other run parameters:
                          gpu-2d-blockgrid : uses 2d CUDA grids, each block of threads loops in z direction
                                         
                          gpu-3d-blockgrid : uses 3d CUDA grids, the block of threads have size 1 in z
-                                            direction, hence grid size is <nz>.  
+                                            direction, hence grid size is <nz>.
+                         openacc : Use OpenACC directives wrapped around the loops in baseline kernel 
+                                   (Gold_laplace3d function in kernels_c.c)  
 			 gpu-bandwidth : measures the time for the simple update u[i] = const * v[i]
                                          useful to measure the effective GPU bandwidth.
 			                 Note: -t is meaningless in this case

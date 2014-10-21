@@ -161,7 +161,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       }
       //OpenACC switch - Mark Mawson 20/10/2014
       else if (strcmp("openacc",argv[i]) == 0){
-#ifdef OPENACC
+#ifdef _OPENACC
 	*kernel_key = grid->key = OPENACC_KERNEL;
 
 #else
@@ -519,7 +519,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
       meanTime->comp += times[ii].comp;
       maxTime->comp = MAX(maxTime->comp, times[ii].comp);
       minTime->comp = MIN(minTime->comp, times[ii].comp);
-#if defined USE_GPU || defined OPENACC
+#if defined USE_GPU || defined _OPENACC
       meanTime->comm += times[ii].comm;
       maxTime->comm = MAX(maxTime->comm, times[ii].comm);
       minTime->comm = MIN(minTime->comm, times[ii].comm);
@@ -528,7 +528,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
     }
   }
   meanTime->comp = meanTime->comp / (double) nruns / (double) nproc;
-#if defined USE_GPU || defined OPENACC
+#if defined USE_GPU || defined _OPENACC
   meanTime->comm = meanTime->comm / (double) nruns / (double) nproc;
 #endif
 
@@ -673,15 +673,17 @@ static void print_help( const struct grid_info_t *g, const char *s){
 [-malign <memory-alignment> ] [-v] [-t] [-pc] [-nh] [-help] [-version] \n");
       
     else if (strcmp(s, "model") == 0)
-      printf("possible values for model parameter: \n \
-        baseline \n \
-        baseline-opt\n \
-        blocked\n \
-        wave num-waves threads-per-column \n \
-        gpu-2d-blockgrid\n \
-        gpu-3d-blockgrid\n\n \
-        gpu-bandwidth\n\n \
-        Note for wave model: if threads-per-column == 0 diagonal wave kernel is used.\n");  
+      printf("\nBelow are the possible values after  -model flag:\n\
+        baseline\n\
+        baseline-opt\n\
+        blocked\n\
+        wave num-waves threads-per-column\n\
+        gpu-2d-blockgrid\n\
+        gpu-3d-blockgrid\n\
+        openacc\n\
+        gpu-bandwidth\n\n\
+Note for wave model: if threads-per-column == 0 diagonal wave kernel is used.\n\
+See README.md for more details.\n\n");  
     else if (strcmp(s, "version") == 0)
       printf("%s \n",JTC_VERSION);
     else

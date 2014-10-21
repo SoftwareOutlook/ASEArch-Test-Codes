@@ -41,6 +41,10 @@ ifdef USE_GPU
   EXE := $(basename $(EXE))_gpu.exe 
 endif
 
+ifdef USE_ACC
+  EXE := $(basename $(EXE))_acc.exe
+endif
+
 ifdef USE_DOUBLE_PRECISION
   EXE := $(basename $(EXE))_dp.exe
 endif

@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     laplace3d(&grid, kernel_key, &compTime, &commTime);
 
     times[irun].comp = compTime;
-#if defined USE_GPU || defined OPENACC
+#if defined USE_GPU || defined _OPENACC
     times[irun].comm = commTime;
 #endif
 
