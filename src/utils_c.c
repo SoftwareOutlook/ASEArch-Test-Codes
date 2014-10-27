@@ -516,12 +516,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
       meanTime->comp += times[ii].comp;
       maxTime->comp = MAX(maxTime->comp, times[ii].comp);
       minTime->comp = MIN(minTime->comp, times[ii].comp);
-#ifdef USE_OPENCL
-      meanTime->comm += times[ii].comm;
-      maxTime->comm = MAX(maxTime->comm, times[ii].comm);
-      minTime->comm = MIN(minTime->comm, times[ii].comm);
-#endif
-#ifdef USE_GPU
+#if defined USE_OPENCL || defined USE_GPU
       meanTime->comm += times[ii].comm;
       maxTime->comm = MAX(maxTime->comm, times[ii].comm);
       minTime->comm = MIN(minTime->comm, times[ii].comm);
@@ -530,12 +525,10 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
     }
   }
   meanTime->comp = meanTime->comp / (double) nruns / (double) nproc;
-#ifdef USE_GPU
+#if defined GPU || defined USE_OPENCL
   meanTime->comm = meanTime->comm / (double) nruns / (double) nproc;
 #endif
-#ifdef USE_OPENCL
-  meanTime->comm = meanTime->comm / (double) nruns / (double) nproc;
-#endif
+
 
     
   /* Compute standard deviation of times */

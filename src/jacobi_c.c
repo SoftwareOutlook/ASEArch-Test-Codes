@@ -89,12 +89,10 @@ int main(int argc, char *argv[]) {
     laplace3d(&grid, kernel_key, &compTime, &commTime);
 
     times[irun].comp = compTime;
-#ifdef USE_GPU
+#if defined USE_GPU || defined USE_OPENCL
     times[irun].comm = commTime;
 #endif
-#ifdef USE_OPENCL
-    times[irun].comm = commTime;
-#endif
+
 
     if (testComputation) {
       norm = local_norm(&grid);
