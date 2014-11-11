@@ -1,13 +1,13 @@
 /*
-  This is the C driver for Jacobi Test Code (JTC) , a hybrid CUDA-OpenMP-MPI benchmark for
-  Jacobi solver applied to a 3D Laplace equation.
+  This is the C driver for Jacobi Test Code (JTC) , a hybrid OpenCL-CUDA-OpenMP-MPI
+  benchmark for Jacobi solver applied to a 3D Laplace equation.
 
   Iteration starts from a Jacobi iterator eigenvalue, boundary conditions are set to 0.
 
   Lucian Anton
   March 2014.
 
-  This code started from v 1.0 of HOMB
+  This source files originates from v 1.0 of HOMB
   http://sourceforge.net/projects/homb/
 
   Below is the original copyright and licence.
