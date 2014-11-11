@@ -671,15 +671,18 @@ static void print_help( const struct grid_info_t *g, const char *s){
 [-malign <memory-alignment> ] [-v] [-t] [-pc] [-nh] [-help] [-version] \n");
       
     else if (strcmp(s, "model") == 0)
-      printf("possible values for model parameter: \n \
-        baseline \n \
-        baseline-opt\n \
-        blocked\n \
-        wave num-waves threads-per-column \n \
-        gpu-2d-blockgrid\n \
-        gpu-3d-blockgrid\n\n \
-        gpu-bandwidth\n\n \
-        Note for wave model: if threads-per-column == 0 diagonal wave kernel is used.\n");  
+      printf("possible values after -model flag: \n\
+        baseline \n\
+        baseline-opt\n\
+        blocked\n\
+        wave num-waves threads-per-column \n\
+        gpu-2d-blockgrid\n\
+        gpu-3d-blockgrid\n\
+        OpenCL\n\
+        gpu-bandwidth\n\n\
+        Notes: \n\
+        1) for wave model, if threads-per-column == 0 diagonal wave kernel is used,\n\
+        2) correctness test (i.e. -t flag) is irrelevant for gpu-bandwidth.\n");  
     else if (strcmp(s, "version") == 0)
       printf("%s \n",JTC_VERSION);
     else
