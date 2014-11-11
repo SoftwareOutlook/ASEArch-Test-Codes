@@ -3,3 +3,4 @@
 *.o
 .project
 .cproject
+.DS_Store
