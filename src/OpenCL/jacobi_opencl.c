@@ -239,10 +239,6 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown){
 
 
 
-
-
-
-
 int OpenCL_Jacobi_Iteration(int maxIters){
   int err;//Error checking integer
   int i;//Generic loop counting variable
@@ -266,9 +262,6 @@ int OpenCL_Jacobi_Iteration(int maxIters){
   clFinish(OCLInst.commands);
 
   }
-
-
-
 			  
   return 0;
 }
