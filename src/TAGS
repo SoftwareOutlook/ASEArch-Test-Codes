@@ -1,0 +1,184 @@
+
+comm_mpi_c.c,1164
+#define NORTH 13,182
+#define SOUTH 14,198
+#define WEST 15,214
+#define EAST 16,229
+#define BOTTOM 17,244
+#define TOP 18,261
+static const int ns_tag 23,322
+static int ngb_n,25,437
+static int ngb_n, ngb_s,25,437
+static int ngb_n, ngb_s, ngb_w,25,437
+static int ngb_n, ngb_s, ngb_w, ngb_e,25,437
+static int ngb_n, ngb_s, ngb_w, ngb_e, ngb_b,25,437
+static int ngb_n, ngb_s, ngb_w, ngb_e, ngb_b, ngb_t;25,437
+static Real *sides_buff,sides_buff27,510
+static Real *sides_buff, *sbuff_ns,sbuff_ns27,510
+static Real *sides_buff, *sbuff_ns, *rbuff_ns,rbuff_ns27,510
+static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we,sbuff_we27,510
+static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we,rbuff_we27,510
+static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt,sbuff_bt27,510
+static Real *sides_buff, *sbuff_ns, *rbuff_ns, *sbuff_we, *rbuff_we, *sbuff_bt, *rbuff_bt;rbuff_bt27,510
+static MPI_Request request[request29,618
+void post_recv(39,803
+void post_send(110,2655
+void buffer_halo_transfers(188,4817
+void transfer_data(220,5968
+void exchange_halos(307,7863
+void compute_local_grid_ranges(317,8044
+
+comm_mpi_c.h,80
+#define IN 4,48
+#define OUT 5,62
+#define UPDATE 6,76
+#define NO_UPDATE 7,93
+
+cutil_inline.h,166
+#define cudaSafeCall(13,225
+#define cudaCheckMsg(16,429
+inline void __cudaSafeCall(18,495
+inline void __cudaCheckMsg(45,1231
+inline void cutilDeviceInit(57,1606
+
+functions_f90.f90,678
+   subroutine jacobi_smoother(50,1245
+     subroutine post_recv108,2737
+     subroutine buffs_halos_transfers(184,5592
+     subroutine exchange_halos259,7490
+   subroutine jacobi_smoother_cco(342,10282
+     subroutine post_recv413,12218
+     subroutine buffs_halos_transfers(488,15016
+     subroutine exchange_halos641,18995
+   subroutine initContext724,21791
+ subroutine setPEsParams 807,24153
+     subroutine compute_local_grid_ranges839,24906
+   subroutine initial_field940,27659
+   subroutine printContext 973,28584
+   subroutine check_norm(996,29163
+   subroutine timeUpdate(1031,30086
+   subroutine statistics(1047,30534
+   subroutine stdoutIO(1076,31367
+
+gpu_laplace3d_wrapper.h,31
+#define LAPLACE3D_GPU_h10,535
+
+jacobi_c.c,18
+int main(39,1136
+
+jacobi_c.h,1407
+#define JACOBI_C33,1070
+#define JTC_VERSION 35,1088
+#define PI 54,1416
+#define MAX(55,1450
+#define MIN(56,1488
+typedef double Real;59,1555
+    #define REAL_MPI 61,1593
+typedef float Real;64,1640
+    #define REAL_MPI 66,1677
+struct grid_info_t71,1752
+  int ng[ng73,1773
+  int ng[3], nb[nb73,1773
+  int threads_per_column;74,1833
+  int sx,75,1909
+  int sx, ex,75,1909
+  int sx, ex, sy,75,1909
+  int sx, ex, sy, ey,75,1909
+  int sx, ex, sy, ey, sz,75,1909
+  int sx, ex, sy, ey, sz, ez,75,1909
+  int sx, ex, sy, ey, sz, ez, nlx,75,1909
+  int sx, ex, sy, ey, sz, ez, nlx, nly,75,1909
+  int sx, ex, sy, ey, sz, ez, nlx, nly, nlz;75,1909
+  int nproc,76,2013
+  int nproc, myrank;76,2013
+  int np[np77,2046
+  int cp[cp78,2080
+  int key;79,2127
+  int malign;80,2159
+  int nwaves;81,2222
+  int gpuflag;82,2284
+  float kernelTimer;84,2325
+  float memoryTimer;85,2346
+  int memoryCtr;86,2367
+  MPI_Comm comm;89,2406
+struct times_t93,2436
+  double comp,95,2453
+  double comp, comm;95,2453
+#define ROOT 100,2545
+#define BASELINE_KERNEL 103,2594
+#define OPTBASE_KERNEL 104,2620
+#define BLOCKED_KERNEL 105,2646
+#define CCO_KERNEL 106,2672
+#define WAVE_KERNEL 107,2699
+#define WAVE_DIAGONAL_KERNEL	108,2725
+#define GPU_BASE_KERNEL 109,2756
+#define GPU_SHM_KERNEL 110,2784
+#define GPU_BANDWIDTH_KERNEL 111,2811
+#define GPU_MM_KERNEL 112,2844
+#define OPENCL_KERNEL 113,2868
+
+kernels_c.c,382
+static const Real sixth=21,301
+static void Gold_laplace3d(33,1152
+static void vec_oneD_loop(58,2013
+static void Titanium_laplace3d(79,2792
+static void Blocked_laplace3d(108,3766
+static void Wave_diagonal_laplace3d(141,4902
+static void Wave_laplace3d(214,6921
+void laplace3d(328,10540
+static void cco_laplace3d(498,15273
+void stencil_update(548,16505
+int uindex(571,17133
+
+kernels_cuda.cu,610
+static int BlockX,17,358
+static int BlockX, BlockY,17,358
+static int BlockX, BlockY, BlockZ,17,358
+static int BlockX, BlockY, BlockZ, GridX,17,358
+static int BlockX, BlockY, BlockZ, GridX, GridY,17,358
+static int BlockX, BlockY, BlockZ, GridX, GridY, GridZ;17,358
+__global__ void kernel_laplace3d_baseline(28,578
+__global__ void kernel_laplace3d_MarkMawson(78,1786
+__global__ void kernel_laplace3d_shm(103,2554
+__global__ void kernel_BandWidth(155,4032
+void CudaDeviceInit(186,4804
+void setInitialData(215,5564
+void laplace3d_GPU(241,6339
+void getUpdatedArray(330,9164
+void calcGpuDims(351,9726
+
+utils_c.c,817
+int nruns,43,1190
+int nruns, niter;43,1190
+int nthreads;46,1234
+Real  *udata,udata49,1267
+Real  *udata, *uOld,uOld49,1267
+Real  *udata, *uOld, *uNew;uNew49,1267
+Real *d_u1,d_u152,1309
+Real *d_u1, *d_u2,d_u252,1309
+Real *d_u1, *d_u2, *d_foo;d_foo52,1309
+static Real kx=55,1367
+int pContext,58,1422
+int pContext, testComputation;58,1422
+static int vOut,59,1454
+static int vOut, pHeader;59,1454
+void initContext(62,1482
+void setPEsParams(249,7206
+void initialise_grid(302,8820
+void printContext(351,10338
+void check_norm(431,13091
+double local_norm(464,13921
+void timeUpdate(485,14372
+void statistics(498,14732
+void stdoutIO(557,16363
+double my_wtime(633,20058
+void error_abort(653,20442
+static void print_help(662,20617
+void initialiseGPUData(704,21958
+void freeDeviceMemory(713,22185
+
+utils_c.h,0
+
+kernels_c.h,0
+
+homb_f90.f90,0
