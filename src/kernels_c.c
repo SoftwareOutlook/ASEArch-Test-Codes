@@ -449,6 +449,19 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       }
       *tcomp = my_wtime() - taux;
       break;
+#ifdef USE_GPU
+    case GPU_BASE_KERNEL:
+    case GPU_SHM_KERNEL:
+    case GPU_BANDWIDTH_KERNEL:
+    case GPU_MM_KERNEL: 
+      calcGpuDims( kernel_key, BX, BY, BZ, NX,NY,NZ, gridxy);
+      float taux_comp, taux_comm;
+      //invoke GPU function
+      laplace3d_GPU(kernel_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
+      *tcomp = 0.001 * taux_comp; // CUDA timer works with ms
+      *tcomm = 0.001 * taux_comm;
+      break;
+#endif
 #ifdef USE_OPENCL
       //OpenCL functionality
     case(OPENCL_KERNEL):
@@ -468,21 +481,7 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       break;
 #endif
     default :     
-#ifdef USE_GPU
-
-
-     
-      calcGpuDims( kernel_key, BX, BY, BZ, NX,NY,NZ, gridxy);
-      float taux_comp, taux_comm;
-      //invoke GPU function
-      laplace3d_GPU(kernel_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
-      *tcomp = 0.001 * taux_comp; // CUDA timer works with ms
-      *tcomm = 0.001 * taux_comm;
-      
-#else 
       error_abort("unkown kernel key", "");
-#endif
-      
     }
 }
 
