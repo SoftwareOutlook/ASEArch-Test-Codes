@@ -3,4 +3,7 @@
 *.o
 .project
 .cproject
-.DS_Store
+#
+# some annoing mac OSX files
+#
+**/.DS_Store
