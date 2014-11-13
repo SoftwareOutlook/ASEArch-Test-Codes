@@ -29,7 +29,7 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
               const struct times_t *minTime, const struct times_t *meanTime, const struct times_t *maxTime, 
 	       double norm);
 double local_norm(const struct grid_info_t *g);
-void timeUpdate(struct times_t *times);
+void timeUpdate( const struct grid_info_t *g, struct times_t *times);
 double my_wtime();
 void error_abort(const char *s1, const char *s2);
 

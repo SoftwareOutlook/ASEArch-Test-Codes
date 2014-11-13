@@ -485,15 +485,21 @@ double local_norm(const struct grid_info_t *g){
 }
 
 
-void timeUpdate(struct times_t *times){
+void timeUpdate(const struct grid_info_t *g, struct times_t *times){
 
   /* Update Root's times matrix to include all times */
+  /* trasfeerint struc ad MPI_BYTE us a hack !*/
 
-#ifdef MPI
-  if ( myrank == ROOT )
-    call MPI_Gather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, times, NITER, MPI_DOULBE, ROOT, MPI_COMM_WORLD);
+#ifdef USE_MPI
+  if ( g->myrank == ROOT ){
+    MPI_Gather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, times, nruns * sizeof(struct times_t),
+		    MPI_BYTE, ROOT, MPI_COMM_WORLD);
+   
+  }
   else
-    call MPI_Gather(times, niter, MPI_DOUBLE, MPI_BOTTOM, 0, MPI_DATATYPE_NULL, ROOT, MPI_COMM_WORLD);
+    MPI_Gather(times, nruns * sizeof(struct times_t), MPI_BYTE, MPI_BOTTOM, 0, MPI_DATATYPE_NULL,
+		    ROOT, MPI_COMM_WORLD);
+
 #endif
 }
  
@@ -519,7 +525,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
       meanTime->comp += times[ii].comp;
       maxTime->comp = MAX(maxTime->comp, times[ii].comp);
       minTime->comp = MIN(minTime->comp, times[ii].comp);
-#if defined USE_GPU || defined _OPENACC
+#if defined USE_GPU || defined _OPENACC || USE_MPI
       meanTime->comm += times[ii].comm;
       maxTime->comm = MAX(maxTime->comm, times[ii].comm);
       minTime->comm = MIN(minTime->comm, times[ii].comm);
@@ -528,7 +534,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
     }
   }
   meanTime->comp = meanTime->comp / (double) nruns / (double) nproc;
-#if defined USE_GPU || defined _OPENACC
+#if defined USE_GPU || defined _OPENACC || USE_MPI
   meanTime->comm = meanTime->comm / (double) nruns / (double) nproc;
 #endif
 
@@ -554,6 +560,12 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
   meanTime->comp /= niter;
   maxTime->comp /= niter;
   minTime->comp /= niter;
+# ifdef USE_MPI
+  // In MPI halos are exchaged at every iterations
+  meanTime->comm /= niter;
+  maxTime->comm /= niter;
+  minTime->comm /= niter;
+#endif 
 }
 
 
@@ -566,9 +578,9 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
   if (pHeader){
     printf("# Last norm %22.15e\n",sqrt(norm));
 #ifdef USE_MPI
-    printf("#==================================================================================================================================#\n");
-    printf("#\tNPx\tNPy\tNPz\tNThs\tNx\tNy\tNz\tNITER \tminTime \tmeanTime \tmaxTime    #\n");
-    printf("#==================================================================================================================================#\n");
+    printf("#================================================================================================================================================================#\n");
+    printf("#\tNPx\tNPy\tNPz\tNThs\tNx\tNy\tNz\tNITER \tminTime \tmeanTime \tmaxTime \tminTcomm \tmeanTcomm \tmaxTcomm #\n");
+    printf("#================================================================================================================================================================#\n");
 #else
     if ( (kernel_key == BLOCKED_KERNEL) || (kernel_key == WAVE_KERNEL)){
 
@@ -590,9 +602,10 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
 #endif 
   }
 #ifdef USE_MPI
-  printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",
-         g->np[0], g->np[1], g->np[2], nthreads, g->ng[0], g->ng[1], g->ng[2],blk_iter,
-	 minTime->comp, meanTime->comp, maxTime->cop);
+  printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
+         g->np[0], g->np[1], g->np[2], nthreads, g->ng[0], g->ng[1], g->ng[2],niter,
+	 minTime->comp, meanTime->comp, maxTime->comp,minTime->comm, meanTime->comm,
+	   maxTime->comm);
 #else
   if ( (kernel_key == BLOCKED_KERNEL) || (kernel_key == WAVE_KERNEL))
     printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",

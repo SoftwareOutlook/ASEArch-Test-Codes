@@ -338,7 +338,7 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
   int NX = g->nlx, NY = g->nly, NZ = g->nlz, nxShift;
   int BX = g->nb[0], BY = g->nb[1], BZ = g->nb[2];
   Real* tmp;
-  double taux;
+  double taux, taux2;
   int  step; // see abobe
   //if using GPU execution apply this function for cuda execution
   //configuration parameters
@@ -359,7 +359,9 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       taux = my_wtime();
       for (step = 0; step < niter; ++step){
 #ifdef USE_MPI
+	taux2 =  my_wtime();
 	exchange_halos(g);
+	*tcomm += my_wtime() - taux2;
 #endif
 	Gold_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
 	tmp = uNew; uNew = uOld; uOld = tmp;
@@ -370,7 +372,9 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       taux = my_wtime();
       for (step = 0; step < niter; ++step){  
 #ifdef USE_MPI
+	taux2 =  my_wtime();
 	exchange_halos(g);
+	*tcomm += my_wtime() - taux2;
 #endif
 	Titanium_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
 	tmp = uNew; uNew = uOld; uOld = tmp;
@@ -381,7 +385,9 @@ void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp,
       taux = my_wtime();
       for (step = 0; step < niter; ++step){   
 #ifdef USE_MPI
+	taux2 =  my_wtime();
 	exchange_halos(g);
+	*tcomm += my_wtime() - taux2;
 #endif
 	Blocked_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, uOld, uNew);
 	tmp = uNew; uNew = uOld; uOld = tmp;

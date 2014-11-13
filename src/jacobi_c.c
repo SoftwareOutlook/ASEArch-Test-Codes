@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   struct times_t meanTime, minTime, maxTime;
   struct times_t *times;
   
-  double compTime, commTime;
+  double compTime = 0.0, commTime = 0.0;
 
 #ifdef USE_MPI
   /* MPI thread safety level parameters */
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     laplace3d(&grid, kernel_key, &compTime, &commTime);
 
     times[irun].comp = compTime;
-#if defined USE_GPU || defined _OPENACC
+#if defined USE_GPU || defined _OPENACC || USE_MPI
     times[irun].comm = commTime;
 #endif
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
 
   /* Gather iteration runtimes to ROOT's matrix */
-    timeUpdate(times);
+    timeUpdate(&grid, times);
   }//end for loop
 
   /* Run statistics on times (Root only) */
