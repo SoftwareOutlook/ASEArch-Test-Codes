@@ -138,7 +138,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       sscanf(argv[++i],"%d", &(grid->malign));
     }
     /* Look for kernel to use */
-    else if ( strcmp("-model", argv[i]) == 0 ){
+    else if ( strcmp("-alg", argv[i]) == 0 ){
       ++i;
       if (strcmp("baseline",argv[i]) == 0)
 	*kernel_key = grid->key = BASELINE_KERNEL;

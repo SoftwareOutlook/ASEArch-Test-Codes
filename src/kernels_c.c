@@ -57,6 +57,156 @@ static void Blocked_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int B
 static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, int threads_per_column, Real* u1, Real* u2);
 static void cco_laplace3d(const struct grid_info_t *g, int iteration);
 
+//! driver for the Jacobi kernels 
+void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, double *tcomp, double *tcomm){
+  // wrapper that controls which variant from above is to be excecuted
+  // also does MPI communication is MPI is active
+
+  int NX = g->nlx, NY = g->nly, NZ = g->nlz, nxShift;
+  int BX = g->nb[0], BY = g->nb[1], BZ = g->nb[2];
+  Real* tmp;
+  double taux;
+  int  step; /*!< see abobe */
+  //!if using GPU execution apply this function for cuda execution
+  //!configuration parameters
+#ifdef USE_GPU
+  int gridxy[4]; //for blocks and grid dims
+#endif
+
+  //! set shift for x direction, this is differs from NX if posix malign is used
+  //! assumes that uOld > uNew
+  if ( g->malign < 0) 
+    nxShift = NX;
+  else
+    nxShift = (abs((int) (uNew - uOld))) / (NY*NZ); 
+
+  switch (lang_key)
+    {
+    case(OMP):
+      switch (alg_key)
+	{
+	case (BASELINE_KERNEL) :
+	  taux = my_wtime();
+	  for (step = 0; step < niter; ++step){
+#ifdef USE_MPI
+	    exchange_halos(g);
+#endif
+	    Gold_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
+	    tmp = uNew; uNew = uOld; uOld = tmp;
+	  } 
+	  *tcomp = my_wtime() - taux;
+	  break;
+	case (OPTBASE_KERNEL) :
+	  taux = my_wtime();
+	  for (step = 0; step < niter; ++step){  
+#ifdef USE_MPI
+	    exchange_halos(g);
+#endif
+	    Titanium_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
+	    tmp = uNew; uNew = uOld; uOld = tmp;
+	  }
+	  *tcomp = my_wtime() - taux;
+	  break;
+	case (BLOCKED_KERNEL) :
+	  taux = my_wtime();
+	  for (step = 0; step < niter; ++step){   
+#ifdef USE_MPI
+	    exchange_halos(g);
+#endif
+	    Blocked_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, uOld, uNew);
+	    tmp = uNew; uNew = uOld; uOld = tmp;
+	  }
+	  *tcomp = my_wtime() - taux;
+	  break;
+	case (CCO_KERNEL)  :  
+	  taux = my_wtime();
+	  for (step = 0; step < niter; ++step){
+	    cco_laplace3d(g, niter);
+	    tmp = uNew; uNew = uOld; uOld = tmp; 
+	  }
+	  *tcomp = my_wtime() - taux;
+	  break;
+	case (WAVE_KERNEL) :
+	  taux = my_wtime();
+#ifdef USE_MPI
+	  // Wave parallelism needs extended halos to accomodate the blocked wave evolution
+	  //exchange_halos(g);
+	  fprintf(stderr,"MPI not implemented for wave parallelism");
+	  MPI_Abort(MPI_COMM_WORLD,1);
+#endif
+	  Wave_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, niter, g->threads_per_column, uOld, uNew);
+	  if ( niter%2 == 1) {
+	    tmp = uNew; uNew = uOld; uOld = tmp;
+	  }
+	  *tcomp = my_wtime() - taux;
+	  break;
+	case(WAVE_DIAGONAL_KERNEL) :
+	  taux = my_wtime();
+#ifdef USE_MPI
+      // Wave parallelism needs extended halos to accomodate the blocked wave evolution
+      //exchange_halos(g);
+	  fprintf(stderr,"MPI not implemented for wave diagonal parallelism");
+	  MPI_Abort(MPI_COMM_WORLD,1);
+#endif
+	  Wave_diagonal_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, niter, uOld, uNew);
+	  if ( niter%2 == 1) {
+	    tmp = uNew; uNew = uOld; uOld = tmp;
+	  }
+	  *tcomp = my_wtime() - taux;
+	  break;
+	default :
+	  error_abort("cannot find the specified algorithm for for OMP laguage", "");
+	}
+      break;
+#ifdef USE_GPU
+    case(CUDA):
+      switch(alg_key)
+	{
+	case GPU_BASE_KERNEL:
+	case GPU_SHM_KERNEL:
+	case GPU_BANDWIDTH_KERNEL:
+	case GPU_MM_KERNEL: 
+	  calcGpuDims( kernel_key, BX, BY, BZ, NX,NY,NZ, gridxy);
+	  float taux_comp, taux_comm;
+      //invoke GPU function
+	  laplace3d_GPU(kernel_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
+	  *tcomp = 0.001 * taux_comp; // CUDA timer works with ms
+	  *tcomm = 0.001 * taux_comm;
+	  break;
+	default:
+	  error_abort("cannot find the specified algorithm for for CUDA laguage", ""); 
+	}
+#endif
+#ifdef USE_OPENCL
+    case (OPENCL):
+      //OpenCL functionality
+      switch(alg_key)
+	{
+	default:
+	  /** \todo Generate timing detail for initialisation */
+	  //Initialise the OpenCL context/program/kernel
+	  taux = my_wtime();
+	  OpenCL_Jacobi(uOld);
+	  *tcomm=my_wtime()-taux;
+	  //Call the OpenCL kernel
+	  taux = my_wtime();
+	  OpenCL_Jacobi_Iteration(niter);
+	  *tcomp = my_wtime() - taux;
+	  //Tidy up
+	  taux=my_wtime();
+	  OpenCL_Jacobi_CopyBack(uOld);
+	  *tcomm+=my_wtime()-taux;
+	  break;
+	}
+#endif
+    default :     
+      error_abort("unkown language algorithm pair, try -lang help", "");
+    }
+}
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Baseline version that describes the logic of Jacobi iteration in one set of loops.
 // Howerver this version is far from optimal because of the if statement inside the
@@ -354,136 +504,6 @@ static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, 
   }
 }
 
-
-
-void laplace3d(const struct grid_info_t *g, const int kernel_key, double *tcomp, double *tcomm){
-  // wrapper that controls which variant from above is to be excecuted
-  // also does MPI communication is MPI is active
-
-  int NX = g->nlx, NY = g->nly, NZ = g->nlz, nxShift;
-  int BX = g->nb[0], BY = g->nb[1], BZ = g->nb[2];
-  Real* tmp;
-  double taux;
-  int  step; // see abobe
-  //if using GPU execution apply this function for cuda execution
-  //configuration parameters
-#ifdef USE_GPU
-  int gridxy[4]; //for blocks and grid dims
-#endif
-
-  // set shift for x direction, this is differs from NX if posix malign is used
-  // assumes that uOld > uNew
-  if ( g->malign < 0) 
-    nxShift = NX;
-  else
-    nxShift = (abs((int) (uNew - uOld))) / (NY*NZ); 
-
-  switch (kernel_key)
-    {
-    case (BASELINE_KERNEL) :
-      taux = my_wtime();
-      for (step = 0; step < niter; ++step){
-#ifdef USE_MPI
-	exchange_halos(g);
-#endif
-	Gold_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
-	tmp = uNew; uNew = uOld; uOld = tmp;
-      } 
-      *tcomp = my_wtime() - taux;
-      break;
-    case (OPTBASE_KERNEL) :
-      taux = my_wtime();
-      for (step = 0; step < niter; ++step){  
-#ifdef USE_MPI
-	exchange_halos(g);
-#endif
-	Titanium_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
-	tmp = uNew; uNew = uOld; uOld = tmp;
-      }
-      *tcomp = my_wtime() - taux;
-      break;
-    case (BLOCKED_KERNEL) :
-      taux = my_wtime();
-      for (step = 0; step < niter; ++step){   
-#ifdef USE_MPI
-	exchange_halos(g);
-#endif
-	Blocked_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, uOld, uNew);
-	tmp = uNew; uNew = uOld; uOld = tmp;
-      }
-      *tcomp = my_wtime() - taux;
-      break;
-    case (CCO_KERNEL)  :  
-      taux = my_wtime();
-      for (step = 0; step < niter; ++step){
-	cco_laplace3d(g, niter);
-	tmp = uNew; uNew = uOld; uOld = tmp; 
-      }
-      *tcomp = my_wtime() - taux;
-      break;
-    case (WAVE_KERNEL) :
-      taux = my_wtime();
-#ifdef USE_MPI
-      // Wave parallelism needs extended halos to accomodate the blocked wave evolution
-      //exchange_halos(g);
-      fprintf(stderr,"MPI not implemented for wave parallelism");
-      MPI_Abort(MPI_COMM_WORLD,1);
-#endif
-      Wave_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, niter, g->threads_per_column, uOld, uNew);
-      if ( niter%2 == 1) {
-	tmp = uNew; uNew = uOld; uOld = tmp;
-      }
-      *tcomp = my_wtime() - taux;
-      break;
-    case(WAVE_DIAGONAL_KERNEL) :
-      taux = my_wtime();
-#ifdef USE_MPI
-      // Wave parallelism needs extended halos to accomodate the blocked wave evolution
-      //exchange_halos(g);
-      fprintf(stderr,"MPI not implemented for wave diagonal parallelism");
-      MPI_Abort(MPI_COMM_WORLD,1);
-#endif
-      Wave_diagonal_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, niter, uOld, uNew);
-      if ( niter%2 == 1) {
-	tmp = uNew; uNew = uOld; uOld = tmp;
-      }
-      *tcomp = my_wtime() - taux;
-      break;
-#ifdef USE_GPU
-    case GPU_BASE_KERNEL:
-    case GPU_SHM_KERNEL:
-    case GPU_BANDWIDTH_KERNEL:
-    case GPU_MM_KERNEL: 
-      calcGpuDims( kernel_key, BX, BY, BZ, NX,NY,NZ, gridxy);
-      float taux_comp, taux_comm;
-      //invoke GPU function
-      laplace3d_GPU(kernel_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
-      *tcomp = 0.001 * taux_comp; // CUDA timer works with ms
-      *tcomm = 0.001 * taux_comm;
-      break;
-#endif
-#ifdef USE_OPENCL
-      //OpenCL functionality
-    case(OPENCL_KERNEL):
-      /** \todo Generate timing detail for initialisation */
-      //Initialise the OpenCL context/program/kernel
-      taux = my_wtime();
-      OpenCL_Jacobi_CopyTo(uOld);
-      *tcomm=my_wtime()-taux;
-      //Call the OpenCL kernel
-      taux = my_wtime();
-      OpenCL_Jacobi_Iteration(niter);
-      *tcomp = my_wtime() - taux;
-      //Tidy up
-      taux=my_wtime();
-      OpenCL_Jacobi_CopyBack(uOld);
-      *tcomm+=my_wtime()-taux;
-      break;
-#endif
-    default :     
-      error_abort("unkown kernel key", "");
-    }
-}
 
 
 /* MPI versions */
