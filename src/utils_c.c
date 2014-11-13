@@ -74,13 +74,14 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
   grid->ng[0] = 33; grid->ng[1] = 33; grid->ng[2] = 33; //Global grid
   grid->malign = -1;
   grid->nwaves = -1; 
-  grid->gpuflag = 0;
+ 
 
   nruns = 5; niter = 1; nthreads = 1; grid->nproc = 1;
   grid->np[0] = 1; grid->np[1] = 1; grid->np[2] = 1;
   grid->cp[0] = 0; grid->cp[1] = 0; grid->cp[2] = 0;
-  // if compiled with GPU flag use GPU kernel as default
-  *kernel_key = BASELINE_KERNEL;
+  // set default language nad algorithms
+  grid->lang_key = LANG_OMP;
+  grid->alg_key = ALG_BASELINE_OPT; // baseline is too bad for OpenMP
 
   int i;
   int have_blocks=0;
@@ -137,65 +138,62 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
     else if (strcmp("-malign",argv[i]) == 0){
       sscanf(argv[++i],"%d", &(grid->malign));
     }
-    /* Look for kernel to use */
+    /* Look for algorithm to use */
     else if ( strcmp("-alg", argv[i]) == 0 ){
       ++i;
       if (strcmp("baseline",argv[i]) == 0)
-	*kernel_key = grid->key = BASELINE_KERNEL;
-      else if ( strcmp("baseline-opt",argv[i]) == 0)
-	*kernel_key = OPTBASE_KERNEL;
+	grid->alg_key = ALG_BASELINE;
+      else if (strcmp("baseline-opt",argv[i]) == 0)
+	grid->alg_key = ALG_BASELINE_OPT;
       else if (strcmp("blocked",argv[i]) == 0)
-	*kernel_key = grid->key = BLOCKED_KERNEL;
+	grid->key = ALG_BLOCKED;
       else if (strcmp("cco",argv[i]) == 0)
-	*kernel_key = grid->key = CCO_KERNEL;
+	grid->key = ALG_CCO;
       else if (strcmp("wave",argv[i]) == 0 ){
 	sscanf(argv[++i],"%d",&(grid->nwaves));
 	//niter_fixed = 1;// prevent reseting by -niter flag
 	sscanf(argv[++i],"%d",&(grid->threads_per_column));
 	if ( grid->threads_per_column == 0 ) 
-	  *kernel_key = grid->key = WAVE_DIAGONAL_KERNEL;
+	  grid->alg_key = WAVE_DIAGONAL_KERNEL;
 	else if ( grid->threads_per_column > 0)
-	  *kernel_key = grid->key = WAVE_KERNEL;
+	  grid->alg_key = WAVE_KERNEL;
 	else
 	  error_abort("wrong value for threads per column parameter", argv[i]);
       }
-      else if (strcmp("gpu-2d-blockgrid",argv[i]) == 0){
+      else if (strcmp("3d-blockgrid",argv[i]) == 0){
 #ifdef USE_GPU
-	*kernel_key = grid->key = GPU_BASE_KERNEL;
-	grid->gpuflag = 1;
+	grid->alg_key = GPU_3D_BLK;
 #else
-	error_abort("GPU model specified without gpu compilation", "");
+	error_abort("GPU algorithm specified without gpu compilation", "");
+#endif
+      }
+      else if (strcmp("2d-blockgrid",argv[i]) == 0){
+#ifdef USE_GPU
+	grid->alg_key = ALG_GPU_2D_BLK;
+#else
+	error_abort("GPU algorithm specified without gpu compilation", "");
 #endif
       }
       else if (strcmp("gpu-shm",argv[i]) == 0){
 #ifdef USE_GPU
-	*kernel_key = grid->key = GPU_SHM_KERNEL;
-	grid->gpuflag = 1;
+	grid->alg_key = ALG_GPU_SHM;
 #else
-	error_abort("GPU model specified without gpu compilation", "");
+	error_abort("GPU algoritm specified without gpu compilation", "");
 #endif
       }
-      else if (strcmp("gpu-bandwidth",argv[i]) == 0){
+      else if (strcmp("bandwidth",argv[i]) == 0){
 #ifdef USE_GPU
-	*kernel_key = grid->key = GPU_BANDWIDTH_KERNEL;
-	grid->gpuflag = 1;
+	grid->alg_key = ALG_GPU_BANDWIDTH;
 #else
-	error_abort("GPU model specified without gpu compilation", "");
+	error_abort("GPU algorithm specified without gpu compilation", "");
 #endif
       }
-      else if (strcmp("gpu-3d-blockgrid",argv[i]) == 0){
-#ifdef USE_GPU
-	*kernel_key = grid->key = GPU_MM_KERNEL;
-	grid->gpuflag = 1;
-#else
-	error_abort("GPU model specified without gpu compilation", "");
-#endif
-      }
+
       else if (strcmp("OpenCL",argv[i]) == 0){
 #ifdef USE_OPENCL
-	*kernel_key = grid->key = OPENCL_KERNEL;
+	grid->alg_key = ALG_OPENCL_BASELINE;
 #else
-	error_abort("OpenCL model specified without OpenCL compilation", "");
+	error_abort("OpenCL algorithm specified without OpenCL compilation", "");
 #endif
       }
       /*
@@ -211,7 +209,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       else if (strcmp("help",argv[i]) == 0) 
 	print_help(grid, "model");
       else
-	error_abort("Wrong model specifier, try -model help\n",argv[i]);
+	error_abort("Wrong algorithm specifier, try -alg help\n",argv[i]);
     }
     /* Look for eigenvalue test */
     else if ( strcmp("-t",argv[i] ) == 0){
@@ -236,7 +234,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
     // default blocks sizes are set to grid sizes if
     // not specified in command line
     // for GPU use a standard 32x4 block
-    if (grid->gpuflag){
+    if (grid->lang_key == LANG_CUDA){
       grid->nb[0] = 32;
       grid->nb[1]= 4;
       grid->nb[2]= grid->ng[2];

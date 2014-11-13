@@ -76,10 +76,10 @@ struct grid_info_t
   int nproc, myrank; // MPI rank
   int np[3]; // MPI topology size
   int cp[3]; // grid coordinated of this ranks
-  int key;	// kernel identifier
+  int lang_key;	// language identifier
+  int alg_key; // algorith indentifier
   int malign; // allocate aligned memory to help vectorization
   int nwaves; // number of waves used in time skwed algorithm
-  int gpuflag; //gpu flag
 #ifdef USE_GPU
   float kernelTimer;
   float memoryTimer;
@@ -99,17 +99,29 @@ struct times_t
 // MPI root or proc 0
 #define ROOT 0
 
-// keys of the available kernels
-#define BASELINE_KERNEL 0
-#define OPTBASE_KERNEL  1
-#define BLOCKED_KERNEL  2
-#define CCO_KERNEL      3 
-#define WAVE_KERNEL     4
-#define WAVE_DIAGONAL_KERNEL	5
-#define GPU_BASE_KERNEL   6
-#define GPU_SHM_KERNEL   7
-#define GPU_BANDWIDTH_KERNEL   8
-#define GPU_MM_KERNEL 9
-#define OPENCL_KERNEL 10
+//! keys for available languages
+#define LANG_OMP 100
+#define LANG_CUDA 200
+#define LANG_OPENCL 300
+#define LANG_OPENACC 400 
 
-#endif
+
+//! keys for available algoritms 
+//! not all algorithms are available to every language
+//! OpenMP kernels
+#define ALG_BASELINE 101
+#define ALG_BASELINE_OPT  100
+#define ALG_BLOCKED  120
+#define ALG_CCO      130 
+#define ALG_WAVE     140
+#define ALG_WAVE_DIAGONAL  141
+//! GPU kernels
+#define ALG_GPU_2D_BLK   201
+#define ALG_GPU_3D_BLK 202
+#define ALG_GPU_SHM   210
+#define ALG_GPU_BANDWIDTH   299
+//! OpenCL kernels
+#define ALG_OPENCL_BASELINE 300
+//! OpenACC kernels
+#define ALG_OPENACC_BASELINE 400
+
