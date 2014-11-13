@@ -218,22 +218,7 @@ int OpenCL_Jacobi(int Nx, int Ny, int Nz, Real *unknown){
       printf("Error: Failed to allocate device memory!\n");
       exit(1);
     }    
-    
-  // Write u1 and u2 vectors into compute device memory 
-  err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u1, CL_TRUE, 0, sizeof(Real) * OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL);
-  if (err != CL_SUCCESS)
-    {
-      printf("Error: Failed to write the d_u1 to opencl buffer!\n%s\n", err_code(err));
-      exit(1);
-    }
-
-
-  err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u2, CL_TRUE, 0, sizeof(Real) * OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL);
-  if (err != CL_SUCCESS)
-    {
-      printf("Error: Failed to write d_u2 to opencl buffer!\n%s\n", err_code(err));
-      exit(1);
-    }
+  
   return 0;
 }
 
@@ -262,20 +247,45 @@ int OpenCL_Jacobi_Iteration(int maxIters){
   clFinish(OCLInst.commands);
 
   }
-			  
   return 0;
 }
 
 
-int OpenCL_Jacobi_Tidy(Real *unknown){
-  int err;
+int OpenCL_Jacobi_CopyTo(Real *unknown){
+  // Write u1 and u2 vectors into compute device memory                                
+  int err;                                                                                                        
+  err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u1, CL_TRUE, 0, sizeof(Real) * OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL);
+  if (err != CL_SUCCESS)
+    {
+      printf("Error: Failed to write the d_u1 to opencl buffer!\n%s\n", err_code(err));
+      exit(1);
+    }
+
+
+  err = clEnqueueWriteBuffer(OCLInst.commands, OCLInst.d_u2, CL_TRUE, 0, sizeof(Real) * OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL);
+  if (err != CL_SUCCESS)
+    {
+      printf("Error: Failed to write d_u2 to opencl buffer!\n%s\n", err_code(err));
+      exit(1);
+    }
+  return 0;
+}
+ 
+int OpenCL_Jacobi_CopyBack(Real *unknown){
+  int err; 
   // Read back the results from the compute device
-  err = clEnqueueReadBuffer(OCLInst.commands,OCLInst.d_u2, CL_TRUE, 0, sizeof(Real) *  OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL );  
+  err = clEnqueueReadBuffer(OCLInst.commands,OCLInst.d_u1, CL_TRUE, 0, sizeof(Real) *  OCLInst.xDim*OCLInst.yDim*OCLInst.zDim, unknown, 0, NULL, NULL );  
   if (err != CL_SUCCESS)
     {
       printf("Error: Failed to read output array!\n%s\n", err_code(err));
       exit(1);
-    }
+    }		  
+  return 0;
+}
+
+
+int OpenCL_Jacobi_Tidy(){
+
     
   // cleanup then shutdown
   clReleaseMemObject(OCLInst.d_u1);

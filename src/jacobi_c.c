@@ -35,6 +35,8 @@
 #include "jacobi_c.h"
 #include "utils_c.h"
 #include "kernels_c.h"
+#include "OpenCL/jacobi_opencl.h"
+
 
 int main(int argc, char *argv[]) {
   int irun, kernel_key;
@@ -83,6 +85,9 @@ int main(int argc, char *argv[]) {
   if (grid.myrank == ROOT && pContext)
     printContext(&grid, kernel_key);
 
+  //Initialise OpenCL
+  OpenCL_Jacobi(grid.nlx,grid.nly,grid.nlz,uOld);
+
   /* Solve */
   for (irun = 0; irun < nruns; ++irun){
     
@@ -129,7 +134,10 @@ int main(int argc, char *argv[]) {
   
 #ifdef USE_GPU
   if(grid.gpuflag==1)
-    freeDeviceMemory();
+        freeDeviceMemory();
+#endif
+#ifdef USE_OPENCL
+  OpenCL_Jacobi_Tidy();
 #endif
   return(EXIT_SUCCESS);
 
