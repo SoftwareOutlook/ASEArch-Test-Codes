@@ -34,13 +34,12 @@ either expressed or implied, of the FreeBSD Project.
 */
 
 
-
 #include "jacobi_c.h"
 #include "comm_mpi_c.h"
 #include "kernels_c.h"
 #include "comm_mpi_c.h"
 #include "utils_c.h"
-#ifdef USE_GPU
+#ifdef USE_CUDA
 #include "gpu_laplace3d_wrapper.h"
 #endif
 
@@ -55,21 +54,23 @@ static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* 
 static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2);
 static void Blocked_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, Real* u1, Real* u2);
 static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, int threads_per_column, Real* u1, Real* u2);
+static void Wave_diagonal_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, Real* u1, Real* u2);
 static void cco_laplace3d(const struct grid_info_t *g, int iteration);
 
 //! driver for the Jacobi kernels 
-void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, double *tcomp, double *tcomm){
+void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
   // wrapper that controls which variant from above is to be excecuted
   // also does MPI communication is MPI is active
 
   int NX = g->nlx, NY = g->nly, NZ = g->nlz, nxShift;
   int BX = g->nb[0], BY = g->nb[1], BZ = g->nb[2];
+  int lang_key = g->lang_key, alg_key = g->alg_key;
   Real* tmp;
   double taux;
   int  step; /*!< see abobe */
   //!if using GPU execution apply this function for cuda execution
   //!configuration parameters
-#ifdef USE_GPU
+#ifdef USE_CUDA
   int gridxy[4]; //for blocks and grid dims
 #endif
 
@@ -82,10 +83,10 @@ void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, dou
 
   switch (lang_key)
     {
-    case(OMP):
+    case(LANG_OMP):
       switch (alg_key)
 	{
-	case (BASELINE_KERNEL) :
+	case (ALG_BASELINE) :
 	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){
 #ifdef USE_MPI
@@ -96,7 +97,7 @@ void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, dou
 	  } 
 	  *tcomp = my_wtime() - taux;
 	  break;
-	case (OPTBASE_KERNEL) :
+	case (ALG_BASELINE_OPT) :
 	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){  
 #ifdef USE_MPI
@@ -107,7 +108,7 @@ void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, dou
 	  }
 	  *tcomp = my_wtime() - taux;
 	  break;
-	case (BLOCKED_KERNEL) :
+	case (ALG_BLOCKED) :
 	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){   
 #ifdef USE_MPI
@@ -118,7 +119,7 @@ void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, dou
 	  }
 	  *tcomp = my_wtime() - taux;
 	  break;
-	case (CCO_KERNEL)  :  
+	case (ALG_CCO)  :  
 	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){
 	    cco_laplace3d(g, niter);
@@ -126,7 +127,7 @@ void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, dou
 	  }
 	  *tcomp = my_wtime() - taux;
 	  break;
-	case (WAVE_KERNEL) :
+	case (ALG_WAVE) :
 	  taux = my_wtime();
 #ifdef USE_MPI
 	  // Wave parallelism needs extended halos to accomodate the blocked wave evolution
@@ -140,7 +141,7 @@ void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, dou
 	  }
 	  *tcomp = my_wtime() - taux;
 	  break;
-	case(WAVE_DIAGONAL_KERNEL) :
+	case(ALG_WAVE_DIAGONAL) :
 	  taux = my_wtime();
 #ifdef USE_MPI
       // Wave parallelism needs extended halos to accomodate the blocked wave evolution
@@ -155,18 +156,18 @@ void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, dou
 	  *tcomp = my_wtime() - taux;
 	  break;
 	default :
-	  error_abort("cannot find the specified algorithm for for OMP laguage", "");
+	  error_abort("cannot find the specified algorithm for for OMP language", "");
 	}
       break;
-#ifdef USE_GPU
-    case(CUDA):
+#ifdef USE_CUDA
+    case(LANG_CUDA):
       switch(alg_key)
 	{
-	case GPU_BASE_KERNEL:
-	case GPU_SHM_KERNEL:
-	case GPU_BANDWIDTH_KERNEL:
-	case GPU_MM_KERNEL: 
-	  calcGpuDims( kernel_key, BX, BY, BZ, NX,NY,NZ, gridxy);
+	case ALG_CUDA_2D_BLK:
+	case ALG_CUDA_3D_BLK:
+	case ALG_CUDA_SHM :
+	case ALG_CUDA_BANDWIDTH: 
+	  calcGpuDims( kernel_key, BX, BY, BZ, NX, NY, NZ, gridxy);
 	  float taux_comp, taux_comm;
       //invoke GPU function
 	  laplace3d_GPU(kernel_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
@@ -178,11 +179,11 @@ void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, dou
 	}
 #endif
 #ifdef USE_OPENCL
-    case (OPENCL):
+    case (LANG_OPENCL):
       //OpenCL functionality
       switch(alg_key)
 	{
-	default:
+	case(ALG_OPENCL_BASELINE):
 	  /** \todo Generate timing detail for initialisation */
 	  //Initialise the OpenCL context/program/kernel
 	  taux = my_wtime();
@@ -197,10 +198,12 @@ void laplace3d(const struct grid_info_t *g, const int lang_key, int alg_key, dou
 	  OpenCL_Jacobi_CopyBack(uOld);
 	  *tcomm+=my_wtime()-taux;
 	  break;
+	default:
+	  error_abort("cannot find the specified algorithm for for OPenCL laguage", "");
 	}
 #endif
-    default :     
-      error_abort("unkown language algorithm pair, try -lang help", "");
+    default :
+      error_abort("unkown language, try -lang help", "");
     }
 }
 

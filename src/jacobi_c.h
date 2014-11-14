@@ -67,6 +67,8 @@ typedef float Real;
   #endif
 #endif
 
+#define MAXNAME 31
+
 // struc to keep grid data
 struct grid_info_t
 {
@@ -77,14 +79,11 @@ struct grid_info_t
   int np[3]; // MPI topology size
   int cp[3]; // grid coordinated of this ranks
   int lang_key;	// language identifier
-  int alg_key; // algorith indentifier
+  char lang_name[MAXNAME+1]; // language name
+  int alg_key; // algorithm indentifier
+  char alg_name[MAXNAME+1]; // algorithm name
   int malign; // allocate aligned memory to help vectorization
   int nwaves; // number of waves used in time skwed algorithm
-#ifdef USE_GPU
-  float kernelTimer;
-  float memoryTimer;
-  int memoryCtr;
-#endif
 #ifdef USE_MPI
   MPI_Comm comm;
 #endif 
@@ -115,13 +114,15 @@ struct times_t
 #define ALG_CCO      130 
 #define ALG_WAVE     140
 #define ALG_WAVE_DIAGONAL  141
-//! GPU kernels
-#define ALG_GPU_2D_BLK   201
-#define ALG_GPU_3D_BLK 202
-#define ALG_GPU_SHM   210
-#define ALG_GPU_BANDWIDTH   299
+//! CUDA kernels
+#define ALG_CUDA_2D_BLK   201
+#define ALG_CUDA_3D_BLK 202
+#define ALG_CUDA_SHM   210
+#define ALG_CUDA_BANDWIDTH   299
 //! OpenCL kernels
 #define ALG_OPENCL_BASELINE 300
 //! OpenACC kernels
 #define ALG_OPENACC_BASELINE 400
 
+#endif
+// ifndef JACOBI_C

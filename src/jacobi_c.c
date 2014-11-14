@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   initContext(argc, argv, &grid, &kernel_key);
 
   /* Get task/thread information */
-  setPEsParams(&grid, kernel_key);
+  setPEsParams(&grid);
 
 #ifdef USE_MPI
   if ( (grid.myrank == 0) && (requested_mpi_safety != provided_mpi_safety) ) {
@@ -95,10 +95,10 @@ int main(int argc, char *argv[]) {
   /* Solve */
   for (irun = 0; irun < nruns; ++irun){
     
-    laplace3d(&grid, kernel_key, &compTime, &commTime);
+    laplace3d(&grid, &compTime, &commTime);
 
     times[irun].comp = compTime;
-#if defined USE_GPU || defined USE_OPENCL
+#if defined USE_CUDA || defined USE_OPENCL
     times[irun].comm = commTime;
 #endif
 
@@ -136,9 +136,8 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
   
-#ifdef USE_GPU
-  if(grid.gpuflag==1)
-        freeDeviceMemory();
+#ifdef USE_CUDA
+  freeDeviceMemory();
 #endif
 #ifdef USE_OPENCL
   OpenCL_Jacobi_Tidy();

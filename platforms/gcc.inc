@@ -21,8 +21,8 @@ else
   F90 := gfortran
 endif
 
-ifdef USE_GPU
-	CPPFLAGS += -DUSE_GPU
+ifdef USE_CUDA
+	CPPFLAGS += -DUSE_CUDA
 	INC	:= -I$(CUDADIR)/include 
 	LIB	:= -L$(CUDADIR)/lib64 -lcuda -lcudart
 	CUDAO := laplace3d_kernel.o

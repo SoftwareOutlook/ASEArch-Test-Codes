@@ -260,7 +260,7 @@ void setInitialData(float* dev,float* host,int NX,int NY,int NZ,float* memoryTim
  * executes the functionality on GPU
  */
 extern "C"
-void laplace3d_GPU(const int kernel_key, Real* uOld, int NX,int NY,int NZ,const int* gridparams, int iter_block, float *compTime,  float *commTime)
+void laplace3d_GPU(const int alg_key, Real* uOld, int NX,int NY,int NZ,const int* gridparams, int iter_block, float *compTime,  float *commTime)
 {
   float taux;
   Real *aux;
@@ -292,23 +292,23 @@ void laplace3d_GPU(const int kernel_key, Real* uOld, int NX,int NY,int NZ,const 
 					
   cudaEventRecord(compStart,0);
   
-  switch(kernel_key)
+  switch(alg_key)
     {
-    case(GPU_BASE_KERNEL):
+    case(ALG_CUDA_2D_BLK):
       for (iter = 0; iter < iter_block; ++iter){
 	kernel_laplace3d_baseline<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
 	cudaSafeCall(cudaPeekAtLastError());    	
 	aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
-      case(GPU_MM_KERNEL):
+      case(ALG_CUDA_3D_BLK):
 	for (iter = 0; iter < iter_block; ++iter){
 	  kernel_laplace3d_MarkMawson<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
 	  cudaSafeCall(cudaPeekAtLastError());    	
 	  aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
-    case(GPU_SHM_KERNEL):
+    case(ALG_CUDA_SHM):
       shmsize=BlockX*BlockY*sizeof(Real);
       for (iter = 0; iter < iter_block; ++iter){
 	kernel_laplace3d_shm<<<dimGrid, dimBlock, shmsize>>>(NX, NY, NZ, d_u1, d_u2);
@@ -316,7 +316,7 @@ void laplace3d_GPU(const int kernel_key, Real* uOld, int NX,int NY,int NZ,const 
 	aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
-    case(GPU_BANDWIDTH_KERNEL):
+    case(ALG_CUDA_SHM):
       for (iter = 0; iter < iter_block; ++iter){
         kernel_BandWidth<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
 	cudaSafeCall(cudaPeekAtLastError());
