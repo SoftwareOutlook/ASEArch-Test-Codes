@@ -40,7 +40,13 @@
 #define LANGUAGE 777
 #define ALGORITHM 999
 
-static void print_help(const struct grid_info_t *g, const char *s);
+// constants for help printing
+#define H_USAGE 240
+#define H_LANG 241
+#define H_ALG 242
+#define H_VERSION 243 
+
+static void print_help(const struct grid_info_t *g, const int);
 static void set_g(struct grid_info_t *g, const int key, const int val, 
 		   const char * name);
 
@@ -144,7 +150,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
     /* Look for language flag */
     else if ( strcmp("-lang", argv[i]) == 0 ){
       have_lang=1; ++i;
-      if (strcmp("omp",argv[i]) == 0)
+      if (strcmp("openmp",argv[i]) == 0)
 	set_g(grid, LANGUAGE, LANG_OMP, "OpenMP");
       else if (strcmp("cuda",argv[i]) == 0)
 	set_g(grid, LANGUAGE, LANG_CUDA, "CUDA");
@@ -152,8 +158,8 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 	set_g(grid, LANGUAGE, LANG_OPENCL, "OpenCL");
       else if (strcmp("openacc",argv[i]) == 0)
 	set_g(grid, LANGUAGE, LANG_OPENACC, "OpenACC");
-      else if (strcmp("help",argv[i]) == 0) 
-	print_help(grid, "language");
+      else if (strcmp("help", argv[i]) == 0) 
+	print_help(grid, H_LANG);
       else
 	error_abort("Wrong language specifier, try -lang help\n",argv[i]);
     }
@@ -182,7 +188,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 	else
 	  error_abort("wrong value for threads per column parameter", argv[i]);
       }
-      else if (strcmp("3d-blockgrid",argv[i]) == 0)
+      else if (strcmp("3d-blockgrid",argv[i]) == 0 || strcmp("baseline",argv[i]) == 0 )
 	set_g(grid, ALGORITHM, ALG_CUDA_3D_BLK, argv[i]);
       else if (strcmp("2d-blockgrid",argv[i]) == 0)
 	set_g(grid, ALGORITHM, ALG_CUDA_2D_BLK, argv[i]);
@@ -205,7 +211,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 	}
       */
       else if (strcmp("help",argv[i]) == 0) 
-	print_help(grid, "algorithm");
+	print_help(grid, H_ALG);
       else
 	error_abort("Wrong algorithm specifier, try -alg help\n",argv[i]);
     }
@@ -215,12 +221,12 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       //printf(" i %d \n",i); 
     }
     else if ( strcmp("-version",argv[i] ) == 0){
-      print_help(grid,"version");
+      print_help(grid, H_VERSION);
       //printf(" i %d \n",i); 
     }
     /* Look for "verbose" standard out */
     else if ( strcmp("-help",argv[i]) == 0 )
-      print_help(grid, "usage");
+      print_help(grid, H_USAGE);
     else{
       /* basic test on flag values */
       //if (argv[i][0] != '-' )
@@ -244,7 +250,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 #endif
  }
 
-  // default algorithm function of lang option
+  // default algorithm function of language
   if (! have_alg){
     switch(grid->lang_key)
       {
@@ -525,7 +531,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
       meanTime->comp += times[ii].comp;
       maxTime->comp = MAX(maxTime->comp, times[ii].comp);
       minTime->comp = MIN(minTime->comp, times[ii].comp);
-#if defined USE_OPENCL || defined USE_GPU
+#if defined USE_CUDA || USE_OPENCL
       meanTime->comm += times[ii].comm;
       maxTime->comm = MAX(maxTime->comm, times[ii].comm);
       minTime->comm = MIN(minTime->comm, times[ii].comm);
@@ -534,7 +540,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
     }
   }
   meanTime->comp = meanTime->comp / (double) nruns / (double) nproc;
-#if defined GPU || defined USE_OPENCL
+#if defined USE_CUDA || defined USE_OPENCL
   meanTime->comm = meanTime->comm / (double) nruns / (double) nproc;
 #endif
 
@@ -669,33 +675,46 @@ void error_abort( const char *s1, const char *s2){
 #endif
 }
 
-static void print_help( const struct grid_info_t *g, const char *s){
+static void print_help( const struct grid_info_t *g, const int key){
 
   if ( g->myrank == 0) {
-    if ( strcmp(s, "usage") == 0 )
-      printf("Usage: [-ng <grid-size-x> <grid-size-y> <grid-size-z> ] \
+    switch (key)
+      {
+      case (H_LANG):
+	printf("available languages:\n\
+        openmp\n\
+        cuda\n\
+        opencl\n\
+        openacc\n\n\
+        Note:\n\
+        A language needs to be acitvated at build time with preprocessor flags\n");
+	break;
+      case(H_ALG):
+	printf("available algorithms: \n\
+        baseline \n\
+        baseline-opt (only OpenMP)\n\
+        blocked (only OpenMP, CUDA) \n\
+        wave num-waves threads-per-column (only OpenMP)\n\
+        2d-blockgrid (only CUDA)\n\
+        3d-blockgrid (only CUDA)\n\
+        bandwidth (only CUDA)\n\n\
+        Notes:\n\
+        1) for wave algorithm, if threads-per-column == 0 diagonal wave kernel is used,\n\
+        2) correctness test (i.e. -t flag) is irrelevant for bandwidth algorithm.\n");  
+      break;
+      case (H_VERSION):
+	printf("%s \n",JTC_VERSION);
+	break;
+      case(H_USAGE):
+	printf("Usage: [-ng <grid-size-x> <grid-size-y> <grid-size-z> ] \
 [ -nb <block-size-x> <block-size-y> <block-size-z>] \
- [-model <model_name> [num-waves] [threads-per-column]] \
+[-lang <language>] [-alg <algorithm> [num-waves] [threads-per-column]] \
 [-nruns <number-of-runs>] [-niter <num-iterations-per-run>]  ] \
 [-malign <memory-alignment> ] [-v] [-t] [-pc] [-nh] [-help] [-version] \n");
-      
-    else if (strcmp(s, "model") == 0)
-      printf("possible values after -model flag: \n\
-        baseline \n\
-        baseline-opt\n\
-        blocked\n\
-        wave num-waves threads-per-column \n\
-        gpu-2d-blockgrid\n\
-        gpu-3d-blockgrid\n\
-        OpenCL\n\
-        gpu-bandwidth\n\n\
-        Notes: \n\
-        1) for wave model, if threads-per-column == 0 diagonal wave kernel is used,\n\
-        2) correctness test (i.e. -t flag) is irrelevant for gpu-bandwidth.\n");  
-    else if (strcmp(s, "version") == 0)
-      printf("%s \n",JTC_VERSION);
-    else
-      printf(" print_help: unknown help request");
+	break;
+      default:
+	printf("\nutils.c: print_help: unknown help request\n\n");
+      }
   }
   
 #ifdef USE_MPI

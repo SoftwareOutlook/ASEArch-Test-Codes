@@ -34,8 +34,8 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 
  */
-#ifndef LAPLACE3D_GPU_h
-#define LAPLACE3D_GPU_h
+#ifndef LAPLACE3D_CUDA_h
+#define LAPLACE3D_CUDA_h
 
 void laplace3d_GPU(const int kernel_key, Real* uOld,int NX,int NY,int NZ,const int* gridparams, int iteration_block, float *compTime, float *commTime);
 void CudaDeviceInit();
