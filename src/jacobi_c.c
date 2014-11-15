@@ -87,10 +87,12 @@ int main(int argc, char *argv[]) {
   initialise_grid(&grid);
 
   if (grid.myrank == ROOT && pContext)
-    printContext(&grid, kernel_key);
+    printContext(&grid);
 
+#ifdef USE_OPENCL
   //Initialise OpenCL
   OpenCL_Jacobi(grid.nlx,grid.nly,grid.nlz,uOld);
+#endif
 
   /* Solve */
   for (irun = 0; irun < nruns; ++irun){
@@ -129,7 +131,7 @@ int main(int argc, char *argv[]) {
 
   /* Output */
   if (grid.myrank == ROOT) 
-    stdoutIO(&grid, kernel_key, times, &minTime, &meanTime, &maxTime, gnorm);
+    stdoutIO(&grid, times, &minTime, &meanTime, &maxTime, gnorm);
   
   /* MPI Finalize */
 #ifdef USE_MPI

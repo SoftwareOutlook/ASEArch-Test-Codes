@@ -18,14 +18,14 @@ extern Real *udata, *uOld, *uNew;
 extern int pContext, testComputation;
 
 void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_key);
-void setPEsParams(struct grid_info_t *g, int kernel_key);
+void setPEsParams(struct grid_info_t *g);
 void initialise_grid( const struct grid_info_t *g);
-void printContext(const struct grid_info_t *g, int kernel_key);
+void printContext(const struct grid_info_t *g);
 void check_norm(const struct grid_info_t *g, int iter, double norm);
 void statistics(const struct grid_info_t *g, const struct times_t *times,  
                 struct times_t *minTime, struct times_t *meanTime, struct times_t *maxTime);
 
-void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct times_t *times,  
+void stdoutIO( const struct grid_info_t *g, const struct times_t *times,  
               const struct times_t *minTime, const struct times_t *meanTime, const struct times_t *maxTime, 
 	       double norm);
 double local_norm(const struct grid_info_t *g);

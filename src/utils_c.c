@@ -41,7 +41,7 @@
 #define ALGORITHM 999
 
 static void print_help(const struct grid_info_t *g, const char *s);
- static void set_g(struct grid_info_t *g, const int key, const int val, 
+static void set_g(struct grid_info_t *g, const int key, const int val, 
 		   const char * name);
 
 // Number of runs and iterations/run
@@ -280,7 +280,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
   }
 }
 
-void setPEsParams(struct grid_info_t *g, int kernel_key) {
+void setPEsParams(struct grid_info_t *g) {
 
  
 #ifdef USE_MPI
@@ -308,7 +308,7 @@ void setPEsParams(struct grid_info_t *g, int kernel_key) {
 #endif
 
   /* sanity checkes for the time skewed algorithm */
-  if (kernel_key == WAVE_KERNEL){ 
+  if (g->alg_key == ALG_WAVE){ 
     char errmsg[255];
     if ( (nthreads % g->threads_per_column != 0) || 
 	 (g->threads_per_column > nthreads)){     
@@ -381,45 +381,16 @@ void initialise_grid( const struct grid_info_t *g) {
 #endif
 }
 
-
+//! print detailed info on runs parameters
 void printContext(const struct grid_info_t *g){
-  
-  switch (g->lang_key)
-    {
-    case(BASELINE) :
-      sprintf(kernel_name, "Gold baseline"); break;
-    case(OPTBASE_KERNEL) :
-      sprintf(kernel_name, "Titanium baseline"); break;
-    case(BLOCKED_KERNEL) :
-      sprintf(kernel_name, "Blocked"); break;
-    case (CCO_KERNEL)  :
-      sprintf(kernel_name, "MPI CCO"); break;
-    case (WAVE_KERNEL) :
-      sprintf(kernel_name, "Wave"); break;
-    case (WAVE_DIAGONAL_KERNEL) :
-      sprintf(kernel_name, "Wave diagonal"); break;  
-    case(GPU_BASE_KERNEL) :
-      sprintf(kernel_name, "GPU 2D block grid"); break;
-    case(GPU_MM_KERNEL) :
-      sprintf(kernel_name, "GPU 3D block grid"); break;
-    case(GPU_SHM_KERNEL) :
-      sprintf(kernel_name, "shared memory GPU"); break;
-    case(GPU_BANDWIDTH_KERNEL) :
-      sprintf(kernel_name, "GPU bandwidth"); break;
-    case(OPENCL_KERNEL) :
-      sprintf(kernel_name, "OpenCL Kernel"); break;
-      //case(BASEGPU_SHM_KERNEL) :
-      //sprintf(kernel_name, "Titanium SharedMem"); break;
-      //case(BLOCKEDGPU_KERNEL) :
-      //sprintf(kernel_name, "Blocked GPU"); break;
-    }
 
   printf("\n This Jacobi Test Code v%s \n\n", JTC_VERSION);
-  printf("Using %s kernel \n",kernel_name);
+  printf("Compiled with support for %s\n",g->lang_name);
+  printf("Using algorithm %s\n", g->alg_name);
   printf("Global grid sizes   : %d %d %d \n", g->ng[0], g->ng[1], g->ng[2]);
-  if ( (kernel_key == BLOCKED_KERNEL) && (kernel_key == WAVE_KERNEL) ) 
-    printf("Computational block : %d %d %d \n", g->nb[0], g->nb[1], g->nb[2]);
-  if  (kernel_key == WAVE_KERNEL)
+  if ( (g->alg_key == ALG_BLOCKED) && (g->alg_key == ALG_WAVE) ) 
+    printf("Grid block : %d %d %d \n", g->nb[0], g->nb[1], g->nb[2]);
+  if  (g->alg_key == ALG_WAVE)
     printf("Wave parallelism with %d threads per column \n", g->threads_per_column); 
 #ifdef USE_VEC1D
   printf("\nUsing vector wraper for inner loop\n\n");  
@@ -441,20 +412,25 @@ void printContext(const struct grid_info_t *g){
     printf( "Verbose Output \n");
  
 #ifdef USE_MPI 
-  if ( kernel_key == CCO_KERNEL )
-    printf("Using computation-communication overlap \n");
+  if ( kernel_key == ALG_CCO )
+    printf("Using MPI with computation-communication overlap \n");
 #endif
 
-#ifdef USE_GPU
-  if(g->gpuflag==1) {
-    int dev;
-    struct cudaDeviceProp devProp;
-    cudaSafeCall(cudaGetDevice(&dev));
-    cudaSafeCall(cudaGetDeviceProperties(&devProp,dev));
-    printf("\n Using CUDA device %d    : %s\n", dev, devProp.name);
-    printf(" Compute capability     : %d%d\n", devProp.major, devProp.minor);
-    printf(" Memory Clock Rate (KHz): %d\n", devProp.memoryClockRate);
-    printf(" Memory Bus Width (bits): %d\n\n", devProp.memoryBusWidth);
+#ifdef USE_CUDA
+  switch(g->alg_key)
+    {
+      int dev;
+      struct cudaDeviceProp devProp;
+    case ALG_CUDA_3D_BLK :
+    case ALG_CUDA_2D_BLK :
+    case ALG_CUDA_SHM :
+    case ALG_CUDA_BANDWIDTH :
+      cudaSafeCall(cudaGetDevice(&dev));
+      cudaSafeCall(cudaGetDeviceProperties(&devProp,dev));
+      printf("\n Using CUDA device %d    : %s\n", dev, devProp.name);
+      printf(" Compute capability     : %d%d\n", devProp.major, devProp.minor);
+      printf(" Memory Clock Rate (KHz): %d\n", devProp.memoryClockRate);
+      printf(" Memory Bus Width (bits): %d\n\n", devProp.memoryBusWidth);
   }
 #endif
 
@@ -588,11 +564,11 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
 }
 
 
-void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct times_t *times,  
-               const struct times_t *minTime,  const struct times_t *meanTime,  const struct times_t *maxTime, 
-	       double norm){
+void stdoutIO( const struct grid_info_t *g, const struct times_t *times,  
+               const struct times_t *minTime,  const struct times_t *meanTime,  
+	       const struct times_t *maxTime, const double norm){
 
-  int gpu_header = (kernel_key == GPU_BASE_KERNEL) || (kernel_key == GPU_SHM_KERNEL) || (kernel_key == GPU_BANDWIDTH_KERNEL || (kernel_key == GPU_MM_KERNEL) || (kernel_key == OPENCL_KERNEL));
+  int gpu_header = (g->alg_key == ALG_CUDA_2D_BLK) || (g->alg_key == ALG_CUDA_3D_BLK) || (g->alg_key == ALG_CUDA_SHM || (g->alg_key == ALG_CUDA_BANDWIDTH) || (g->alg_key == ALG_OPENCL_BASELINE) || (g->alg_key == ALG_OPENACC_BASELINE));
 
   if (pHeader){
     printf("# Last norm %22.15e\n",sqrt(norm));
@@ -601,7 +577,7 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
     printf("#\tNPx\tNPy\tNPz\tNThs\tNx\tNy\tNz\tNITER \tminTime \tmeanTime \tmaxTime    #\n");
     printf("#==================================================================================================================================#\n");
 #else
-    if ( (kernel_key == BLOCKED_KERNEL) || (kernel_key == WAVE_KERNEL)){
+    if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE)){
 
       printf("#==================================================================================================================================#\n");
       printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tminTime\tmeanTime \tmaxTime    #\n");
@@ -625,7 +601,7 @@ void stdoutIO( const struct grid_info_t *g, const int kernel_key, const struct t
          g->np[0], g->np[1], g->np[2], nthreads, g->ng[0], g->ng[1], g->ng[2],blk_iter,
 	 minTime->comp, meanTime->comp, maxTime->cop);
 #else
-  if ( (kernel_key == BLOCKED_KERNEL) || (kernel_key == WAVE_KERNEL))
+  if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE))
     printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",
 	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2],
 	   niter, minTime->comp, meanTime->comp, maxTime->comp);

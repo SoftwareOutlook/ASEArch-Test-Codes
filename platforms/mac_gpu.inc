@@ -31,7 +31,7 @@ ifdef USE_VEC1D
 endif
 
 NVCC := nvcc
-CPPFLAGS += -DUSE_GPU
+CPPFLAGS += -DUSE_CUDA
 INC	:= -I/usr/local/cuda/include 
 LIB	:= -L/usr/local/cuda/lib -lcuda -lcudart -lstdc++
 

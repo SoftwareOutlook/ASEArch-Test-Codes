@@ -167,10 +167,10 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	case ALG_CUDA_3D_BLK:
 	case ALG_CUDA_SHM :
 	case ALG_CUDA_BANDWIDTH: 
-	  calcGpuDims( kernel_key, BX, BY, BZ, NX, NY, NZ, gridxy);
+	  calcGpuDims( alg_key, BX, BY, BZ, NX, NY, NZ, gridxy);
 	  float taux_comp, taux_comm;
       //invoke GPU function
-	  laplace3d_GPU(kernel_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
+	  laplace3d_GPU(alg_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
 	  *tcomp = 0.001 * taux_comp; // CUDA timer works with ms
 	  *tcomm = 0.001 * taux_comm;
 	  break;

@@ -316,7 +316,7 @@ void laplace3d_GPU(const int alg_key, Real* uOld, int NX,int NY,int NZ,const int
 	aux=d_u1; d_u1=d_u2; d_u2=aux;
       }
       break;
-    case(ALG_CUDA_SHM):
+    case(ALG_CUDA_BANDWIDTH):
       for (iter = 0; iter < iter_block; ++iter){
         kernel_BandWidth<<<dimGrid, dimBlock>>>(NX, NY, NZ, d_u1, d_u2);
 	cudaSafeCall(cudaPeekAtLastError());
@@ -370,16 +370,16 @@ void getUpdatedArray(float* host,float* dev,int NX,int NY,int NZ,float* memoryTi
 }
 
 extern "C"
-void calcGpuDims(int kernel_key, int blockXsize, int blockYsize, int blockZsize,int NX,int NY, int NZ, int* gridsize)
+void calcGpuDims(int alg_key, int blockXsize, int blockYsize, int blockZsize,int NX,int NY, int NZ, int* gridsize)
 {
   // set threads block sizes and grid sizes.
   // used 2 dimensions
   // 0, 1 -> grid x, y
   // 2,3 -> block x, y
 
-  switch (kernel_key)
+  switch (alg_key)
     {
-    case(GPU_BASE_KERNEL):
+    case(ALG_CUDA_2D_BLK):
       GridX = 1 + (NX-1)/blockXsize;
       GridY = (1 + (NY-1)/blockYsize); //* (1 + (NZ-1) / blockZsize);
       GridZ = 1;
@@ -387,7 +387,7 @@ void calcGpuDims(int kernel_key, int blockXsize, int blockYsize, int blockZsize,
       BlockY = blockYsize;
       BlockZ = 1;
       break;
-    case (GPU_SHM_KERNEL) :
+    case (ALG_CUDA_SHM) :
       GridX = 1 + (NX-1)/blockXsize; 
       GridY = 1 + (NY-1)/blockYsize;
       GridZ = NZ;
@@ -395,8 +395,8 @@ void calcGpuDims(int kernel_key, int blockXsize, int blockYsize, int blockZsize,
       BlockY = blockYsize + 2;
       BlockZ = 1;
       break;
-    case(GPU_BANDWIDTH_KERNEL):
-    case(GPU_MM_KERNEL):
+    case(ALG_CUDA_BANDWIDTH):
+    case(ALG_CUDA_3D_BLK):
       GridX = 1 + (NX-1)/blockXsize;
       GridY = 1 + (NY-1)/blockYsize; //* (1 + (NZ-1) / blockZsize);
       GridZ = NZ;
