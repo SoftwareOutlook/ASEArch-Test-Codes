@@ -163,12 +163,12 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
     case(LANG_CUDA):
       switch(alg_key)
 	{
+	  float taux_comp, taux_comm;
 	case ALG_CUDA_2D_BLK:
 	case ALG_CUDA_3D_BLK:
 	case ALG_CUDA_SHM :
 	case ALG_CUDA_BANDWIDTH: 
 	  calcGpuDims( alg_key, BX, BY, BZ, NX, NY, NZ, gridxy);
-	  float taux_comp, taux_comm;
       //invoke GPU function
 	  laplace3d_GPU(alg_key, uOld, NX, NY, NZ, gridxy, niter, &taux_comp, &taux_comm);
 	  *tcomp = 0.001 * taux_comp; // CUDA timer works with ms
@@ -177,6 +177,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	default:
 	  error_abort("cannot find the specified algorithm for for CUDA laguage", ""); 
 	}
+      break;
 #endif
 #ifdef USE_OPENCL
     case (LANG_OPENCL):
@@ -201,6 +202,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	default:
 	  error_abort("cannot find the specified algorithm for for OPenCL laguage", "");
 	}
+      break;
 #endif
     default :
       error_abort("unkown language, try -lang help", "");

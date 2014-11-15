@@ -113,11 +113,11 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       sscanf(argv[++i],"%d", &(grid->np[1]));
       sscanf(argv[++i],"%d", &(grid->np[2]));
     }
-    /* Look for number number of iteration block (runs)*/  
+    /* Look for number number of runs */  
     else if ( strcmp("-nruns", argv[i]) == 0 ){
       sscanf(argv[++i],"%d",&nruns);
     }
-    /* Look for the size of iteration block */
+    /* Look for the run length */
     else if ( strcmp("-niter", argv[i]) == 0 ){
       int iaux;
       sscanf(argv[++i],"%d",&niter);
