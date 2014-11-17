@@ -47,6 +47,9 @@
 #define H_VERSION 243 
 
 static void print_help(const struct grid_info_t *g, const int);
+static void set_lang_ang_alg(struct grid_info_t *g, const char *optLang, const char *optAlg );
+static void set_alg_omp(struct grid_info_t *g, const char * optAlg);
+static void set_alg_cuda(struct grid_info_t *g, const char * optAlg);
 static void set_g(struct grid_info_t *g, const int key, const int val, 
 		   const char * name);
 
@@ -93,7 +96,9 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
  
 
   int i;
-  int have_blocks=0, have_lang=0, have_alg=0;
+  int have_blocks=0;
+  char *optLang = NULL;
+  char *optAlg = NULL;
 
   /* Cycle through command line args */
   i = 0;
@@ -149,71 +154,13 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
     }
     /* Look for language flag */
     else if ( strcmp("-lang", argv[i]) == 0 ){
-      have_lang=1; ++i;
-      if (strcmp("openmp",argv[i]) == 0)
-	set_g(grid, LANGUAGE, LANG_OMP, "OpenMP");
-      else if (strcmp("cuda",argv[i]) == 0)
-	set_g(grid, LANGUAGE, LANG_CUDA, "CUDA");
-      else if (strcmp("opencl",argv[i]) == 0)
-	set_g(grid, LANGUAGE, LANG_OPENCL, "OpenCL");
-      else if (strcmp("openacc",argv[i]) == 0)
-	set_g(grid, LANGUAGE, LANG_OPENACC, "OpenACC");
-      else if (strcmp("help", argv[i]) == 0) 
-	print_help(grid, H_LANG);
-      else
-	error_abort("Wrong language specifier, try -lang help\n",argv[i]);
+      ++i;
+      optLang = argv[i];
     }
     /* Look for algorithm to use */
     else if ( strcmp("-alg", argv[i]) == 0 ){
-      have_alg = 1; ++i;
-      if (strcmp("baseline",argv[i]) == 0)
-	set_g(grid, ALGORITHM, ALG_BASELINE, "baseline");
-      else if (strcmp("baseline-opt",argv[i]) == 0)
-	set_g(grid, ALGORITHM, ALG_BASELINE_OPT, "baseline-opt");
-      else if (strcmp("blocked",argv[i]) == 0)
-	set_g(grid, ALGORITHM, ALG_BLOCKED, argv[i]);
-      else if (strcmp("cco",argv[i]) == 0){
-	error_abort("CCO algorithm not suported in this release", "");
-	grid->alg_key = ALG_CCO;
-      }
-      else if (strcmp("wave",argv[i]) == 0 ){
-	error_abort("wave algorithm not suported in this release", "");
-	sscanf(argv[++i],"%d",&(grid->nwaves));
-	//niter_fixed = 1;// prevent reseting by -niter flag
-	sscanf(argv[++i],"%d",&(grid->threads_per_column));
-	if ( grid->threads_per_column == 0 ) 
-	  grid->alg_key = ALG_WAVE_DIAGONAL;
-	else if ( grid->threads_per_column > 0)
-	  grid->alg_key = ALG_WAVE;
-	else
-	  error_abort("wrong value for threads per column parameter", argv[i]);
-      }
-      else if (strcmp("3d-blockgrid",argv[i]) == 0 )
-	set_g(grid, ALGORITHM, ALG_CUDA_3D_BLK, argv[i]);
-      else if (strcmp("2d-blockgrid",argv[i]) == 0)
-	set_g(grid, ALGORITHM, ALG_CUDA_2D_BLK, argv[i]);
-      else if (strcmp("gpu-shm",argv[i]) == 0)
-	set_g(grid, ALGORITHM, ALG_CUDA_SHM, argv[i]);
-      else if (strcmp("bandwidth",argv[i]) == 0)
-	set_g(grid, ALGORITHM, ALG_CUDA_BANDWIDTH, argv[i]);
-      else if (strcmp("baseline",argv[i]) == 0)
-	set_g(grid, ALGORITHM, ALG_OPENCL_BASELINE, argv[i]);
-      else if (strcmp("baseline",argv[i]) == 0)
-	set_g(grid, ALGORITHM, ALG_OPENACC_BASELINE, argv[i]);
-      /*
-	else if (strcmp("blockedgpu",argv[i]) == 0){
-	#ifdef USE_GPU
-	*kernel_key = grid->key = BLOCKEDGPU_KERNEL;
-	grid->gpuflag = 1;
-	#else
-	error_abort("GPU model specified without gpu compilation", "");
-	#endif
-	}
-      */
-      else if (strcmp("help",argv[i]) == 0) 
-	print_help(grid, H_ALG);
-      else
-	error_abort("Wrong algorithm specifier, try -alg help\n",argv[i]);
+      ++i;
+      optAlg = argv[i];
     }
     /* Look for eigenvalue test */
     else if ( strcmp("-t",argv[i] ) == 0){
@@ -234,44 +181,9 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       
     }
   }
-  
-  // default lang depending on compilation prepocessor selections
-  if (! have_lang)
-{
-  set_g(grid, LANGUAGE, LANG_OMP, "OpenMP");
-#ifdef USE_CUDA
-    set_g(grid, LANGUAGE, LANG_CUDA, "CUDA");
-#endif
-#ifdef USE_OPENCL
-  set_g(grid, LANGUAGE, LANG_OPENCL, "OpenCL");
-#endif
-#ifdef _OPENACC
-  set_g(grid, LANGUAGE, LANG_OPENACC, "OpenACC");
-#endif
- }
-
-  // default algorithm function of language
-  if (! have_alg){
-    switch(grid->lang_key)
-      {
-      case(LANG_OMP):
-	set_g(grid, ALGORITHM, ALG_BASELINE_OPT, "baseline-opt");
-	// Comment: baseline is too bad for OpenMP
-	// it more of an example of how to write
-	// bad performance code for CPU
-	break;
-      case(LANG_CUDA):
-	set_g(grid, ALGORITHM, ALG_CUDA_3D_BLK, "3d-blockgrid");
-	break;
-      case(LANG_OPENCL):
-	set_g(grid, ALGORITHM, ALG_OPENCL_BASELINE, "baseline");
-	break;
-      case(LANG_OPENACC):
-	set_g(grid, ALGORITHM, ALG_OPENACC_BASELINE, "baseline");
-	break;
-      }
-  }
-  
+   
+  set_lang_ang_alg(grid, optLang, optAlg);
+ 
   if (!have_blocks){
     // default blocks sizes are set to grid sizes if
     // not specified in command line
@@ -280,14 +192,14 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
       grid->nb[0] = 32;
       grid->nb[1]= 4;
       grid->nb[2]= grid->ng[2];
-    } else{
+    } else{ // default for OpenMP
       grid->nb[0] = grid->ng[0]; grid->nb[1] = grid->ng[1]; grid->nb[2] = grid->ng[2];
     }
   }
 }
 
-void setPEsParams(struct grid_info_t *g) {
 
+void setPEsParams(struct grid_info_t *g) {
  
 #ifdef USE_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &(g->nproc));
@@ -724,38 +636,149 @@ static void print_help( const struct grid_info_t *g, const int key){
   
 }
 
- static void set_g(struct grid_info_t *g, const int key, const int val, 
-		   const char * name){
+static void set_lang_ang_alg(struct grid_info_t *g, const char *optLang, const char *optAlg ){
    
-   switch(key)
-   {
-   case(LANGUAGE):
-     g->lang_key = val;
-     snprintf(g->lang_name, MAXNAME, "%s", name);
-     break;
-   case(ALGORITHM):
-     g->alg_key = val;
-     snprintf(g->alg_name, MAXNAME, "%s", name);
-     break;
-   default :
-     error_abort("unkwon key ins set_g","");
-   }
-// Sanity checks
 
-   if ( key == LANGUAGE){
+  //check if help is needed
+  if ( optAlg != NULL) 
+    if (strcmp("help",optAlg) == 0) 
+      print_help(g, H_ALG);
+
+  if(optLang != NULL){
+    
+    //check if help is needed
+    if (strcmp("help",optLang) == 0) 
+      print_help(g, H_LANG);
+
+    if (strcmp("openmp",optLang) == 0){
+      set_g(g, LANGUAGE, LANG_OMP, "OpenMP");
+      set_alg_omp(g, optAlg);
+    }
+    else if (strcmp("cuda",optLang) == 0){
+      set_g(g, LANGUAGE, LANG_OMP, "CUDA");
+      set_alg_cuda(g, optAlg); 
+    }
+    else if (strcmp("opencl", optLang) == 0){
+      set_g(g, LANGUAGE, LANG_OPENCL, "OpenCL");
+      // need to write a set function if the number of algorithms increases for opencl anf openacc
+      if ( (optAlg == NULL) || (strcmp("baseline",optAlg) == 0))
+	set_g(g, ALGORITHM, ALG_OPENCL_BASELINE, "baseline");
+      else
+	error_abort(" set_lang_ang_alg: Wrong algorithm specifier for opencl language, try -alg help\n",optAlg);
+    }
+    else if (strcmp("openacc", optLang) == 0){
+      set_g(g, LANGUAGE, LANG_OPENACC, "OpenACC");
+      if ( (optAlg == NULL) || (strcmp("baseline",optAlg) == 0))
+	set_g(g, ALGORITHM, ALG_OPENACC_BASELINE, "baseline");
+      else
+	error_abort(" set_lang_ang_alg: Wrong algorithm specifier for openacc language, try -alg help\n",optAlg);
+    }
+  }
+  else {
+    /* set default language and algorithm */
+#if defined(USE_CUDA)
+    set_g(g, LANGUAGE, LANG_CUDA, "CUDA");
+    set_alg_cuda(g, optAlg);
+#elif defined(USE_OPENCL)
+    set_g(g, LANGUAGE, LANG_OPENCL, "OpenCL");
+    set_alg_omp(g, optAlg);
+#elif defined(USE_OPENACC)
+    set_g(g, LANGUAGE, LANG_OPENACC, "OpenACC");
+    set_alg_omp(g, optAlg);
+#else
+    set_g(g, LANGUAGE, LANG_OMP, "OpenMP");
+    set_alg_omp(g, optAlg);
+#endif
+  }
+ 
+// Sanity checks
 #ifndef USE_CUDA
-     if ( val == LANG_CUDA) error_abort("CUDA language selected without USE_CUDA preprocessor","");
+  if ( optLang == LANG_CUDA) error_abort("CUDA language selected without USE_CUDA preprocessor","");
 #endif
 
 #ifndef USE_OPENCL
-     if ( val == LANG_OPENCL) error_abort("OpenCL language selected without USE_OPENCL preprocessor","");
+  if ( optLang == LANG_OPENCL) error_abort("OpenCL language selected without USE_OPENCL preprocessor","");
 #endif
      
 #ifndef _OPENACC
-     if ( val == LANG_OPENACC) error_abort("OpenACC language selected without accelerator compilation","");
+  if ( optLang == LANG_OPENACC) error_abort("OpenACC language selected without accelerator compilation","");
 #endif
-   }
- }
+  
+}
+
+static void set_alg_omp(struct grid_info_t *g, const char * optAlg){
+  if (optAlg != NULL){
+    if (strcmp("baseline", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BASELINE, "baseline");
+    else if (strcmp("baseline-opt", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BASELINE_OPT, "baseline-opt");
+    else if (strcmp("blocked",optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BLOCKED, optAlg);
+    else if (strcmp("cco",optAlg) == 0){
+      error_abort("CCO algorithm not suported in this release", "");
+    }
+    else if (strcmp("wave",optAlg) == 0 ){
+      error_abort("wave algorithm not suported in this release", "");
+      /*
+	sscanf(argv[++i],"%d",&(grid->nwaves));
+	//niter_fixed = 1;// prevent reseting by -niter flag
+	sscanf(argv[++i],"%d",&(grid->threads_per_column));
+	if ( grid->threads_per_column == 0 ) 
+	grid->alg_key = ALG_WAVE_DIAGONAL;
+	else if ( grid->threads_per_column > 0)
+	grid->alg_key = ALG_WAVE;
+	else
+	error_abort("wrong value for threads per column parameter", argv[i]);
+      */
+    }
+    else
+      error_abort(" set_alg_omp: Wrong algorithm specifier for openmp language, try -alg help\n",optAlg);
+  }
+else
+	// default OpenMP algorithm (baseline is not a proper CPU implementation
+	set_g(g, ALGORITHM, ALG_BASELINE_OPT, "baseline-opt");
+}
+
+static void set_alg_cuda(struct grid_info_t *g, const char * optAlg){
+
+  if (optAlg != NULL){
+    if ((strcmp("3d-blockgrid",optAlg) == 0) ||
+	(strcmp("baseline",optAlg) == 0))
+      set_g(g, ALGORITHM, ALG_CUDA_3D_BLK, optAlg);
+    else if (strcmp("2d-blockgrid",optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_CUDA_2D_BLK, optAlg);
+    else if (strcmp("gpu-shm",optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_CUDA_SHM, optAlg);
+    else if (strcmp("bandwidth", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_CUDA_BANDWIDTH, optAlg);
+    else
+      error_abort(" set_alg_cuda: Wrong algorithm specifier for cuda language, try -alg help\n",optAlg);
+  }
+  else 
+    // default cuda algorithm
+    set_g(g, ALGORITHM, ALG_CUDA_3D_BLK, "baseline");
+}
+
+static void set_g(struct grid_info_t *g, const int key, const int val,
+                   const char * name){
+
+  if (strlen(name)  >= MAXNAME) 
+       error_abort("set_g name length larger than MAXNAME", name);
+  
+  switch(key)
+    { 
+    case(LANGUAGE):
+      g->lang_key = val;
+      snprintf(g->lang_name, MAXNAME, "%s", name);
+      break;
+    case(ALGORITHM):
+      g->alg_key = val;
+      snprintf(g->alg_name, MAXNAME, "%s", name);
+      break;
+    default :
+      error_abort("unkwon key in set_g","");
+    }
+}
 
 
 /////////////////////////////////////////////////////////////////
