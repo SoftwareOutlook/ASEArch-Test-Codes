@@ -188,7 +188,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  /** \todo Generate timing detail for initialisation */
 	  //Initialise the OpenCL context/program/kernel
 	  taux = my_wtime();
-	  OpenCL_Jacobi(uOld);
+	  OpenCL_Jacobi_CopyTo(uOld);
 	  *tcomm=my_wtime()-taux;
 	  //Call the OpenCL kernel
 	  taux = my_wtime();
@@ -200,7 +200,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  *tcomm+=my_wtime()-taux;
 	  break;
 	default:
-	  error_abort("cannot find the specified algorithm for for OPenCL laguage", "");
+	  error_abort("cannot find the specified algorithm for for OpenCL laguage", "");
 	}
       break;
 #endif

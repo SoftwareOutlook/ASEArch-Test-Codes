@@ -188,7 +188,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
 	else
 	  error_abort("wrong value for threads per column parameter", argv[i]);
       }
-      else if (strcmp("3d-blockgrid",argv[i]) == 0 || strcmp("baseline",argv[i]) == 0 )
+      else if (strcmp("3d-blockgrid",argv[i]) == 0 )
 	set_g(grid, ALGORITHM, ALG_CUDA_3D_BLK, argv[i]);
       else if (strcmp("2d-blockgrid",argv[i]) == 0)
 	set_g(grid, ALGORITHM, ALG_CUDA_2D_BLK, argv[i]);
