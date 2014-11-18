@@ -693,15 +693,15 @@ static void set_lang_ang_alg(struct grid_info_t *g, const char *optLang, const c
  
 // Sanity checks
 #ifndef USE_CUDA
-  if ( optLang == LANG_CUDA) error_abort("CUDA language selected without USE_CUDA preprocessor","");
+  if ( g->lang_key == LANG_CUDA) error_abort("CUDA language selected without USE_CUDA preprocessor","");
 #endif
 
 #ifndef USE_OPENCL
-  if ( optLang == LANG_OPENCL) error_abort("OpenCL language selected without USE_OPENCL preprocessor","");
+  if ( g->lang_key == LANG_OPENCL) error_abort("OpenCL language selected without USE_OPENCL preprocessor","");
 #endif
      
 #ifndef _OPENACC
-  if ( optLang == LANG_OPENACC) error_abort("OpenACC language selected without accelerator compilation","");
+  if ( g->lang_key == LANG_OPENACC) error_abort("OpenACC language selected without accelerator compilation","");
 #endif
   
 }

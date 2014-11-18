@@ -12,15 +12,15 @@ BUILD := opt
 COMP := nvcc
 
 USE_OPENMP := yes
-USE_GPU := yes
+USE_CUDA := yes
 CUDAO=kernels_cuda.o
 
 # upgrade arch flag for emerald keples cards
 # needs cuda/6.0.37 or newer for kepler
 
-GPU_ARCH := -arch=sm_20
-ifdef GPU_KEPLER
-  GPU_ARCH := -arch=sm_35
+CUDA_ARCH := -arch=sm_20
+ifdef CUDA_KEPLER
+  CUDA_ARCH := -arch=sm_35
 endif
 
 ifdef USE_MPI
@@ -38,7 +38,7 @@ ifdef USE_VEC1D
 endif
 
 NVCC := $(CUDA_HOME)/bin/nvcc
-CPPFLAGS += -DUSE_GPU
+CPPFLAGS += -DUSE_CUDA
 INC	:= -I$(CUDA_HOME)/include
 
 LIB	:= -L$(CUDA_HOME)/lib64 -lcuda -lstdc++ -lcudart
