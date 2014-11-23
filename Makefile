@@ -45,6 +45,10 @@ ifdef USE_OPENCL
   EXE := $(basename $(EXE))_opencl.exe 
 endif
 
+ifdef USE_OPENACC
+  EXE := $(basename $(EXE))_openacc.exe 
+endif
+
 ifdef USE_DOUBLE_PRECISION
   EXE := $(basename $(EXE))_dp.exe
 endif

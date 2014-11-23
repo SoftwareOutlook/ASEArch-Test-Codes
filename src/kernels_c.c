@@ -204,25 +204,34 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	}
       break;
 #elif defined(_OPENACC)
-      taux = my_wtime();
+    case (LANG_OPENACC):
+      switch(alg_key)
+	{
+	case(ALG_OPENACC_BASELINE):
+          taux = my_wtime();
 #pragma acc enter data copyin(uOld[0:nxShift*NY*NZ]) create(uNew[0:nxShift*NY*NZ])
-      *tcomm = my_wtime() - taux;
-      Real* u1_device =acc_deviceptr(uOld);
-      Real* u2_device =acc_deviceptr(uNew);
-      taux = my_wtime();
-      for (step = 0; step < niter; ++step){
+          *tcomm = my_wtime() - taux;
+          Real* u1_device =acc_deviceptr(uOld);
+          Real* u2_device =acc_deviceptr(uNew);
+          taux = my_wtime();
+          for (step = 0; step < niter; ++step){
 #ifdef USE_MPI
-        exchange_halos(g);
+            exchange_halos(g);
 #endif
-        Gold_laplace3d(NX, NY, NZ, nxShift, u1_device, u2_device);
-        tmp = u2_device; u2_device = u1_device; u1_device = tmp;
-      }
-      *tcomp = my_wtime() - taux;
-      uOld = acc_hostptr(u1_device);
-      uNew = acc_hostptr(u2_device);
-      taux = my_wtime();
+	    Gold_laplace3d(NX, NY, NZ, nxShift, u1_device, u2_device);
+	    tmp = u2_device; u2_device = u1_device; u1_device = tmp;
+          }
+          *tcomp = my_wtime() - taux;
+          uOld = acc_hostptr(u1_device);
+          uNew = acc_hostptr(u2_device);
+          taux = my_wtime();
 #pragma acc exit data copyout(uOld[0:nxShift*NY*NZ]) delete(uNew)
-      *tcomm += my_wtime() - taux;
+          *tcomm += my_wtime() - taux;
+          break;
+	default:
+          error_abort("kernels_c.c: cannot find the specified algorithm for OpenACC laguage", "");
+	}
+      break;
 #endif
     default :
       error_abort("kernels_c.c: unkown language, try -lang help", "");

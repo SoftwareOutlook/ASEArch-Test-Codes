@@ -681,10 +681,16 @@ static void set_lang_and_alg(struct grid_info_t *g, const char *optLang, const c
     set_alg_cuda(g, optAlg);
 #elif defined(USE_OPENCL)
     set_g(g, LANGUAGE, LANG_OPENCL, "OpenCL");
-    set_alg_omp(g, optAlg);
-#elif defined(USE_OPENACC)
+    if ( (optAlg == NULL) || (strcmp("baseline",optAlg) == 0))
+        set_g(g, ALGORITHM, ALG_OPENCL_BASELINE, "baseline");
+      else
+        error_abort(" set_lang_ang_alg: Wrong algorithm specifier for opencl language, try -alg help\n",optAlg);
+#elif defined(_OPENACC)
     set_g(g, LANGUAGE, LANG_OPENACC, "OpenACC");
-    set_alg_omp(g, optAlg);
+    if ( (optAlg == NULL) || (strcmp("baseline",optAlg) == 0))
+        set_g(g, ALGORITHM, ALG_OPENACC_BASELINE, "baseline");
+      else
+        error_abort(" set_lang_ang_alg: Wrong algorithm specifier for openacc language, try -alg help\n",optAlg);
 #else
     set_g(g, LANGUAGE, LANG_OMP, "OpenMP");
     set_alg_omp(g, optAlg);
