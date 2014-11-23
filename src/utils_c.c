@@ -47,7 +47,7 @@
 #define H_VERSION 243 
 
 static void print_help(const struct grid_info_t *g, const int);
-static void set_lang_ang_alg(struct grid_info_t *g, const char *optLang, const char *optAlg );
+static void set_lang_and_alg(struct grid_info_t *g, const char *optLang, const char *optAlg );
 static void set_alg_omp(struct grid_info_t *g, const char * optAlg);
 static void set_alg_cuda(struct grid_info_t *g, const char * optAlg);
 static void set_g(struct grid_info_t *g, const int key, const int val, 
@@ -182,7 +182,7 @@ void initContext(int argc, char *argv[], struct grid_info_t * grid, int *kernel_
     }
   }
    
-  set_lang_ang_alg(grid, optLang, optAlg);
+  set_lang_and_alg(grid, optLang, optAlg);
  
   if (!have_blocks){
     // default blocks sizes are set to grid sizes if
@@ -302,36 +302,36 @@ void initialise_grid( const struct grid_info_t *g) {
 //! print detailed info on runs parameters
 void printContext(const struct grid_info_t *g){
 
-  printf("\n This Jacobi Test Code v%s \n\n", JTC_VERSION);
-  printf("Compiled with support for %s\n",g->lang_name);
-  printf("Using algorithm %s\n", g->alg_name);
-  printf("Global grid sizes   : %d %d %d \n", g->ng[0], g->ng[1], g->ng[2]);
+  printf("\n# This is Jacobi Test Code v%s \n#\n", JTC_VERSION);
+  printf(  "# Compiled with support for %s\n",g->lang_name);
+  printf(  "# Using algorithm %s\n", g->alg_name);
+  printf(  "# Global grid sizes   : %d %d %d \n", g->ng[0], g->ng[1], g->ng[2]);
   if ( (g->alg_key == ALG_BLOCKED) && (g->alg_key == ALG_WAVE) ) 
-    printf("Grid block : %d %d %d \n", g->nb[0], g->nb[1], g->nb[2]);
+    printf("# Grid block : %d %d %d \n", g->nb[0], g->nb[1], g->nb[2]);
   if  (g->alg_key == ALG_WAVE)
-    printf("Wave parallelism with %d threads per column \n", g->threads_per_column); 
+    printf("# Wave parallelism with %d threads per column \n", g->threads_per_column); 
 #ifdef USE_VEC1D
-  printf("\nUsing vector wraper for inner loop\n\n");  
+  printf("#\n# Using vector wraper for inner loop\n#\n");  
 #endif
 
 #ifdef USE_MPI
-  printf("MPI topology        : %d %d %d \n", g->np[0], g->np[1], g->np[2]);
+  printf("# MPI topology        : %d %d %d \n", g->np[0], g->np[1], g->np[2]);
 #endif
   if ( niter <= 0 ) 
     error_abort("Non-positive value for iterations/run","");
   
-  printf("Collecting over %d runs, %d iterations/run \n", nruns, niter);
+  printf("# Collecting timings over %d runs, with %d iterations/run \n", nruns, niter);
   if (pHeader) 
-    printf("Summary Standard Ouput with Header\n");
+    printf("# Summary Standard Ouput with Header\n");
   else
-    printf("Summary Standard Output without Header\n");
+    printf("# Summary Standard Output without Header\n");
   
   if (vOut)
-    printf( "Verbose Output \n");
+    printf( "# Verbose Output \n");
  
 #ifdef USE_MPI 
   if ( kernel_key == ALG_CCO )
-    printf("Using MPI with computation-communication overlap \n");
+    printf("# Using MPI with computation-communication overlap \n");
 #endif
 
 #ifdef USE_CUDA
@@ -636,7 +636,7 @@ static void print_help( const struct grid_info_t *g, const int key){
   
 }
 
-static void set_lang_ang_alg(struct grid_info_t *g, const char *optLang, const char *optAlg ){
+static void set_lang_and_alg(struct grid_info_t *g, const char *optLang, const char *optAlg ){
    
 
   //check if help is needed
@@ -655,7 +655,7 @@ static void set_lang_ang_alg(struct grid_info_t *g, const char *optLang, const c
       set_alg_omp(g, optAlg);
     }
     else if (strcmp("cuda",optLang) == 0){
-      set_g(g, LANGUAGE, LANG_OMP, "CUDA");
+      set_g(g, LANGUAGE, LANG_CUDA, "CUDA");
       set_alg_cuda(g, optAlg); 
     }
     else if (strcmp("opencl", optLang) == 0){

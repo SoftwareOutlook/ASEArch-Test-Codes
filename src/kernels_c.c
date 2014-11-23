@@ -156,7 +156,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  *tcomp = my_wtime() - taux;
 	  break;
 	default :
-	  error_abort("cannot find the specified algorithm for for OMP language", "");
+	  error_abort("kernels_c.c: cannot find the specified algorithm for OpenMP language", "");
 	}
       break;
 #ifdef USE_CUDA
@@ -175,7 +175,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  *tcomm = 0.001 * taux_comm;
 	  break;
 	default:
-	  error_abort("cannot find the specified algorithm for for CUDA laguage", ""); 
+	  error_abort("kernels_c.c: cannot find the specified algorithm for CUDA laguage", ""); 
 	}
       break;
 #endif
@@ -200,12 +200,12 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  *tcomm+=my_wtime()-taux;
 	  break;
 	default:
-	  error_abort("cannot find the specified algorithm for for OpenCL laguage", "");
+	  error_abort("kernels_c.c: cannot find the specified algorithm for OpenCL laguage", "");
 	}
       break;
 #endif
     default :
-      error_abort("unkown language, try -lang help", "");
+      error_abort("kernels_c.c: unkown language, try -lang help", "");
     }
 }
 
