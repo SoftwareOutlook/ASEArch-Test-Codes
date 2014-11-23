@@ -443,7 +443,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
       meanTime->comp += times[ii].comp;
       maxTime->comp = MAX(maxTime->comp, times[ii].comp);
       minTime->comp = MIN(minTime->comp, times[ii].comp);
-#if defined USE_CUDA || USE_OPENCL
+#if defined USE_CUDA || USE_OPENCL || _OPENACC
       meanTime->comm += times[ii].comm;
       maxTime->comm = MAX(maxTime->comm, times[ii].comm);
       minTime->comm = MIN(minTime->comm, times[ii].comm);
@@ -452,7 +452,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
     }
   }
   meanTime->comp = meanTime->comp / (double) nruns / (double) nproc;
-#if defined USE_CUDA || defined USE_OPENCL
+#if defined USE_CUDA || defined USE_OPENCL || _OPENACC
   meanTime->comm = meanTime->comm / (double) nruns / (double) nproc;
 #endif
 

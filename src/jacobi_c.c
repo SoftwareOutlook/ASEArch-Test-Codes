@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     laplace3d(&grid, &compTime, &commTime);
 
     times[irun].comp = compTime;
-#if defined USE_CUDA || defined USE_OPENCL
+#if defined USE_CUDA || defined USE_OPENCL || defined _OPENACC
     times[irun].comm = commTime;
 #endif
 

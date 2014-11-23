@@ -42,11 +42,12 @@ either expressed or implied, of the FreeBSD Project.
 #ifdef USE_CUDA
 #include "gpu_laplace3d_wrapper.h"
 #endif
-
-//#ifdef USE_OPENCL
+#ifdef USE_OPENCL
 #include"OpenCL/jacobi_opencl.h"
-//#endif
-
+#endif
+#ifdef _OPENACC
+#include "openacc.h"
+#endif
 
 static const Real sixth=1.0/6.0;
 
@@ -159,7 +160,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  error_abort("kernels_c.c: cannot find the specified algorithm for OpenMP language", "");
 	}
       break;
-#ifdef USE_CUDA
+#if defined(USE_CUDA)
     case(LANG_CUDA):
       switch(alg_key)
 	{
@@ -178,8 +179,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  error_abort("kernels_c.c: cannot find the specified algorithm for CUDA laguage", ""); 
 	}
       break;
-#endif
-#ifdef USE_OPENCL
+#elif defined(USE_OPENCL)
     case (LANG_OPENCL):
       //OpenCL functionality
       switch(alg_key)
@@ -203,6 +203,26 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  error_abort("kernels_c.c: cannot find the specified algorithm for OpenCL laguage", "");
 	}
       break;
+#elif defined(_OPENACC)
+      taux = my_wtime();
+#pragma acc enter data copyin(uOld[0:nxShift*NY*NZ]) create(uNew[0:nxShift*NY*NZ])
+      *tcomm = my_wtime() - taux;
+      Real* u1_device =acc_deviceptr(uOld);
+      Real* u2_device =acc_deviceptr(uNew);
+      taux = my_wtime();
+      for (step = 0; step < niter; ++step){
+#ifdef USE_MPI
+        exchange_halos(g);
+#endif
+        Gold_laplace3d(NX, NY, NZ, nxShift, u1_device, u2_device);
+        tmp = u2_device; u2_device = u1_device; u1_device = tmp;
+      }
+      *tcomp = my_wtime() - taux;
+      uOld = acc_hostptr(u1_device);
+      uNew = acc_hostptr(u2_device);
+      taux = my_wtime();
+#pragma acc exit data copyout(uOld[0:nxShift*NY*NZ]) delete(uNew)
+      *tcomm += my_wtime() - taux;
 #endif
     default :
       error_abort("kernels_c.c: unkown language, try -lang help", "");
@@ -221,7 +241,12 @@ static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* 
   int   i, j, k, ind;
   //Real sixth=1.0f/6.0f;  // predefining this improves performance more than 10%
 
+#ifdef _OPENACC
+#pragma acc data deviceptr(u1,u2)
+#pragma acc kernels loop collapse(3) independent private(i,j,k,ind)
+#else
 #pragma omp parallel for schedule(static) default(none) shared(u1,u2,NX,NY,NZ,nxShift) private(i,j,k,ind)
+#endif
   for (k=0; k<NZ; k++) {
     for (j=0; j<NY; j++) {
       for (i=0; i<NX; i++) {   // i loop innermost for sequential memory access
