@@ -112,7 +112,7 @@ The following flags can be used to set the grid sized and other run parameters:
           3. OpenCL uses an algorithm similar to the CUDA 3d-blockgrid model.
              If the DEVICE flag is not set then it takes on the type
              CL_DEVICE_TYPE_DEFAULT. See your OpenCL documentation
-             for valid values for DEVICE                           	
+             for valid values for DEVICE.                           	
 				
 -pc       prints information on run parameters at the beginning of a calculation.
 

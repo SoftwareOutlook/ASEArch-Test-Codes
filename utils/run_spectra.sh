@@ -18,7 +18,7 @@ for argument in $options
     flag="${argument%=*}"
     val="${argument#*=}"
     case $flag in
-        -lang) lang_val=$val ;;
+        -cmodel) cmod_val=$val ;;
         -alg) alg_list="${val//,/ }" ;;
         -wave) wave_params=(${val//,/ }) ;;
 	-blocks) blk_val=(${val//,/ }) ; blk_x="${blk_val[0]}";blk_y="${blk_val[1]}";blk_z="${blk_val[2]}";;
@@ -32,7 +32,8 @@ for argument in $options
 	-system)run_command=$val ;;
         -info)print_context=1 ;;
 	-help|-h) 
-	       echo "$0 -lang=<val> -alg=<algorithms list> wave=<wavel param list> -blocks=<block sizes list>"
+	       echo ""
+	       echo "$0 -cmodel=<compute model> -alg=<algorithms list> wave=<wavel param list> -blocks=<block sizes list>"
 	       echo "   -minsize=<start grid sizes> -maxsize=<end grid sizes> -step=<linear grid size increase>"
 	       echo "   -exe=<executables list> -nthreads=<number of OpenMP threads list> "
 	       echo "   -test pass the -t flag to executable for testing"
@@ -57,7 +58,7 @@ then
     exit 1
 fi
 
-[ -z "$lang_val"    ] && lang_val=openmp
+[ -z "$cmod_val"    ] && cmod_val=openmp
 [ -z "$alg_list"    ] && alg_list=baseline
 [ -z "$min_linsize" ] && min_linsize=$MIN_LINSIZE
 [ -z "$max_linsize" ] && max_linsize=$MAX_LINSIZE
@@ -79,7 +80,7 @@ do
 	do
 	    export OMP_NUM_THREADS=$nth
 
-	    echo "# $((index++)) language $lang_val algorithm $alg nth $nth exe $exe" >> $fout
+	    echo "# $((index++)) compute model $cmod_val algorithm $alg nth $nth exe $exe" >> $fout
 	    # $((++index))
 	    for ((linsize=min_linsize; linsize <= max_linsize; linsize += step)) 
 	    do
@@ -106,7 +107,7 @@ do
 		    if [ -z "$first_time_inner_loop" ] ; then pc=-pc ; first_time_inner_loop=done ; else pc=""; fi
 		fi
   
-		arguments="$pc -lang $lang_val -ng $linsize $linsize $linsize -alg $alg $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign"
+		arguments="$pc -cmodel $cmod_val -ng $linsize $linsize $linsize -alg $alg $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign"
 		
 		# block flags are not not compulsory
 		if [ "$blk_val" ] 

@@ -304,10 +304,11 @@ void printContext(const struct grid_info_t *g){
 
   printf("\n# This is Jacobi Test Code v%s \n#\n", JTC_VERSION);
   printf(  "# Compiled with support for %s\n",g->cmod_name);
-  printf(  "# Using algorithm %s\n", g->alg_name);
-  printf(  "# Global grid sizes   : %d %d %d \n", g->ng[0], g->ng[1], g->ng[2]);
+  printf(  "# Using compute model: %s\n", g->cmod_name);
+  printf(  "# Using algorithm    : %s\n", g->alg_name);
+  printf(  "# Global grid sizes  : %d %d %d \n", g->ng[0], g->ng[1], g->ng[2]);
   if ( (g->alg_key == ALG_BLOCKED) && (g->alg_key == ALG_WAVE) ) 
-    printf("# Grid block : %d %d %d \n", g->nb[0], g->nb[1], g->nb[2]);
+    printf("# Grid block         : %d %d %d \n", g->nb[0], g->nb[1], g->nb[2]);
   if  (g->alg_key == ALG_WAVE)
     printf("# Wave parallelism with %d threads per column \n", g->threads_per_column); 
 #ifdef USE_VEC1D
@@ -315,7 +316,7 @@ void printContext(const struct grid_info_t *g){
 #endif
 
 #ifdef USE_MPI
-  printf("# MPI topology        : %d %d %d \n", g->np[0], g->np[1], g->np[2]);
+  printf(  "# MPI topology       : %d %d %d \n", g->np[0], g->np[1], g->np[2]);
 #endif
   if ( niter <= 0 ) 
     error_abort("Non-positive value for iterations/run","");
@@ -665,18 +666,18 @@ static void set_cmodel_and_alg(struct grid_info_t *g, const char *optMod, const 
       if ( (optAlg == NULL) || (strcmp("baseline",optAlg) == 0))
 	set_g(g, ALGORITHM, ALG_OPENCL_BASELINE, "baseline");
       else
-	error_abort(" set_lang_ang_alg: Wrong algorithm specifier for opencl language, try -alg help\n",optAlg);
+	error_abort(" set_lang_ang_alg: Wrong algorithm specifier for opencl compute model, try -alg help\n",optAlg);
     }
     else if (strcmp("openacc", optMod) == 0){
       set_g(g, CMODEL, CMODEL_OPENACC, "OpenACC");
       if ( (optAlg == NULL) || (strcmp("baseline",optAlg) == 0))
 	set_g(g, ALGORITHM, ALG_OPENACC_BASELINE, "baseline");
       else
-	error_abort(" set_lang_ang_alg: Wrong algorithm specifier for openacc language, try -alg help\n",optAlg);
+	error_abort(" set_lang_ang_alg: Wrong algorithm specifier for openacc compute model, try -alg help\n",optAlg);
     }
   }
   else {
-    /* set default language and algorithm */
+    /* set default compute model and algorithm */
 #if defined(USE_CUDA)
     set_g(g, CMODEL, CMODEL_CUDA, "CUDA");
     set_alg_cuda(g, optAlg);
@@ -685,7 +686,7 @@ static void set_cmodel_and_alg(struct grid_info_t *g, const char *optMod, const 
     if ( (optAlg == NULL) || (strcmp("baseline",optAlg) == 0))
         set_g(g, ALGORITHM, ALG_OPENCL_BASELINE, "baseline");
       else
-        error_abort(" set_lang_ang_alg: Wrong algorithm specifier for opencl language, try -alg help\n",optAlg);
+        error_abort(" set_lang_ang_alg: Wrong algorithm specifier for opencl compute model, try -alg help\n",optAlg);
 #elif defined(_OPENACC)
     set_g(g, CMODEL, CMODEL_OPENACC, "OpenACC");
     if ( (optAlg == NULL) || (strcmp("baseline",optAlg) == 0))
