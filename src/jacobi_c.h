@@ -78,8 +78,8 @@ struct grid_info_t
   int nproc, myrank; // MPI rank
   int np[3]; // MPI topology size
   int cp[3]; // grid coordinated of this ranks
-  int lang_key;	// language identifier
-  char lang_name[MAXNAME+1]; // language name
+  int cmod_key;	// language identifier
+  char cmod_name[MAXNAME+1]; // language name
   int alg_key; // algorithm indentifier
   char alg_name[MAXNAME+1]; // algorithm name
   int malign; // allocate aligned memory to help vectorization
@@ -99,10 +99,10 @@ struct times_t
 #define ROOT 0
 
 //! keys for available languages
-#define LANG_OMP 100
-#define LANG_CUDA 200
-#define LANG_OPENCL 300
-#define LANG_OPENACC 400 
+#define CMODEL_OMP 100
+#define CMODEL_CUDA 200
+#define CMODEL_OPENCL 300
+#define CMODEL_OPENACC 400 
 
 
 //! keys for available algoritms 

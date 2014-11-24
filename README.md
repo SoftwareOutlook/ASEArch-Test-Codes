@@ -59,21 +59,26 @@ The following flags can be used to set the grid sized and other run parameters:
 	eigenvector of the Jacobi smoother. Warning: Numerical artefacts
 	may creep in for large number of iterations and small grids.
 
--lang name
-     selects an implementation written in one of the following
-     languages: OpenMP, CUDA, OpenACC, OpenCL.
-	 name can take on the following values:
-	 openmp
-	 cuda
-         openacc
-	 opencl
-	 help
+-cmodel  __name__
+     selects the compute model implementation. written in one of the following
+   __name__ can take one of the following values:
+     openmp
+     cuda
+     openacc
+     opencl
+     help
 
-	 Note: OpenMP is always available, the default language depends on the build.
+     Notes:
+     ------
+     OpenMP compute module is available for any build,
+	 the default language depends on the build options.
+	 
+     help prints the available compute models and quits.
 
--alg name
-       selects an algorithm for the Jacobi iteration. Each language has at least one algorithm,
-       named baseline. Obviously it is not the same algorithm for all languages.
+-alg __name__
+       selects an algorithm for the Jacobi iteration. Each compute model has at least
+	   one algorithm, named baseline. Obviously baseline is not the same algorithm
+	   for all compute models.
 
 	  Other algoritms:
 	  ---------------
@@ -81,7 +86,6 @@ The following flags can be used to set the grid sized and other run parameters:
                         basic loop optimisations ( hoisted if, faster index algebra). OpenMP only.
                   
           blocked - uses the blocked loops version, OpenMP only
-
 
           wave num-waves threads-per-column - time skewed blocks
 	      Notes:

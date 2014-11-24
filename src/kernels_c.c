@@ -65,7 +65,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 
   int NX = g->nlx, NY = g->nly, NZ = g->nlz, nxShift;
   int BX = g->nb[0], BY = g->nb[1], BZ = g->nb[2];
-  int lang_key = g->lang_key, alg_key = g->alg_key;
+  int compute_model = g->cmod_key, alg_key = g->alg_key;
   Real* tmp;
   double taux;
   int  step; /*!< see abobe */
@@ -82,9 +82,9 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
   else
     nxShift = (abs((int) (uNew - uOld))) / (NY*NZ); 
 
-  switch (lang_key)
+  switch (compute_model)
     {
-    case(LANG_OMP):
+    case(CMODEL_OMP):
       switch (alg_key)
 	{
 	case (ALG_BASELINE) :
@@ -161,7 +161,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	}
       break;
 #if defined(USE_CUDA)
-    case(LANG_CUDA):
+    case(CMODEL_CUDA):
       switch(alg_key)
 	{
 	  float taux_comp, taux_comm;
@@ -180,7 +180,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	}
       break;
 #elif defined(USE_OPENCL)
-    case (LANG_OPENCL):
+    case (CMODEL_OPENCL):
       //OpenCL functionality
       switch(alg_key)
 	{
@@ -204,7 +204,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	}
       break;
 #elif defined(_OPENACC)
-    case (LANG_OPENACC):
+    case (CMODEL_OPENACC):
       switch(alg_key)
 	{
 	case(ALG_OPENACC_BASELINE):
