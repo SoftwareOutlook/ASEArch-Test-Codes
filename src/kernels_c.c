@@ -56,7 +56,7 @@ static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Re
 static void Blocked_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, Real* u1, Real* u2);
 static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, int threads_per_column, Real* u1, Real* u2);
 static void Wave_diagonal_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, Real* u1, Real* u2);
-static void cco_laplace3d(const struct grid_info_t *g, int iteration);
+static void cco_laplace3d(const struct grid_info_t *g, int iteration, double *tcomp, double *tcomm);
 
 //! driver for the Jacobi kernels 
 void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
@@ -68,6 +68,9 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
   int compute_model = g->cmod_key, alg_key = g->alg_key;
   Real* tmp;
   double taux;
+#ifdef USE_MPI
+  double taux2;
+#endif
   int  step; /*!< see abobe */
   //!if using GPU execution apply this function for cuda execution
   //!configuration parameters
@@ -85,13 +88,18 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
   switch (compute_model)
     {
     case(CMODEL_OMP):
+#ifdef USE_MPI
+    case(CMODEL_MPIOMP):
+#endif
       switch (alg_key)
 	{
 	case (ALG_BASELINE) :
 	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){
 #ifdef USE_MPI
+	    taux2 = my_wtime();
 	    exchange_halos(g);
+	    *tcomm += my_wtime() - taux2;
 #endif
 	    Gold_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
 	    tmp = uNew; uNew = uOld; uOld = tmp;
@@ -102,7 +110,9 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){  
 #ifdef USE_MPI
+	    taux2 = my_wtime();
 	    exchange_halos(g);
+	     *tcomm += my_wtime() - taux2;
 #endif
 	    Titanium_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
 	    tmp = uNew; uNew = uOld; uOld = tmp;
@@ -113,28 +123,29 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){   
 #ifdef USE_MPI
+	    taux2 =  my_wtime();
 	    exchange_halos(g);
+	    *tcomm += my_wtime() - taux2;
 #endif
 	    Blocked_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, uOld, uNew);
 	    tmp = uNew; uNew = uOld; uOld = tmp;
 	  }
 	  *tcomp = my_wtime() - taux;
 	  break;
+#ifdef USE_MPI
 	case (ALG_CCO)  :  
-	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){
-	    cco_laplace3d(g, niter);
+	    cco_laplace3d(g, niter, tcomp, tcomm);
 	    tmp = uNew; uNew = uOld; uOld = tmp; 
 	  }
-	  *tcomp = my_wtime() - taux;
 	  break;
+#endif
 	case (ALG_WAVE) :
 	  taux = my_wtime();
 #ifdef USE_MPI
 	  // Wave parallelism needs extended halos to accomodate the blocked wave evolution
 	  //exchange_halos(g);
-	  fprintf(stderr,"MPI not implemented for wave parallelism");
-	  MPI_Abort(MPI_COMM_WORLD,1);
+	  error_abort("MPI not implemented for wave parallelism", "");
 #endif
 	  Wave_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, niter, g->threads_per_column, uOld, uNew);
 	  if ( niter%2 == 1) {
@@ -145,10 +156,9 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	case(ALG_WAVE_DIAGONAL) :
 	  taux = my_wtime();
 #ifdef USE_MPI
-      // Wave parallelism needs extended halos to accomodate the blocked wave evolution
-      //exchange_halos(g);
-	  fprintf(stderr,"MPI not implemented for wave diagonal parallelism");
-	  MPI_Abort(MPI_COMM_WORLD,1);
+	  // Wave parallelism needs extended halos to accomodate the blocked wave evolution
+	  //exchange_halos(g);
+	  error_abort("MPI not implemented for wave diagonal parallelism","");
 #endif
 	  Wave_diagonal_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, niter, uOld, uNew);
 	  if ( niter%2 == 1) {
@@ -584,25 +594,29 @@ static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, 
   }
 */
 
-static void cco_laplace3d(const struct grid_info_t *g, int iteration){
+static void cco_laplace3d(const struct grid_info_t *g, int iteration, double *tcomp, double *tcomm){
 
   int sx = g->sx, ex = g->ex;
   int sy = g->sy, ey = g->ey;
   int sz = g->sz, ez = g->ez;
+  double tp = 0.0, tc = 0.0; // time processing, time communication
 
-#pragma omp parallel if (nthreads > 1) default(none) shared(g, sx, ex, sy, ey, sz, ez, nthreads) 
+#pragma omp parallel if (nthreads > 1) default(none) shared(g, sx, ex, sy, ey, sz, ez, nthreads, tp, tc) 
   {
 #ifdef USE_MPI
+    double t0 = my_wtime();
     post_recv(g);
     buffer_halo_transfers(g, OUT, NO_UPDATE);
     post_send(g);
     buffer_halo_transfers(g, IN, UPDATE);
+    tc += my_wtime() - t0;
 #endif
     // explicit work placement equivalent to static schedule
     // but only amongst threads 1 ... nthreads - 1 ( if nthreads > 1)
     // could be done in initalisation with thread private variables 
    
     int s3, e3, dt, d1, blk, r, tid;
+    double tt = my_wtime();
     if ( nthreads > 1) {
 #ifdef _OPENMP
       tid = omp_get_thread_num();
@@ -629,9 +643,14 @@ static void cco_laplace3d(const struct grid_info_t *g, int iteration){
     
     stencil_update(g, sx+1, ex-1, sy+1, ey-1, s3, e3);
     //stencil_update(g, sx, ex, sy, ey, sz, ez);
-
+    tt += my_wtime()-tt;
+#pragma omp atomic
+    tc += tt;
   }
-  
+
+  *tcomp = tp;
+  *tcomm = tc / (double)(nthreads > 1 ? nthreads-1 : 1);
+ 
 }
 
 void stencil_update(const struct grid_info_t * g, int s1, int e1, int s2, int e2, int s3, int e3){

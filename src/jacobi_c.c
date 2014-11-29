@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     laplace3d(&grid, &compTime, &commTime);
 
     times[irun].comp = compTime;
-#if defined USE_CUDA || defined USE_OPENCL || defined _OPENACC
+#if defined USE_CUDA || defined USE_OPENCL || defined _OPENACC || defined USE_MPI
     times[irun].comm = commTime;
 #endif
 
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
 
     /* Gather iteration runtimes to ROOT's matrix */
-    timeUpdate(times);
+    timeUpdate(&grid, times);
   }//end for loop
 
   /* Run statistics on times (Root only) */

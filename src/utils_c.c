@@ -49,9 +49,11 @@
 static void print_help(const struct grid_info_t *g, const int);
 static void set_cmodel_and_alg(struct grid_info_t *g, const char *optCmod, const char *optAlg );
 static void set_alg_omp(struct grid_info_t *g, const char * optAlg);
+static void set_alg_mpiomp(struct grid_info_t *g, const char * optAlg);
 static void set_alg_cuda(struct grid_info_t *g, const char * optAlg);
 static void set_g(struct grid_info_t *g, const int key, const int val, 
 		   const char * name);
+static void print_hline(const size_t n, const char c);
 
 // Number of runs and iterations/run
 
@@ -330,11 +332,6 @@ void printContext(const struct grid_info_t *g){
   if (vOut)
     printf( "# Verbose Output \n");
  
-#ifdef USE_MPI 
-  if ( kernel_key == ALG_CCO )
-    printf("# Using MPI with computation-communication overlap \n");
-#endif
-
 #ifdef USE_CUDA
   switch(g->alg_key)
     {
@@ -410,15 +407,15 @@ double local_norm(const struct grid_info_t *g){
 }
 
 
-void timeUpdate(struct times_t *times){
+void timeUpdate(const struct grid_info_t *g, struct times_t *times){
 
   /* Update Root's times matrix to include all times */
-
-#ifdef MPI
-  if ( myrank == ROOT )
-    call MPI_Gather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, times, NITER, MPI_DOULBE, ROOT, MPI_COMM_WORLD);
+  /* trasfeering struc as MPI_BYTE is a hack !*/
+#ifdef USE_MPI
+  if ( g->myrank == ROOT )
+    MPI_Gather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, times, nruns * sizeof(struct times_t), MPI_BYTE, ROOT, MPI_COMM_WORLD);
   else
-    call MPI_Gather(times, niter, MPI_DOUBLE, MPI_BOTTOM, 0, MPI_DATATYPE_NULL, ROOT, MPI_COMM_WORLD);
+    MPI_Gather(times, nruns * sizeof(struct times_t), MPI_BYTE, MPI_BOTTOM, 0, MPI_DATATYPE_NULL, ROOT, MPI_COMM_WORLD);
 #endif
 }
  
@@ -444,7 +441,7 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
       meanTime->comp += times[ii].comp;
       maxTime->comp = MAX(maxTime->comp, times[ii].comp);
       minTime->comp = MIN(minTime->comp, times[ii].comp);
-#if defined USE_CUDA || USE_OPENCL || _OPENACC
+#if defined USE_CUDA || USE_OPENCL || _OPENACC || USE_MPI
       meanTime->comm += times[ii].comm;
       maxTime->comm = MAX(maxTime->comm, times[ii].comm);
       minTime->comm = MIN(minTime->comm, times[ii].comm);
@@ -453,33 +450,20 @@ void statistics(const struct grid_info_t *g, const struct times_t *times,
     }
   }
   meanTime->comp = meanTime->comp / (double) nruns / (double) nproc;
-#if defined USE_CUDA || defined USE_OPENCL || _OPENACC
+#if defined USE_CUDA || defined USE_OPENCL || _OPENACC || USE_MPI
   meanTime->comm = meanTime->comm / (double) nruns / (double) nproc;
 #endif
 
-
-    
-  /* Compute standard deviation of times */
-  /*
-    ii = 0;
-    for (iPE = 0; iPE < nproc; iPE++){
-
-    for (iter = shift; iter < ntimes; iter++){
-
-    *stdvTime += (times[ii] - *meanTime) *
-    (times[ii] - *meanTime);
-    ++ii;
-    }
-    ii += shift;
-    }
-    *stdvTime = sqrt(*stdvTime / ((ntimes - shift)* nproc-1.0));
-    */
-  /* Normalized standard deviation (stdv / mean) */
-  //*NstdvTime = *stdvTime / *meanTime;
   /* normalise averages to 1 iteration step */
   meanTime->comp /= niter;
   maxTime->comp /= niter;
   minTime->comp /= niter;
+# ifdef USE_MPI
+  // In MPI halos are exchaged at every iterations
+  meanTime->comm /= niter;
+  maxTime->comm /= niter;
+  minTime->comm /= niter;
+#endif
 }
 
 
@@ -487,20 +471,90 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
                const struct times_t *minTime,  const struct times_t *meanTime,  
 	       const struct times_t *maxTime, const double norm){
 
+  char header[512];
+  int w[64], i;
+  size_t hlen;
+
   int gpu_header = (g->alg_key == ALG_CUDA_2D_BLK) || (g->alg_key == ALG_CUDA_3D_BLK) || (g->alg_key == ALG_CUDA_SHM || (g->alg_key == ALG_CUDA_BANDWIDTH) || (g->alg_key == ALG_OPENCL_BASELINE) || (g->alg_key == ALG_OPENACC_BASELINE));
 
   if (pHeader){
     printf("# Last norm %22.15e\n",sqrt(norm));
 #ifdef USE_MPI
-    printf("#==================================================================================================================================#\n");
-    printf("#\tNPx\tNPy\tNPz\tNThs\tNx\tNy\tNz\tNITER \tminTime \tmeanTime \tmaxTime    #\n");
-    printf("#==================================================================================================================================#\n");
+    if(g->alg_key == ALG_BLOCKED){
+      snprintf(header,511,"#   %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n #", 
+	       "NPx",  &w[0],
+	       "  NPy", &w[1],
+	       "  NPz", &w[2],
+	       "NThs", &w[3],
+	       "   Nx", &w[4],
+	       "   Ny", &w[5],
+	       "   Nz", &w[6],
+	       "   Bx", &w[7],
+	       "   By", &w[8],
+	       "   Bz", &w[9],
+	       " NITER",      &w[10],
+	       "  minTime",   &w[11],
+	       "  meanTime",  &w[12],
+	       "  maxTime",   &w[13],
+	       "minCommTime", &w[14],
+	       "meanCommTime",&w[15],
+	       "maxCommTime", &w[16]);
+
+      hlen=strlen(header);
+      print_hline(hlen,'=');
+      printf("%s\n",header);
+      print_hline(hlen,'=');
+    }
+    else{
+      snprintf(header,511,"#   %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n #", 
+	       "NPx",  &w[0],
+	       "  NPy", &w[1],
+	       "  NPz", &w[2],
+	       "NThs", &w[3],
+	       "    Nx", &w[4],
+	       "    Ny", &w[5],
+	       "    Nz", &w[6],
+	       " NITER", &w[7],
+	       "  minTime", &w[8],
+	       "  meanTime", &w[9],
+	       "  maxTime", &w[10],
+	       "minCommTime", &w[11],
+	       "meanCommTime", &w[12],
+	       "maxCommTime", &w[13]);
+      
+      hlen=strlen(header);
+      print_hline(hlen,'=');
+      printf("%s\n",header);
+      print_hline(hlen,'=');
+
+     }
 #else
+    // OpenMP header
     if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE)){
 
+            snprintf(header,511,"#   %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n #", 
+	       "NThs", &w[0],
+	       "   Nx", &w[1],
+	       "   Ny", &w[2],
+	       "   Nz", &w[3],
+	       "   Bx", &w[4],
+	       "   By", &w[5],
+	       "   Bz", &w[6],
+	       " NITER",      &w[7],
+	       "  minTime",   &w[8],
+	       "  meanTime",  &w[9],
+	       "  maxTime",   &w[10]);
+
+      hlen=strlen(header);
+      print_hline(hlen,'=');
+      printf("%s\n",header);
+      print_hline(hlen,'=');
+
+      /*
       printf("#==================================================================================================================================#\n");
       printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tminTime\tmeanTime \tmaxTime    #\n");
       printf("#==================================================================================================================================#\n");
+      */
     }
     else if ( gpu_header)
       {
@@ -509,18 +563,78 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
 	printf("#==================================================================================================================================================================#\n");
       }
     else {
-      printf("#==========================================================================================================#\n");
-      printf("#\tNThs\tNx\tNy\tNz\tNITER\tminTime    \tmeanTime \tmaxTime   \n ");
-      printf("#==========================================================================================================#\n");
+      snprintf(header,511,"#%9s%10s%10s%10s%10s%10s%10s%10s #",
+	       "nThs", "Nx", "Ny", "Nz", "NITER", "minT", "meanT", "maxT");
+      hlen=strlen(header);
+      print_hline(hlen,'=');
+      printf("%s\n",header);
+      print_hline(hlen,'=');
     }
 #endif 
-  }
+  } // if ( pHeader)
+  else
+    for (i=0; i<64; ++i) w[i] = 10*i;
+
+  // Now print the data under the header
 #ifdef USE_MPI
-  printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",
-         g->np[0], g->np[1], g->np[2], nthreads, g->ng[0], g->ng[1], g->ng[2],blk_iter,
-	 minTime->comp, meanTime->comp, maxTime->cop);
+if (g->alg_key == ALG_BLOCKED)
+ printf("  %5d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*.3e %*.3e %*.3e %*.3e %*.3e %*.3e\n",
+	                g->np[0], 
+	w[1] - w[0] -1, g->np[1], 
+	w[2] - w[1] -1, g->np[2], 
+	w[3] - w[2] -1, nthreads, 
+	w[4] - w[3] -1, g->ng[0], 
+	w[5] - w[4] -1, g->ng[1], 
+	w[6] - w[5] -1, g->ng[2],
+	w[7] - w[6] -1, g->nb[0], 
+	w[8] - w[7] -1, g->nb[1], 
+	w[9] - w[8] -1, g->nb[2],
+	w[10] - w[9] -1, niter,
+	w[11] - w[10] -1, minTime->comp,
+	w[12] - w[11] -1, meanTime->comp,
+	w[13] - w[12] -1, maxTime->comp,
+	w[14] - w[13] -1, minTime->comm,
+	w[15] - w[14] -1, meanTime->comm,
+	w[16] - w[15] -1, maxTime->comm);
+/*
+  printf("  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %9.3e  %9.3e  %9.3e  %9.3e  %9.3e  %9.3e\n",
+         g->np[0], g->np[1], g->np[2], nthreads, g->ng[0], g->ng[1], 
+	 g->ng[2], g->nb[0], g->nb[1], g->nb[2], 
+	 niter, minTime->comp, meanTime->comp, maxTime->comp,
+	 minTime->comm, meanTime->comm, maxTime->comm);
+*/
+     else
+       printf("  %5d %*d %*d %*d %*d %*d %*d %*d %*.3e %*.3e %*.3e %*.3e %*.3e %*.3e\n",
+	                   g->np[0], 
+	      w[1] - w[0] -1, g->np[1], 
+	      w[2] - w[1] -1, g->np[2], 
+	      w[3] - w[2] -1, nthreads, 
+	      w[4] - w[3] -1, g->ng[0], 
+	      w[5] - w[4] -1, g->ng[1], 
+	      w[6] - w[5] -1, g->ng[2],
+	      w[7] - w[6] -1, niter,
+	      w[8] - w[7] -1, minTime->comp,
+	      w[9] - w[8] -1, meanTime->comp,
+	      w[10] - w[9] -1, maxTime->comp,
+	      w[11] - w[10] -1, minTime->comm,
+	      w[12] - w[11] -1, meanTime->comm,
+	      w[13] - w[12] -1, maxTime->comm);
 #else
-  if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE))
+ if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE)){
+ printf("  %5d %*d %*d %*d %*d %*d %*d %*d %*.3e %*.3e %*.3e\n",
+	                nthreads, 
+	w[1] - w[0] -1, g->ng[0], 
+	w[2] - w[1] -1, g->ng[1], 
+	w[3] - w[2] -1, g->ng[2],
+	w[4] - w[3] -1, g->nb[0], 
+	w[5] - w[4] -1, g->nb[1], 
+	w[6] - w[5] -1, g->nb[2],
+	w[7] - w[6] -1, niter,
+	w[8] - w[7] -1, minTime->comp,
+	w[9] - w[8] -1, meanTime->comp,
+	w[10] - w[9] -1, maxTime->comp);
+ }
+  /*
     printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",
 	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2],
 	   niter, minTime->comp, meanTime->comp, maxTime->comp);
@@ -529,8 +643,9 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
 	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2], niter, 
 	   minTime->comp, meanTime->comp, maxTime->comp,minTime->comm, meanTime->comm,
 	   maxTime->comm);
+  */
   else
-    printf("\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",
+    printf("%10d%10d%10d%10d%10d%10.3e%10.3e%10.3e\n",
 	   nthreads, g->ng[0], g->ng[1], g->ng[2], niter, minTime->comp,
 	   meanTime->comp, maxTime->comp);
 
@@ -551,6 +666,15 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
     }
     }
   */
+}
+
+static void print_hline(const size_t n, const char c){
+
+  int i;
+  printf("#");
+  for (i=0; i< n-2;++i)
+    printf("%c",c);
+  printf("#\n");
 }
 
 #ifndef USE_MPI
@@ -596,6 +720,7 @@ static void print_help( const struct grid_info_t *g, const int key){
       case (H_CMODEL):
 	printf("available compute models:\n\
         openmp\n\
+        mpi+omp\n\
         cuda\n\
         opencl\n\
         openacc\n\n\
@@ -606,8 +731,8 @@ variable.\nDefault compute model is OpenMP.");
       case(H_ALG):
 	printf("available algorithms: \n\
         baseline \n\
-        baseline-opt (only OpenMP)\n\
-        blocked (only OpenMP, CUDA) \n\
+        baseline-opt (only OpenMP and MPI+OpenMP)\n\
+        blocked (only OpenMP, MPI+OpenMP, CUDA) \n\
         wave num-waves threads-per-column (only OpenMP)\n\
         2d-blockgrid (only CUDA)\n\
         3d-blockgrid (only CUDA)\n\
@@ -656,6 +781,11 @@ static void set_cmodel_and_alg(struct grid_info_t *g, const char *optMod, const 
       set_g(g, CMODEL, CMODEL_OMP, "OpenMP");
       set_alg_omp(g, optAlg);
     }
+
+    else if (strcmp("mpi+omp",optMod) == 0){
+      set_g(g, CMODEL, CMODEL_MPIOMP, "MPI+OpenMP");
+      set_alg_mpiomp(g, optAlg);
+    }
     else if (strcmp("cuda",optMod) == 0){
       set_g(g, CMODEL, CMODEL_CUDA, "CUDA");
       set_alg_cuda(g, optAlg); 
@@ -678,7 +808,10 @@ static void set_cmodel_and_alg(struct grid_info_t *g, const char *optMod, const 
   }
   else {
     /* set default compute model and algorithm */
-#if defined(USE_CUDA)
+#if defined (USE_MPI)
+    set_g(g, CMODEL, CMODEL_MPIOMP, "MPI+OpenMP");
+    set_alg_mpiomp(g, optAlg);
+#elif defined(USE_CUDA)
     set_g(g, CMODEL, CMODEL_CUDA, "CUDA");
     set_alg_cuda(g, optAlg);
 #elif defined(USE_OPENCL)
@@ -700,6 +833,11 @@ static void set_cmodel_and_alg(struct grid_info_t *g, const char *optMod, const 
   }
  
 // Sanity checks
+#ifndef USE_MPI
+  if (g->cmod_key == CMODEL_MPIOMP) error_abort("MPI+OpenMP compute model selected without USE_MPI preprocessor","");
+#endif
+
+
 #ifndef USE_CUDA
   if ( g->cmod_key == CMODEL_CUDA) error_abort("CUDA compute model selected without USE_CUDA preprocessor","");
 #endif
@@ -723,7 +861,7 @@ static void set_alg_omp(struct grid_info_t *g, const char * optAlg){
     else if (strcmp("blocked",optAlg) == 0)
       set_g(g, ALGORITHM, ALG_BLOCKED, optAlg);
     else if (strcmp("cco",optAlg) == 0){
-      error_abort("CCO algorithm not suported in this release", "");
+      error_abort("CCO id meaninful only with mpi+omp compute model", "");
     }
     else if (strcmp("wave",optAlg) == 0 ){
       error_abort("wave algorithm not suported in this release", "");
@@ -746,6 +884,30 @@ else
 	// default OpenMP algorithm (baseline is not a proper CPU implementation
 	set_g(g, ALGORITHM, ALG_BASELINE_OPT, "baseline-opt");
 }
+
+
+static void set_alg_mpiomp(struct grid_info_t *g, const char * optAlg){
+  if (optAlg != NULL){
+    if (strcmp("baseline", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BASELINE, "baseline");
+    else if (strcmp("baseline-opt", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BASELINE_OPT, "baseline-opt");
+    else if (strcmp("blocked",optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BLOCKED, optAlg);
+    else if (strcmp("cco",optAlg) == 0){
+      set_g(g, ALGORITHM, ALG_BASELINE_OPT, "CCO");
+    }
+    else if (strcmp("wave",optAlg) == 0 ){
+      error_abort("wave algorithm not suported for MPI+OpenMP compute model", "");
+    }
+    else
+      error_abort(" set_alg_omp: Wrong algorithm specifier for mpi+omp compute model, try -alg help\n",optAlg);
+  }
+else
+	// default OpenMP algorithm (baseline is not a proper CPU implementation
+	set_g(g, ALGORITHM, ALG_BASELINE_OPT, "baseline-opt");
+}
+
 
 static void set_alg_cuda(struct grid_info_t *g, const char * optAlg){
 

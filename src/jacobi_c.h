@@ -102,7 +102,8 @@ struct times_t
 #define CMODEL_OMP 100
 #define CMODEL_CUDA 200
 #define CMODEL_OPENCL 300
-#define CMODEL_OPENACC 400 
+#define CMODEL_OPENACC 400
+#define CMODEL_MPIOMP 500
 
 
 //! keys for available algoritms 
@@ -124,5 +125,7 @@ struct times_t
 //! OpenACC kernels
 #define ALG_OPENACC_BASELINE 400
 
+//! MPI specific kernels
+#define ALG_MPIOMP_CCO 510
 #endif
 // ifndef JACOBI_C
