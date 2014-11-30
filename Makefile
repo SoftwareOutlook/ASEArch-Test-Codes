@@ -49,6 +49,10 @@ ifdef USE_OPENACC
   EXE := $(basename $(EXE))_openacc.exe 
 endif
 
+ifdef USE_MPI
+  EXE := $(basename $(EXE))_mpi.exe 
+endif
+
 ifdef USE_DOUBLE_PRECISION
   EXE := $(basename $(EXE))_dp.exe
 endif

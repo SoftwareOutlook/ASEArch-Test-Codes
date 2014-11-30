@@ -27,6 +27,7 @@ for argument in $options
 	-step)step=$val;;
         -exe)exe_list="${val//,/ }";;
 	-nthreads)threads_list="${val//,/ }" ;;
+	-nproc)proc_list="${val//,/ }" ;;
 	-test)test_flag="-t";;
         -malign)fmalign="-malign $val";;
 	-system)run_command=$val ;;
@@ -35,7 +36,7 @@ for argument in $options
 	       echo ""
 	       echo "$0 -cmodel=<compute model> -alg=<algorithms list> wave=<wavel param list> -blocks=<block sizes list>"
 	       echo "   -minsize=<start grid sizes> -maxsize=<end grid sizes> -step=<linear grid size increase>"
-	       echo "   -exe=<executables list> -nthreads=<number of OpenMP threads list> "
+	       echo "   -exe=<executables list> -nthreads=<number of OpenMP threads list>, -nproc=<number of MPI ranks in each dimension>"
 	       echo "   -test pass the -t flag to executable for testing"
 	       echo "   -malig=<val> use posix_memalign for main arrays, align memory with <val>"
 	       echo "   -system=<val> : select system <val> for batch execution" 
@@ -66,6 +67,10 @@ fi
 [ -z "$step" ] && step=7
 
 [ -z "$threads_list" ] && threads_list=1
+[ -z "$proc_list" ]    && proc_list="1 1 1"
+aux=($proc_list)
+nproc=$((aux[0] * aux[1] * aux[2]))
+
 
 #echo "min-max linsize $min_linsize $max_linsize step $step model_list $model_list"
 
@@ -80,7 +85,7 @@ do
 	do
 	    export OMP_NUM_THREADS=$nth
 
-	    echo "# $((index++)) compute model $cmod_val algorithm $alg nth $nth exe $exe" >> $fout
+	    echo "# $((index++)) compute model $cmod_val algorithm $alg nth $nth MPI ranks $proc_list exe $exe" >> $fout
 	    # $((++index))
 	    for ((linsize=min_linsize; linsize <= max_linsize; linsize += step)) 
 	    do
@@ -107,7 +112,7 @@ do
 		    if [ -z "$first_time_inner_loop" ] ; then pc=-pc ; first_time_inner_loop=done ; else pc=""; fi
 		fi
   
-		arguments="$pc -cmodel $cmod_val -ng $linsize $linsize $linsize -alg $alg $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign"
+		arguments="-np $proc_list $pc -cmodel $cmod_val -ng $linsize $linsize $linsize -alg $alg $wave_params_temp -niter $niter -nruns $nruns -nh $test_flag  $fmalign"
 		
 		# block flags are not not compulsory
 		if [ "$blk_val" ] 
@@ -124,16 +129,20 @@ do
 		    # mic on csemic2
 			export I_MPI_MIC=1
                         # -env KMP_AFFINITY balanced
-			mpirun -n 1 -host mic0  -env LD_LIBRARY_PATH /lib -env OMP_NUM_THREADS $nth -env KMP_AFFINITY balanced "$exe" $arguments  >> $fout
+			mpirun -n $nproc -host mic0  -env LD_LIBRARY_PATH /lib -env OMP_NUM_THREADS $nth -env KMP_AFFINITY balanced "$exe" $arguments  >> $fout
 			;;
 		    bgq)
 		    # blue joule
-			/bgsys/drivers/ppcfloor/hlcs/bin/runjob -n 1 --envs OMP_NUM_THREADS="$nth" BG_THREADLAYOUT=1 : "$exe" $arguments  >> $fout
+			/bgsys/drivers/ppcfloor/hlcs/bin/runjob -n $nproc --envs OMP_NUM_THREADS="$nth" BG_THREADLAYOUT=1 : "$exe" $arguments  >> $fout
 			;;
                     idp)
 		    # IdataPlex
-			mpiexec.hydra -np 1 -env OMP_NUM_THREADS $nth "$exe" $arguments  >> $fout
+			mpiexec.hydra -np $nproc -env OMP_NUM_THREADS $nth "$exe" $arguments  >> $fout
                         ;;
+		    mpich)
+			# interactive mpi
+			mpiexec -n $nproc $exe $arguments >> $fout
+			;;
 		    *)
 		    # interactive shell 
 			$exe $arguments  >> $fout

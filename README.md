@@ -63,6 +63,7 @@ The following flags can be used to set the grid sized and other run parameters:
      selects the compute model implementation. written in one of the following
    __name__ can take one of the following values:
      openmp
+     mpi+omp
      cuda
      openacc
      opencl
@@ -83,9 +84,11 @@ The following flags can be used to set the grid sized and other run parameters:
 	  Other algoritms:
 	  ---------------
           baseline-opt - used in kernel Titanium_laplace3d which is Gold_laplace3d with
-                        basic loop optimisations ( hoisted if, faster index algebra). OpenMP only.
+                        basic loop optimisations ( hoisted if, faster index algebra). Implentend for MPI+OpenMP and OpenMP.
                   
-          blocked - uses the blocked loops version, OpenMP only
+          blocked - uses the blocked loops version, implemented for MPI+OpenMP and OpenMP.
+
+         cco - implemented in MPI+OpenMP, uses master thread for halo exchage. Note: the Jacobi loops don't use vec1D function to help vectorisation in this version.
 
           wave num-waves threads-per-column - time skewed blocks
 	      Notes:
