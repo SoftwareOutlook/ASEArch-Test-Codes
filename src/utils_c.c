@@ -472,8 +472,21 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
 	       const struct times_t *maxTime, const double norm){
 
   char header[512];
-  int w[64], i;
   size_t hlen;
+  // headers format
+  const char fmt_h_mpi_blk[]="#%9s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s #";
+  const char fmt_h_mpi[]="#%9s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s #";
+  const char fmt_h_omp_blk[]="#%9s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s #";
+  const char fmt_h_gpu[]="#%9s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s%10s #";
+  const char fmt_h_omp[]="#%9s%10s%10s%10s%10s%10s%10s%10s #";
+
+  // data formats
+  const char fmt_mpi_blk[]="%10d%10d%10d%10d%10d%10d%10d%10d%10d%10d%10d%10.3e%10.3e%10.3e%10.3e%10.3e%10.3e\n";
+  const char fmt_mpi[]="%10d%10d%10d%10d%10d%10d%10d%10d%10.3e%10.3e%10.3e%10.3e%10.3e%10.3e\n";
+  const char fmt_omp_blk[]="%10d%10d%10d%10d%10d%10d%10d%10d%10.3e%10.3e%10.3e\n";
+  const char fmt_gpu[]="%10d%10d%10d%10d%10d%10d%10d%10d%10.3e%10.3e%10.3e%10.3e%10.3e%10.3e\n";
+  const char fmt_omp[]="%10d%10d%10d%10d%10d%10.3e%10.3e%10.3e\n";
+  
 
   int gpu_header = (g->alg_key == ALG_CUDA_2D_BLK) || (g->alg_key == ALG_CUDA_3D_BLK) || (g->alg_key == ALG_CUDA_SHM || (g->alg_key == ALG_CUDA_BANDWIDTH) || (g->alg_key == ALG_OPENCL_BASELINE) || (g->alg_key == ALG_OPENACC_BASELINE));
 
@@ -481,24 +494,11 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
     printf("# Last norm %22.15e\n",sqrt(norm));
 #ifdef USE_MPI
     if(g->alg_key == ALG_BLOCKED){
-      snprintf(header,511,"#   %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n #", 
-	       "NPx",  &w[0],
-	       "  NPy", &w[1],
-	       "  NPz", &w[2],
-	       "NThs", &w[3],
-	       "   Nx", &w[4],
-	       "   Ny", &w[5],
-	       "   Nz", &w[6],
-	       "   Bx", &w[7],
-	       "   By", &w[8],
-	       "   Bz", &w[9],
-	       " NITER",      &w[10],
-	       "  minTime",   &w[11],
-	       "  meanTime",  &w[12],
-	       "  maxTime",   &w[13],
-	       "minCommTime", &w[14],
-	       "meanCommTime",&w[15],
-	       "maxCommTime", &w[16]);
+ snprintf(header,511,fmt_h_mpi_blk,
+	  "NPx", "NPy", "NPz", "nThs", "Nx", "Ny", "Nz",
+	  "Bx", "By", "Bz",
+	  "NITER", "minT", "meanT", "maxT",
+	  "minTcom", "meanTcom", "maxTcom" );
 
       hlen=strlen(header);
       print_hline(hlen,'=');
@@ -506,21 +506,10 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
       print_hline(hlen,'=');
     }
     else{
-      snprintf(header,511,"#   %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n #", 
-	       "NPx",  &w[0],
-	       "  NPy", &w[1],
-	       "  NPz", &w[2],
-	       "NThs", &w[3],
-	       "    Nx", &w[4],
-	       "    Ny", &w[5],
-	       "    Nz", &w[6],
-	       " NITER", &w[7],
-	       "  minTime", &w[8],
-	       "  meanTime", &w[9],
-	       "  maxTime", &w[10],
-	       "minCommTime", &w[11],
-	       "meanCommTime", &w[12],
-	       "maxCommTime", &w[13]);
+    snprintf(header,511,fmt_h_mpi,
+	  "NPx", "NPy", "NPz", "nThs", "Nx", "Ny", "Nz",
+	  "NITER", "minT", "meanT", "maxT",
+	  "minTcom", "meanTcom","maxTcom" );
       
       hlen=strlen(header);
       print_hline(hlen,'=');
@@ -532,38 +521,31 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
     // OpenMP header
     if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE)){
 
-            snprintf(header,511,"#   %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n %s%n #", 
-	       "NThs", &w[0],
-	       "   Nx", &w[1],
-	       "   Ny", &w[2],
-	       "   Nz", &w[3],
-	       "   Bx", &w[4],
-	       "   By", &w[5],
-	       "   Bz", &w[6],
-	       " NITER",      &w[7],
-	       "  minTime",   &w[8],
-	       "  meanTime",  &w[9],
-	       "  maxTime",   &w[10]);
-
+      snprintf(header,511,fmt_h_omp_blk,
+	       "nThs", "Nx", "Ny", "Nz",  "Bx", "By", "Bz",
+	       "NITER", "minT", "meanT", "maxT");
+      
       hlen=strlen(header);
       print_hline(hlen,'=');
       printf("%s\n",header);
       print_hline(hlen,'=');
 
-      /*
-      printf("#==================================================================================================================================#\n");
-      printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tminTime\tmeanTime \tmaxTime    #\n");
-      printf("#==================================================================================================================================#\n");
-      */
     }
-    else if ( gpu_header)
-      {
-	printf("#==================================================================================================================================================================#\n");
-	printf("#\tNThs\tNx\tNy\tNz\tBx\tBy\tBz\tNITER\tminTime\t         meanTime\tmaxTime \tminCpyTime\tmeanCpyTime \tmaxCpyTime #\n");
-	printf("#==================================================================================================================================================================#\n");
+    else if (gpu_header) {
+      
+      snprintf(header,511, fmt_h_gpu,
+	       "nThs", "Nx", "Ny", "Nz",
+	       "Bx", "By", "Bz",
+	       "NITER", "minT", "meanT", "maxT",
+	       "minTcpy", "meanTcpy", "maxTcpy" );
+      
+      hlen=strlen(header);
+      print_hline(hlen,'=');
+      printf("%s\n",header);
+      print_hline(hlen,'=');
       }
     else {
-      snprintf(header,511,"#%9s%10s%10s%10s%10s%10s%10s%10s #",
+      snprintf(header,511, fmt_h_omp,
 	       "nThs", "Nx", "Ny", "Nz", "NITER", "minT", "meanT", "maxT");
       hlen=strlen(header);
       print_hline(hlen,'=');
@@ -572,100 +554,42 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
     }
 #endif 
   } // if ( pHeader)
-  else
-    for (i=0; i<64; ++i) w[i] = 10*i;
 
   // Now print the data under the header
 #ifdef USE_MPI
-if (g->alg_key == ALG_BLOCKED)
- printf("  %5d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*.3e %*.3e %*.3e %*.3e %*.3e %*.3e\n",
-	                g->np[0], 
-	w[1] - w[0] -1, g->np[1], 
-	w[2] - w[1] -1, g->np[2], 
-	w[3] - w[2] -1, nthreads, 
-	w[4] - w[3] -1, g->ng[0], 
-	w[5] - w[4] -1, g->ng[1], 
-	w[6] - w[5] -1, g->ng[2],
-	w[7] - w[6] -1, g->nb[0], 
-	w[8] - w[7] -1, g->nb[1], 
-	w[9] - w[8] -1, g->nb[2],
-	w[10] - w[9] -1, niter,
-	w[11] - w[10] -1, minTime->comp,
-	w[12] - w[11] -1, meanTime->comp,
-	w[13] - w[12] -1, maxTime->comp,
-	w[14] - w[13] -1, minTime->comm,
-	w[15] - w[14] -1, meanTime->comm,
-	w[16] - w[15] -1, maxTime->comm);
-/*
-  printf("  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %d  %9.3e  %9.3e  %9.3e  %9.3e  %9.3e  %9.3e\n",
-         g->np[0], g->np[1], g->np[2], nthreads, g->ng[0], g->ng[1], 
-	 g->ng[2], g->nb[0], g->nb[1], g->nb[2], 
-	 niter, minTime->comp, meanTime->comp, maxTime->comp,
-	 minTime->comm, meanTime->comm, maxTime->comm);
-*/
-     else
-       printf("  %5d %*d %*d %*d %*d %*d %*d %*d %*.3e %*.3e %*.3e %*.3e %*.3e %*.3e\n",
-	                   g->np[0], 
-	      w[1] - w[0] -1, g->np[1], 
-	      w[2] - w[1] -1, g->np[2], 
-	      w[3] - w[2] -1, nthreads, 
-	      w[4] - w[3] -1, g->ng[0], 
-	      w[5] - w[4] -1, g->ng[1], 
-	      w[6] - w[5] -1, g->ng[2],
-	      w[7] - w[6] -1, niter,
-	      w[8] - w[7] -1, minTime->comp,
-	      w[9] - w[8] -1, meanTime->comp,
-	      w[10] - w[9] -1, maxTime->comp,
-	      w[11] - w[10] -1, minTime->comm,
-	      w[12] - w[11] -1, meanTime->comm,
-	      w[13] - w[12] -1, maxTime->comm);
-#else
- if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE)){
- printf("  %5d %*d %*d %*d %*d %*d %*d %*d %*.3e %*.3e %*.3e\n",
-	                nthreads, 
-	w[1] - w[0] -1, g->ng[0], 
-	w[2] - w[1] -1, g->ng[1], 
-	w[3] - w[2] -1, g->ng[2],
-	w[4] - w[3] -1, g->nb[0], 
-	w[5] - w[4] -1, g->nb[1], 
-	w[6] - w[5] -1, g->nb[2],
-	w[7] - w[6] -1, niter,
-	w[8] - w[7] -1, minTime->comp,
-	w[9] - w[8] -1, meanTime->comp,
-	w[10] - w[9] -1, maxTime->comp);
- }
-  /*
-    printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\n",
-	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2],
-	   niter, minTime->comp, meanTime->comp, maxTime->comp);
-  else if (gpu_header)
-    printf("\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
-	   nthreads, g->ng[0], g->ng[1], g->ng[2], g->nb[0], g->nb[1], g->nb[2], niter, 
-	   minTime->comp, meanTime->comp, maxTime->comp,minTime->comm, meanTime->comm,
-	   maxTime->comm);
-  */
+  if (g->alg_key == ALG_BLOCKED)
+    printf(fmt_mpi_blk,
+	   g->np[0], g->np[1], g->np[2], nthreads, 
+	   g->ng[0], g->ng[1], g->ng[2],
+	   g->nb[0], g->nb[1], g->nb[2],
+	   niter, minTime->comp, meanTime->comp, maxTime->comp,
+	   minTime->comm, meanTime->comm, maxTime->comm);
   else
-    printf("%10d%10d%10d%10d%10d%10.3e%10.3e%10.3e\n",
-	   nthreads, g->ng[0], g->ng[1], g->ng[2], niter, minTime->comp,
-	   meanTime->comp, maxTime->comp);
+    printf(fmt_mpi,
+	   g->np[0], g->np[1],  g->np[2], nthreads, 
+	   g->ng[0], g->ng[1], g->ng[2],
+	   niter, minTime->comp, meanTime->comp, maxTime->comp,
+	   minTime->comm, meanTime->comm, maxTime->comm);
+#else
+ if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE))
+   printf(fmt_omp_blk,
+	  nthreads, 
+	  g->ng[0], g->ng[1], g->ng[2],
+	  g->nb[0], g->nb[1], g->nb[2],
+	  niter, minTime->comp, meanTime->comp, maxTime->comp);
+ else if (gpu_header)
+    printf(fmt_gpu,
+	   nthreads, 
+	   g->ng[0],  g->ng[1], g->ng[2],
+	   g->nb[0], g->nb[1],  g->nb[2],
+	   niter, minTime->comp, meanTime->comp, maxTime->comp,
+	   minTime->comm, meanTime->comm, maxTime->comm);   
+  else
+    printf(fmt_omp,
+	   nthreads, g->ng[0], g->ng[1], g->ng[2], 
+	   niter, minTime->comp, meanTime->comp, maxTime->comp);
 
 #endif
-  /* Only if "Verbose Output" asked for */
-  /*
-    if (vOut){ 
-    printf("\n"); printf("\n");
-    printf("# Full Time Output (rows are times, cols are tasks)\n");
-    ii = 0;
-    int nproc = g->np[0] * g->np[1] * g->np[2];
-    for (iter = 0; iter < niter; iter++){ 
-    for (i = 0; i < nproc; i++){
-    printf("%e \t",times[ii]);
-    ++ii;
-    }
-    printf("\n");
-    }
-    }
-  */
 }
 
 static void print_hline(const size_t n, const char c){
