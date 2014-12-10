@@ -1,7 +1,7 @@
 /*
   variants for Jacobi smoother
 
-  Lucian Anton, July 2013
+  Lucian Anton, December 2014
 
 
 Copyright (c) 2014, Science & Technology Facilities Council, UK

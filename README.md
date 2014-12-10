@@ -1,4 +1,4 @@
-Jacobi Test Code (JTC): OpenMP, CUDA,  OpenCL OpenACC benchmark for 3D Jacobi solver
+Jacobi Test Code (JTC): MPI, OpenMP, CUDA,  OpenCL and OpenACC benchmark for 3D Jacobi solver
 Version: 1.1.0
 
 
@@ -14,7 +14,8 @@ number of iterations.
 The average time per iteration is collected for each run and
 the minimum, the average and the maximum values over the
 runs are reported. The output contains also the values of the grid sizes, 
-block sizes (if the loops are blocked) and the number of used OpenMP threads.
+block sizes (if the loops are blocked), the number of used OpenMP threads and
+the MPI topology (if MPI is enabled).
         
 Build:
 =====
@@ -60,7 +61,7 @@ The following flags can be used to set the grid sized and other run parameters:
 	may creep in for large number of iterations and small grids.
 
 -cmodel  __name__
-     selects the compute model implementation. written in one of the following
+     selects the compute model implementation.
    __name__ can take one of the following values:
      openmp
      mpi+omp
@@ -73,12 +74,13 @@ The following flags can be used to set the grid sized and other run parameters:
      ------
      OpenMP compute module is available for any build,
 	 the default language depends on the build options.
+     OpenMP can be disabled if make variable USE_OPENMP is unset.
 	 
-     help prints the available compute models and quits.
+     __help__ prints the available compute models and quits.
 
 -alg __name__
        selects an algorithm for the Jacobi iteration. Each compute model has at least
-	   one algorithm, named baseline. Obviously baseline is not the same algorithm
+	   one algorithm, named baseline. Obviously, baseline is not the same algorithm
 	   for all compute models.
 
 	  Other algoritms:
@@ -123,10 +125,9 @@ The following flags can be used to set the grid sized and other run parameters:
 
 -malign __n__    use `posix_memalign` to allocate the working array with an address alignment
              of __n__ bytes. 
-             It may help vectorisation on certain systems.
-             Default allocation is done with malloc.
+             It may help vectorisation on certain systems. Default allocation is done with malloc.
 
--help        prints short description of command line arguments
+-help        prints a short description of command line arguments
 -version     prints version
 
 

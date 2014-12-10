@@ -1,9 +1,12 @@
 /*
-  This is part of JTC, a CUDA-OpenMP-MPI Benchmark for
+  This is part of JTC, a  OpenCL-CUDA-OpenACC-OpenMP-MPI benchmark for
   Jacobi solver applied to a 3D Laplace equation.
 
   Lucian Anton 
-  March 2014.
+  December 2014.
+
+  Note: The source files execept src/utils_c.c and src/jacobi_c.c are release the under 
+        FreeBSD licence.
 
   This file originates from v 1.0 of HOMB
   http://sourceforge.net/projects/homb/
