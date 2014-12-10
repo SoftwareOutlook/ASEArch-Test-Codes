@@ -1,5 +1,5 @@
 Jacobi Test Code (JTC): MPI, OpenMP, CUDA,  OpenCL and OpenACC benchmark for 3D Jacobi solver
-Version: 1.1.0
+Version: 1.0.4b (10th December 2014)
 
 
 Introduction:
