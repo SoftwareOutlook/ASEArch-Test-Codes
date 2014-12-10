@@ -1,5 +1,5 @@
-// data common between needed by  kernels_c.c
-/* utils exported valriables
+/* data common between needed by  kernels_c.c
+   utils exported valriables
 
  Lucian Anton
  July 2013
