@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#PBS -N JTC
+#PBS -l select=1
+#PBS -l walltime=6:00:00
+# #PBS -j oe
+#PBS -A c01-hec
+
+cd $PBS_O_WORKDIR
+echo 'PBS_O_WORKDIR =' $PBS_O_WORKDIR
+
+JTCDIR= # point to the JTC directory
+exelist="./jacobi_c_cray_opt_vec1d_mpi_dp.exe"
+
+for exe in $exelist
+do
+  options=( -cmodel=mpi+omp "-alg=baseline-opt" "-exe=$exe" -nproc=2,3,4 "-nthreads=1" "-maxsize=500" "-system=cray" "-step=1" "-run-opts=-j 1" -info )
+
+  sh "$JTCDIR"/utils/performance_profile.sh "${options[@]}"
+
+done

@@ -6,11 +6,8 @@
 # March 2014
 #
 
-# command options
-options=$@
-
 # read options
-for argument in $options
+for argument in "$@"
   do
     index=$((index + 1))
 
@@ -31,6 +28,7 @@ for argument in $options
 	-test)test_flag="-t";;
         -malign)fmalign="-malign $val";;
 	-system)run_command=$val ;;
+        -run-opts)run_opts="$val" ;;
         -info)print_context=1 ;;
 	-help|-h) 
 	       echo ""
@@ -72,7 +70,7 @@ aux=($proc_list)
 nproc=$((aux[0] * aux[1] * aux[2]))
 
 
-#echo "min-max linsize $min_linsize $max_linsize step $step model_list $model_list"
+#echo "min-max linsize $min_linsize $max_linsize step $step model_list $model_list exe list $exelist"
 
 index=0
 for exe in $exe_list
@@ -129,20 +127,24 @@ do
 		    # mic on csemic2
 			export I_MPI_MIC=1
                         # -env KMP_AFFINITY balanced
-			mpirun -n $nproc -host mic0  -env LD_LIBRARY_PATH /lib -env OMP_NUM_THREADS $nth -env KMP_AFFINITY balanced "$exe" $arguments  >> $fout
+			mpirun -n $nproc -host mic0 $run_opts -env LD_LIBRARY_PATH /lib -env OMP_NUM_THREADS $nth -env KMP_AFFINITY balanced "$exe" $arguments  >> $fout
 			;;
 		    bgq)
 		    # blue joule
-			/bgsys/drivers/ppcfloor/hlcs/bin/runjob -n $nproc --envs OMP_NUM_THREADS="$nth" BG_THREADLAYOUT=1 : "$exe" $arguments  >> $fout
+			/bgsys/drivers/ppcfloor/hlcs/bin/runjob -n $nproc $run_opts --envs OMP_NUM_THREADS="$nth" BG_THREADLAYOUT=1 : "$exe" $arguments  >> $fout
 			;;
                     idp)
 		    # IdataPlex
-			mpiexec.hydra -np $nproc -env OMP_NUM_THREADS $nth "$exe" $arguments  >> $fout
+			mpiexec.hydra -np $nproc $run_opts -env OMP_NUM_THREADS $nth "$exe" $arguments  >> $fout
                         ;;
 		    mpich)
 			# interactive mpi
-			mpiexec -n $nproc $exe $arguments >> $fout
+			mpiexec -n $nproc $run_opts $exe $arguments >> $fout
 			;;
+                    cray)
+                    # Cray systems use aprun
+                        aprun -n $nproc -d $OMP_NUM_THREADS $run_opts "$exe" $arguments  >> $fout
+                        ;;
 		    *)
 		    # interactive shell 
 			$exe $arguments  >> $fout

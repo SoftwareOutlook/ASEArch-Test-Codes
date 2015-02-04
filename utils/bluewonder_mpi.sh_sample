@@ -1,0 +1,22 @@
+#BSUB -o homb%J.out
+#BSUB -e homb%J.err
+#BSUB -R "span[ptile=1]"
+#BSUB -n 1
+#BSUB -J JTC
+#BSUB -x
+
+# setup modules
+. /etc/profile.d/modules.sh
+module load intel/mpi > /dev/null 2>&1
+
+cd $(pwd)
+ulimit -s unlimited
+
+JTCDIR= # provide value
+
+for exe in  "$JTCDIR"/jacobi_c_intel_opt_vec1d_mpi_dp.exe
+do
+# command options
+  options=( -cmodel=mpi+omp -alg=baseline-opt -exe=$exe -nproc=1,1,16 -nthreads=1 -maxsize=500 -system=idp -step=1 -info )
+  sh "$JTCDIR"/utils/run_spectra.sh "${options[@]}"
+done
