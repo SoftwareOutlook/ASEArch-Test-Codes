@@ -12,7 +12,7 @@ for argument in "$@"
     index=$((index + 1))
 
     # check if we have a flag
-    flag="${argument%=*}"
+    flag="${argument%%=*}"
     val="${argument#*=}"
     case $flag in
         -cmodel) cmod_val=$val ;;
@@ -121,7 +121,7 @@ do
 		    arguments="$arguments -nb  $blk_xt $blk_yt $blk_zt"
 		fi
 
-		echo "nth $nth $exe $arguments"
+		echo "nth $nth run opts $run_opts $exe $arguments"
 		case $run_command in
 		    mic)
 		    # mic on csemic2
@@ -144,6 +144,9 @@ do
                     cray)
                     # Cray systems use aprun
                         aprun -n $nproc -d $OMP_NUM_THREADS $run_opts "$exe" $arguments  >> $fout
+                        ;;
+                    slurm)
+                        srun -n $nproc -c $OMP_NUM_THREADS $run_opts "$exe" $arguments  >> $fout
                         ;;
 		    *)
 		    # interactive shell 
