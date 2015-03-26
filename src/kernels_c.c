@@ -244,7 +244,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
       break;
 #endif
     default :
-      error_abort("kernels_c.c: unkown language, try -lang help", "");
+      error_abort("kernels_c.c: unkown compute model, try -cmodel help", "");
     }
 }
 

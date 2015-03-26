@@ -36,7 +36,7 @@ either expressed or implied, of the FreeBSD Project.
 #ifndef JACOBI_C
 #define JACOBI_C
 
-#define JTC_VERSION "1.1.1 (16th of March 2015)"
+#define JTC_VERSION "1.1.2 (26th of March 2015)"
 
 /* Include Files */ 
 #ifdef USE_MPI

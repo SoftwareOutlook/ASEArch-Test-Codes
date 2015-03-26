@@ -57,12 +57,10 @@ OMPFLAGS_gnu_no  :=
 # Intel flags
 FFLAGS_intel_opt   := -fast
 FFLAGS_intel_debug := -g 
-CFLAGS_intel_opt   := $(VEC1D) $(DOUBLE) $(FMPI) -O2 -xHost -restrict -align -vec-report6  -opt-streaming-stores auto
+CFLAGS_intel_opt   := $(VEC1D) $(DOUBLE) $(FMPI) -O2 -restrict -align -vec-report6  -opt-streaming-stores auto
 CFLAGS_intel_debug := $(VEC1D) $(DOUBLE) $(FMPI) -g 
 OMPFLAGS_intel_yes := -openmp
 OMPFLAGS_intel_no  :=
-
-
 
 # Cray flags
 FFLAGS_cray_opt   := -rm 
