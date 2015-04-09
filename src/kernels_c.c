@@ -85,6 +85,8 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
   else
     nxShift = (abs((int) (uNew - uOld))) / (NY*NZ); 
 
+  *tcomm = 0.0;
+
   switch (compute_model)
     {
     case(CMODEL_OMP):
