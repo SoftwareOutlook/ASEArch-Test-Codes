@@ -1,3 +1,4 @@
+
 #============================================================
 # Makefile configuration for GNU compiler, MPICH2 + OpenMP  
 #    
@@ -11,6 +12,7 @@ COMP=gcc
 
 USE_OPENMP=yes
 BUILD=opt
+##USE_FORTRAN=no
 
 ifdef USE_MPI
   CC  := mpicc
@@ -36,17 +38,23 @@ ifdef USE_DOUBLE_PRECISION
   CPPFLAGS += -DUSE_DOUBLE_PRECISION
 endif
 
-USE_VEC1D := on
+##USE_VEC1D := on
 ifdef USE_VEC1D
   CPPFLAGS += -DUSE_VEC1D
 endif
 
+##USE_FORTRAN := off
+
+ifdef USE_FORTRAN
+  CPPFLAGS += -DUSE_FORTRAN
+endif
+
 CFLAGS_opt = -O3
-CFLAGS_debug = -g -Wall -Wuninitialized -O1
+CFLAGS_debug = -gdwarf-3 -Wall -Wuninitialized -O1
 CFLAGS := $(CPPFLAGS) $(CFLAGS_$(BUILD)) -std=c99 
 
 FFLAGS_opt := -O3
-FFLAGS_debug := -g -fbounds-check -Wall -fbacktrace -ffpe-trap=invalid,zero,overflow -fsignaling-nans -fdump-core 
+FFLAGS_debug := -gdwarf-3 -fbounds-check -Wall -fbacktrace -ffpe-trap=invalid,zero,overflow -fsignaling-nans -fdump-core 
 FFLAGS := $(CPPFLAGS) $(FFLAGS_$(BUILD))
 
 ifdef USE_OPENMP
@@ -54,5 +62,9 @@ ifdef USE_OPENMP
 endif
 
 ifeq ($(LANG),C)
-  LIB := -lm
+  LIB := -lm -lgfortran
 endif
+
+#ifdef USE_FORTRAN
+#  LIB += -lgfortran
+#endif

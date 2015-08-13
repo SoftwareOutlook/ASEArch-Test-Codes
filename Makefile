@@ -31,6 +31,10 @@ ifdef USE_VEC1D
   EXE := $(basename $(EXE))_vec1d.exe
 endif
 
+ifdef USE_FORTRAN
+  EXE := $(basename $(EXE))_Fortran.exe
+endif
+
 ifdef USE_CUDA
   EXE := $(basename $(EXE))_cuda.exe 
 endif
@@ -51,28 +55,36 @@ ifdef USE_DOUBLE_PRECISION
   EXE := $(basename $(EXE))_dp.exe
 endif
 
-OBJ := kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o $(CUDAO) $(OPENCLO)
+OBJ := kernels_c.o comm_mpi_c.o utils_c.o jacobi_c.o c_call_f90.o $(CUDAO) $(OPENCLO)
 
 default: $(JTC_C)
 all: $(JTC_C)
 
+##$(JTC_C): checkplatform checkbuild $(OBJ)
+#	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -l $(F90) $(OMPFLAGS) -o $(EXE) $(OBJ) $(LIB)
+
 $(JTC_C): checkplatform checkbuild $(OBJ)
-	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE) $(OBJ) $(LIB) 
+	$(CC) -v $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE) $(OBJ) $(LIB)
+
+#$(JTC_C):
+#	$(CC) -l gfortran -v $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) $(EXE) src/jacobi_c.c src/comm_mpi_c.c src/kernels_c.c src/utils_c.c src/c_call_f90.F90 -lm
+
+##$(JTC_C): $(GCC) $(CFLAGS) -l $(F90) jacobi_c.c c_call_f90.F90 $(EXE)
 
 # Fortran build is inactive in this version
-$(JTC_F90) : homb_f90.o functions_f90.o 
-	$(F90) $(MPIFLAGS) $(FFLAGS) $(OMPFLAGS) -o $(EXE) $^
+#$(JTC_F90) : homb_f90.o functions_f90.o 
+#	$(F90) $(MPIFLAGS) $(FFLAGS) $(OMPFLAGS) -o $(EXE) $^
 
 clean:
 	rm -f *.mod *.o  
 vclean:
 	rm -f *.mod *.o *.exe
 
-%_f90.o : src/%_f90.f90
-	$(F90) -c -o $@ $(OMPFLAGS) $(FFLAGS) $< 
+%_f90.o : src/%_f90.F90
+	$(F90) -v -c -o $@ $(OMPFLAGS) $(FFLAGS) $< 
 
 %_c.o : src/%_c.c
-	$(CC) -c -o $@ $(OMPFLAGS) $(CFLAGS) $(INC) $<
+	$(CC) -v -c -o $@ $(OMPFLAGS) $(CFLAGS) $(INC) -S $<
 
 ifdef USE_CUDA
 %_cuda.o : src/%_cuda.cu

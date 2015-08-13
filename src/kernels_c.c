@@ -52,6 +52,7 @@ either expressed or implied, of the FreeBSD Project.
 static const Real sixth=1.0/6.0;
 
 static void Gold_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2);
+//extern void Gold_laplace3d_f(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2);
 static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2);
 static void Blocked_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, Real* u1, Real* u2);
 static void Wave_laplace3d(int NX, int NY, int NZ, int nxShift, int BX, int BY, int BZ, int iter_block, int threads_per_column, Real* u1, Real* u2);
@@ -71,6 +72,20 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 #ifdef USE_MPI
   double taux2;
 #endif
+  //#ifdef USE_FORTRAN
+  // make pointers for fortran
+  //int *nx_p = &NX;
+  //int *ny_p = &NY;
+  //int *nz_p = &NZ;
+  //int *nxshift_p = &nxShift;
+  //int *bx_p = &BX;
+  //int *by_p = &BY;
+  //int *bz_p = &BZ;
+  //int *niter_p = &niter;
+  //const int *nthreads_per_column_p = &g->threads_per_column;
+  //int *nthreads_p = &nthreads;
+  //#endif
+  
   int  step; /*!< see abobe */
   //!if using GPU execution apply this function for cuda execution
   //!configuration parameters
@@ -103,7 +118,19 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	    exchange_halos(g);
 	    *tcomm += my_wtime() - taux2;
 #endif
+#ifdef USE_FORTRAN
+	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
+	    //int *nx_p = &NX;
+	    //int *ny_p = &NY;
+	    //int *nz_p = &NZ;
+	    //int *nxshift_p = &nxShift;
+	    /* call subroutine */
+	    //Gold_laplace3d_f(nx_p, ny_p, nz_p, nxshift_p, uOld, uNew);
+	    printf("C %d %d %d \n", NX, NY, NZ);
+	    Gold_laplace3d_f(&NX, &NY, &NZ, &nxShift, uOld, uNew);
+#else
 	    Gold_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
+#endif	    
 	    tmp = uNew; uNew = uOld; uOld = tmp;
 	  } 
 	  *tcomp = my_wtime() - taux;
@@ -116,7 +143,18 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	    exchange_halos(g);
 	     *tcomm += my_wtime() - taux2;
 #endif
+#ifdef USE_FORTRAN
+	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
+	    //int *nx_p = &NX;
+	    //int *ny_p = &NY;
+	    //int *nz_p = &NZ;
+	    //int *nxshift_p = &nxShift;
+	    /* call subroutine */
+	    //Titanium_laplace3d_f(nx_p, ny_p, nz_p, nxshift_p, uOld, uNew);
+	    Titanium_laplace3d_f(&NX, &NY, &NZ, &nxShift, uOld, uNew);
+#else
 	    Titanium_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
+#endif	  
 	    tmp = uNew; uNew = uOld; uOld = tmp;
 	  }
 	  *tcomp = my_wtime() - taux;
@@ -129,7 +167,22 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	    exchange_halos(g);
 	    *tcomm += my_wtime() - taux2;
 #endif
+	    
+#ifdef USE_FORTRAN
+	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
+	    //int *nx_p = &NX;
+	    //int *ny_p = &NY;
+	    //int *nz_p = &NZ;
+	    //int *bx_p = &BX;
+	    //int *by_p = &BY;
+	    //int *bz_p = &BZ;
+	    //int *nxshift_p = &nxShift;
+	    /* call subroutine */
+	    //Blocked_laplace3d_f(nx_p, ny_p, nz_p, bx_p, by_p, bz_p, nxshift_p, uOld, uNew);
+	    Blocked_laplace3d_f(&NX, &NY, &NZ, &BX, &BY, &BZ, &nxShift, uOld, uNew);
+#else
 	    Blocked_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, uOld, uNew);
+#endif	    
 	    tmp = uNew; uNew = uOld; uOld = tmp;
 	  }
 	  *tcomp = my_wtime() - taux;
@@ -149,7 +202,24 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  //exchange_halos(g);
 	  error_abort("MPI not implemented for wave parallelism", "");
 #endif
+	  
+	  //#ifdef USE_FORTRAN
+	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
+	  //int *nx_p = &NX;
+	  //int *ny_p = &NY;
+	  //int *nz_p = &NZ;
+	  //int *bx_p = &BX;
+	  //int *by_p = &BY;
+	  //int *bz_p = &BZ;
+	  //int *nxshift_p = &nxShift;
+	  //int *niter_p = &niter;
+	  //int *nthreads_p = &nthreads;
+	  //const int *nthreads_per_column_p = &g->threads_per_column;
+	  //Wave_laplace3d_f(nx_p, ny_p, nz_p, nxshift_p, bx_p, by_p, bz_p, niter_p, nthreads_p,
+	  //		   nthreads_per_column_p, uOld, uNew);
+	  //#else
 	  Wave_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, niter, g->threads_per_column, uOld, uNew);
+	  //#endif
 	  if ( niter%2 == 1) {
 	    tmp = uNew; uNew = uOld; uOld = tmp;
 	  }
@@ -162,7 +232,20 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	  //exchange_halos(g);
 	  error_abort("MPI not implemented for wave diagonal parallelism","");
 #endif
-	  Wave_diagonal_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, niter, uOld, uNew);
+	  //#ifdef USE_FORTRAN
+	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
+	  //int *nx_p = &NX;
+	  //int *ny_p = &NY;
+	  //int *nz_p = &NZ;
+	  //int *bx_p = &BX;
+	  //int *by_p = &BY;
+	  //int *bz_p = &BZ;
+	  //int *nxshift_p = &nxShift;
+	  //int *niter_p = &niter;
+	  // Wave_diagonal_laplace3d_f(nx_p, ny_p, nz_p, nxshift_p, bx_p, by_p, bz_p, niter_p, uOld, uNew);
+	  //else
+	  //Wave_diagonal_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, niter, uOld, uNew);
+	  //#endif
 	  if ( niter%2 == 1) {
 	    tmp = uNew; uNew = uOld; uOld = tmp;
 	  }
@@ -309,12 +392,14 @@ static void vec_oneD_loop(const int n, const Real *restrict uNorth, const Real *
 // It is enough to do it only once at initialisation stage.
 // The inner loop index algebra uses less operations ( compare with Gold_laplace3d )
 static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Real* u2) 
+
 {
   int   i, j, k, ind, indmj, indpj, indmk, indpk, NXY;
   //Real sixth=1.0f/6.0f;  // predefining this improves performance more than 10%
-
+  //printf("%f %f %f %f \n",u1[1500],u1[1501],u1[1502],u1[1503]);
+  //printf("%f %f %f %f \n",u2[1500],u2[1501],u2[1502],u2[1503]);	 
   NXY = nxShift*NY;
-#pragma omp parallel for default(none) shared(u1,u2,NX,NY,NZ,NXY, nxShift) private(i,j,k,ind,indmj,indpj,indmk,indpk) schedule(static) collapse(2)
+ #pragma omp parallel for default(none) shared(u1,u2,NX,NY,NZ,NXY, nxShift) private(i,j,k,ind,indmj,indpj,indmk,indpk) schedule(static) collapse(2)
   for (k=1; k<NZ-1; k++) {
     for (j=1; j<NY-1; j++) {
       ind = j*nxShift + k*NXY;
@@ -325,7 +410,17 @@ static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Re
 #ifdef USE_VEC1D
       vec_oneD_loop(NX-2, &u1[ind], & u1[ind+2], &u1[indmj+1], &u1[indpj+1], &u1[indmk+1],&u1[indpk+1], &u2[ind+1]);
 #else
-      for (i=1; i<NX-1; i++) {   // i loop innermost for sequential memory access
+      for (i=1; i<NX-1; i++) {
+	/* if (i == 1) { */
+	/*   printf("ind + 1 = %f /n", ind+1); */
+	/*   printf("ind + i - 1 = %f /n", ind+i-1); */
+	/*   printf("ind + i + 1 = %f /n", ind+i+1); */
+	/*   printf("indmj + i = %f /n", indmj+i); */
+	/*   printf("indpj + i = %f /n", indpj+i); */
+	/*   printf("indmk + i = %f /n", indmk+i); */
+	/*   printf("indpk + i = %f /n", indpk+i); */
+	/* } */
+		 // i loop innermost for sequential memory access
 	u2[ind+i] = ( u1[ind+i-1] + u1[ind+i+1]
 		      +   u1[indmj+i] + u1[indpj+i]
 		      +   u1[indmk+i] + u1[indpk+i] ) * sixth;
@@ -334,6 +429,9 @@ static void Titanium_laplace3d(int NX, int NY, int NZ, int nxShift, Real* u1, Re
 #endif
     }
   }
+  //printf("%f %f %f %f \n",u1[1500],u1[1501],u1[1502],u1[1503]);
+  //printf("%f %f %f %f \n",u2[1500],u2[1501],u2[1502],u2[1503]);	 
+
 }
 
 
