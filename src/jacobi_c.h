@@ -114,8 +114,11 @@ struct times_t
 //! not all algorithms are available to every language
 //! OpenMP kernels
 #define ALG_BASELINE 101
+#define ALG_BASELINE_F90 109
 #define ALG_BASELINE_OPT  100
+#define ALG_BASELINE_OPT_F90 119
 #define ALG_BLOCKED  120
+#define ALG_BLOCKED_F90 129
 #define ALG_CCO      130 
 #define ALG_WAVE     140
 #define ALG_WAVE_DIAGONAL  141

@@ -37,10 +37,10 @@ either expressed or implied, of the FreeBSD Project.
 int uindex(const struct grid_info_t *grid, const int i, const int j, const int k);
 void stencil_update(const struct grid_info_t *grid, int s1, int e1, int s2, int e2, int s3, int e3);
 void laplace3d(const struct grid_info_t *g, double *tstart, double *tend);
-#ifdef USE_FORTRAN
+//#ifdef USE_FORTRAN
 void Gold_laplace3d_f(int *NX, int *NY, int *NZ, int *nxshift, Real* u1, Real* u2);
 void Titanium_laplace3d_f(int *NX, int *NY, int *NZ, int *nxshift, Real* u1, Real* u2);
 void Blocked_laplace3d_f(int *NX, int *NY, int *NZ, int *BX, int *BY, int *BZ, int *nxshift, Real* u1, Real* u2);
 //void Wave_laplace3d_f(int *NX, int *NY, int *NZ, int *nxshift, int *BX, int *BY, int *BZ, int *iter_block, int *nthreads, const int *nthreads_per_column, Real *uOld, Real *uNew);
 //void Wave_diagonal_laplace3d_f(int *NX, int *NY, int *NZ, int *nxshift, int *BX, int *BY, int *BZ, int *iter_block, Real* u1, Real* u2);
-#endif
+//#endif

@@ -4,6 +4,7 @@ module kernels
 !   use openacc
 ! #endif
   use iso_c_binding
+  use iso_fortran_env
   implicit none
 
 !   type, bind(C) :: grid_info_t
@@ -17,12 +18,13 @@ module kernels
 
 ! end type grid_info_t
 #if USE_DOUBLE_PRECISION
-  integer, parameter :: wp = kind(0.0d0)
-#endif
+  integer, parameter :: wp = REAL64
+#else
   !! ??≈
   integer, parameter :: wp = kind(4)
+#endif  
   !! real(wp), parameter :: pi = 4.0*atan(1.0)
-  real(kind=4), parameter :: sixth = 1.0/6.0 
+  real(wp), parameter :: sixth = (1.0_wp/6.0_wp)
 
 
   
@@ -107,9 +109,13 @@ contains
      use iso_c_binding
      !!type(grid_info_t), intent(in) :: grid
      integer(c_int), intent(in) :: nx, ny , nz, nxShift
+#if USE_DOUBLE_PRECISION
+     real(c_double), intent(in), dimension(0:(nx*ny*nz)-1) :: u1
+     real(c_double), intent(inout), dimension(0:(nx*ny*nz)-1) :: u2
+#else
      real(c_float), intent(in), dimension(0:(nx*ny*nz)-1) :: u1
      real(c_float), intent(inout), dimension(0:(nx*ny*nz)-1) :: u2
-     
+#endif     
      !type(c_ptr), intent(inout) :: u2
      !integer(c_int), intent(in) :: NX, NY, NZ, nxShift
      integer i, j, k
@@ -166,8 +172,13 @@ contains
     
     subroutine vec_oneD_loop(nx,ny,nz, n, uNorth, uSouth, uWest, uEast, uBottom, uTop, w)
       integer, intent(in) :: n, nx, ny, nz
+#if USE_DOUBLE_PRECISION
+      real(c_double), dimension(0:(nx*ny*nz)-1), intent(in) :: uNorth, uSouth, uWest, uEast, uBottom, uTop
+      real(c_double), dimension(0:(nx*ny*nz)-1), intent(inout) :: w
+#else
       real(c_float), dimension(0:(nx*ny*nz)-1), intent(in) :: uNorth, uSouth, uWest, uEast, uBottom, uTop
       real(c_float), dimension(0:(nx*ny*nz)-1), intent(inout) :: w
+#endif      
       integer i
       
 #if 0
@@ -190,8 +201,14 @@ contains
     
     subroutine Titanium_laplace3d(nx, ny, nz, nxshift, u1, u2) BIND(C, name="Titanium_laplace3d_f")
       integer(c_int), intent(in) :: nx, ny, nz, nxshift
+
+#if USE_DOUBLE_PRECISION
+      real(c_double), intent(in), dimension(0:(NX*NY*NZ)-1) :: u1
+      real(c_double), intent(inout), dimension(0:(NX*NY*NZ)-1) :: u2
+#else      
       real(c_float), intent(in), dimension(0:(NX*NY*NZ)-1) :: u1
       real(c_float), intent(inout), dimension(0:(NX*NY*NZ)-1) :: u2
+#endif     
       !integer   nxy = nxshift * NY
       integer   i, j, k, ind, indmj, indpj, indmk, indpk, nxy
       nxy = nxshift * ny
@@ -250,31 +267,40 @@ contains
     subroutine Blocked_laplace3d(nx, ny, nz, bx, by, bz, nxshift, u1, u2) BIND(C, name="Blocked_laplace3d_f")
       
       integer(c_int), intent(in) :: nx, ny, nz, bx, by, bz, nxshift
-      real(c_float), dimension(nx*ny*nz), intent(in) :: u1
-      real(c_float), dimension(nx*ny*nz), intent(inout) :: u2
+#if USE_DOUBLE_PRECISION
+      real(c_double), intent(in), dimension(0:(nx*ny*nz)-1) :: u1
+      real(c_double), intent(inout), dimension(0:(nx*ny*nz)-1) :: u2
+#else
+      real(c_float), intent(in), dimension(0:(nx*ny*nz)-1) :: u1
+      real(c_float), intent(inout), dimension(0:(nx*ny*nz)-1) :: u2
+#endif
+      
       integer i, j, k, ind, indmj, indpj, indmk, indpk, nxy, ii, jj, kk
 
       nxy = nxshift * ny
+
 !$OMP parallel default(none) shared(u1,u2,nx,ny,nz,nxy,nxshift,bx,by,bz) private(i,j,k,ind,indmj,indpj,indmk,indpk,ii,jj,kk)
 !$OMP do schedule(static,1) collapse(3)
-      do kk=1, nz-2
-         do jj=1, ny-2
-            do ii=1, nx-2
-               do k = kk, min(1 + kk + bz, nz-2)
-                  do j = jj, min(1 + jj + by, ny-2)
+
+      do kk=1, nz-2, bz
+         do jj=1, ny-2, by
+            do ii=1, nx-2, bx
+               do k = kk, min(kk + bz - 1, nz-2)
+                  do j = jj, min(jj + by - 1, ny-2)
                      ind = j*nxshift + k*nxy
                      indmj = ind - nxshift
                      indpj = ind + nxshift
                      indmk = ind - nxy
                      indpk = ind + nxy
+               
 #if USE_VEC1D
-                     call vec_oneD_loop(nx,ny,nz, min(ii+bx, nx-1)-ii, u1(ind+ii-1), u1(ind+ii+1), &
+                     call vec_oneD_loop(nx,ny,nz, min(ii+bx-1, nx-2)-ii, u1(ind+ii-1), u1(ind+ii+1), &
                           u1(indmj+ii), u1(indpj+ii), u1(indmk+ii), u1(indpk+ii), u2(ind+ii))
 #else
-                     do i=ii, min(1 + ii + bx, nx-2)
-                        u2(ind + i) = ( u1(ind + i - 1) + u1(ind + 1 + 1) &
-                             + u1(indmj + i) + u1(indpj + 1) &
-                             + u1(indmk + i) + u1(indpk + 1) ) * sixth        
+                     do i=ii, min(ii + bx - 1, nx-2)
+                        u2(ind + i) = ( u1(ind + i - 1) + u1(ind + i + 1) &
+                             + u1(indmj + i) + u1(indpj + i) &
+                             + u1(indmk + i) + u1(indpk + i) ) * sixth        
                      end do
 #endif                     
                   end do

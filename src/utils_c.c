@@ -496,7 +496,7 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
   if (pHeader){
     printf("# Last norm %22.15e\n",sqrt(norm));
 #ifdef USE_MPI
-    if(g->alg_key == ALG_BLOCKED){
+    if(g->alg_key == ALG_BLOCKED || ALG_BLOCKED_F90){
  snprintf(header,511,fmt_h_mpi_blk,
 	  "NPx", "NPy", "NPz", "nThs", "Nx", "Ny", "Nz",
 	  "Bx", "By", "Bz",
@@ -522,7 +522,7 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
      }
 #else
     // OpenMP header
-    if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE)){
+    if ( (g->alg_key == ALG_BLOCKED || ALG_BLOCKED_F90) || (g->alg_key == ALG_WAVE)){
 
       snprintf(header,511,fmt_h_omp_blk,
 	       "nThs", "Nx", "Ny", "Nz",  "Bx", "By", "Bz",
@@ -560,7 +560,7 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
 
   // Now print the data under the header
 #ifdef USE_MPI
-  if (g->alg_key == ALG_BLOCKED)
+  if (g->alg_key == ALG_BLOCKED || ALG_BLOCKED_F90)
     printf(fmt_mpi_blk,
 	   g->np[0], g->np[1], g->np[2], nthreads, 
 	   g->ng[0], g->ng[1], g->ng[2],
@@ -574,7 +574,7 @@ void stdoutIO( const struct grid_info_t *g, const struct times_t *times,
 	   niter, minTime->comp, meanTime->comp, maxTime->comp,
 	   minTime->comm, meanTime->comm, maxTime->comm);
 #else
- if ( (g->alg_key == ALG_BLOCKED) || (g->alg_key == ALG_WAVE))
+ if ( (g->alg_key == ALG_BLOCKED || ALG_BLOCKED_F90) || (g->alg_key == ALG_WAVE))
    printf(fmt_omp_blk,
 	  nthreads, 
 	  g->ng[0], g->ng[1], g->ng[2],
@@ -660,6 +660,9 @@ variable.\nDefault compute model is OpenMP.");
         baseline \n\
         baseline-opt (only OpenMP and MPI+OpenMP)\n\
         blocked (only OpenMP, MPI+OpenMP, CUDA) \n\
+        baseline-F90 \n\
+        baseline-opt-F90 (only OpenMP and MPI+OpenMP) \n\
+        blocked-F90 (only OpenMP, MPI+OpenMP, CUDA) \n\
         wave num-waves threads-per-column (only OpenMP)\n\
         2d-blockgrid (only CUDA)\n\
         3d-blockgrid (only CUDA)\n\
@@ -786,7 +789,13 @@ static void set_alg_omp(struct grid_info_t *g, const char * optAlg){
     else if (strcmp("baseline-opt", optAlg) == 0)
       set_g(g, ALGORITHM, ALG_BASELINE_OPT, "baseline-opt");
     else if (strcmp("blocked",optAlg) == 0)
-      set_g(g, ALGORITHM, ALG_BLOCKED, optAlg);
+      set_g(g, ALGORITHM, ALG_BLOCKED, "blocked");
+    else if (strcmp("baseline-F90", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BASELINE_F90, "baseline-F90");
+    else if (strcmp("baseline-opt-F90", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BASELINE_OPT_F90, "baseline-opt-F90");
+    else if (strcmp("blocked-F90", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BLOCKED_F90, "blocked-F90");
     else if (strcmp("cco",optAlg) == 0){
       error_abort("CCO id meaninful only with mpi+omp compute model", "");
     }
@@ -820,7 +829,13 @@ static void set_alg_mpiomp(struct grid_info_t *g, const char * optAlg){
     else if (strcmp("baseline-opt", optAlg) == 0)
       set_g(g, ALGORITHM, ALG_BASELINE_OPT, "baseline-opt");
     else if (strcmp("blocked",optAlg) == 0)
-      set_g(g, ALGORITHM, ALG_BLOCKED, optAlg);
+      set_g(g, ALGORITHM, ALG_BLOCKED, "blocked");
+    else if (strcmp("baseline-F90", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BASELINE_F90, "baseline-F90");
+    else if (strcmp("baseline-opt-F90", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BASELINE_OPT_F90, "baseline-opt-F90");
+    else if (strcmp("blocked-F90", optAlg) == 0)
+      set_g(g, ALGORITHM, ALG_BLOCKED_F90, "blocked-F90");
     else if (strcmp("cco",optAlg) == 0){
       set_g(g, ALGORITHM, ALG_BASELINE_OPT, "CCO");
     }

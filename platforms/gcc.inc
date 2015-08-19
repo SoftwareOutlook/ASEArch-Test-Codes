@@ -38,16 +38,16 @@ ifdef USE_DOUBLE_PRECISION
   CPPFLAGS += -DUSE_DOUBLE_PRECISION
 endif
 
-##USE_VEC1D := on
+USE_VEC1D := on
 ifdef USE_VEC1D
   CPPFLAGS += -DUSE_VEC1D
 endif
 
 ##USE_FORTRAN := off
 
-ifdef USE_FORTRAN
-  CPPFLAGS += -DUSE_FORTRAN
-endif
+##ifdef USE_FORTRAN
+##  CPPFLAGS += -DUSE_FORTRAN
+##endif
 
 CFLAGS_opt = -O3
 CFLAGS_debug = -gdwarf-3 -Wall -Wuninitialized -O1

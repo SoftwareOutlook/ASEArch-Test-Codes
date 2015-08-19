@@ -64,7 +64,7 @@ all: $(JTC_C)
 #	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -l $(F90) $(OMPFLAGS) -o $(EXE) $(OBJ) $(LIB)
 
 $(JTC_C): checkplatform checkbuild $(OBJ)
-	$(CC) -v $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE) $(OBJ) $(LIB)
+	$(CC) $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) -o $(EXE) $(OBJ) $(LIB)
 
 #$(JTC_C):
 #	$(CC) -l gfortran -v $(MPIFLAGS) $(OMPFLAGS) $(CFLAGS) $(EXE) src/jacobi_c.c src/comm_mpi_c.c src/kernels_c.c src/utils_c.c src/c_call_f90.F90 -lm
@@ -81,10 +81,10 @@ vclean:
 	rm -f *.mod *.o *.exe
 
 %_f90.o : src/%_f90.F90
-	$(F90) -v -c -o $@ $(OMPFLAGS) $(FFLAGS) $< 
+	$(F90) -c -o $@ $(OMPFLAGS) $(FFLAGS) $< 
 
 %_c.o : src/%_c.c
-	$(CC) -v -c -o $@ $(OMPFLAGS) $(CFLAGS) $(INC) -S $<
+	$(CC) -c -o $@ $(OMPFLAGS) $(CFLAGS) $(INC) $<
 
 ifdef USE_CUDA
 %_cuda.o : src/%_cuda.cu

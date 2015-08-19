@@ -113,8 +113,10 @@ The following command line options can be used to set the  run parameters:
 	  ---------------
           baseline-opt - used in kernel Titanium_laplace3d which is Gold_laplace3d with
                         basic loop optimisations ( hoisted if, faster index algebra). Implemented for MPI+OpenMP and OpenMP.
+	  baseline-opt-F90 - same as above, but using Fortran instead of C
                   
           blocked - uses the blocked loops version, implemented for MPI+OpenMP and OpenMP.
+          blocked-F90 - same as above, but using Fortran instead of C
 
          cco - implemented in MPI+OpenMP, uses master thread for halo exchange.
 		          __Note__: the Jacobi loops don't use vec1D function to help vectorisation in this version.

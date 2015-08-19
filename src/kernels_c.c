@@ -118,7 +118,7 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	    exchange_halos(g);
 	    *tcomm += my_wtime() - taux2;
 #endif
-#ifdef USE_FORTRAN
+	    //#ifdef USE_FORTRAN
 	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
 	    //int *nx_p = &NX;
 	    //int *ny_p = &NY;
@@ -126,15 +126,42 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	    //int *nxshift_p = &nxShift;
 	    /* call subroutine */
 	    //Gold_laplace3d_f(nx_p, ny_p, nz_p, nxshift_p, uOld, uNew);
-	    printf("C %d %d %d \n", NX, NY, NZ);
-	    Gold_laplace3d_f(&NX, &NY, &NZ, &nxShift, uOld, uNew);
-#else
+	    //printf("C %d %d %d \n", NX, NY, NZ);
+	    //Gold_laplace3d_f(&NX, &NY, &NZ, &nxShift, uOld, uNew);
+	    //#else
 	    Gold_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
-#endif	    
+	    //#endif	    
 	    tmp = uNew; uNew = uOld; uOld = tmp;
 	  } 
 	  *tcomp = my_wtime() - taux;
 	  break;
+
+	case (ALG_BASELINE_F90) :
+	  taux = my_wtime();
+	  for (step = 0; step < niter; ++step){
+#ifdef USE_MPI
+	    taux2 = my_wtime();
+	    exchange_halos(g);
+	    *tcomm += my_wtime() - taux2;
+#endif
+	    //#ifdef USE_FORTRAN
+	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
+	    //int *nx_p = &NX;
+	    //int *ny_p = &NY;
+	    //int *nz_p = &NZ;
+	    //int *nxshift_p = &nxShift;
+	    /* call subroutine */
+	    //Gold_laplace3d_f(nx_p, ny_p, nz_p, nxshift_p, uOld, uNew);
+	    //printf("C %d %d %d \n", NX, NY, NZ);
+	    Gold_laplace3d_f(&NX, &NY, &NZ, &nxShift, uOld, uNew);
+	    //#else
+	    //Gold_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
+	    //#endif	    
+	    tmp = uNew; uNew = uOld; uOld = tmp;
+	  } 
+	  *tcomp = my_wtime() - taux;
+	  break;
+	  
 	case (ALG_BASELINE_OPT) :
 	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){  
@@ -143,7 +170,32 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	    exchange_halos(g);
 	     *tcomm += my_wtime() - taux2;
 #endif
-#ifdef USE_FORTRAN
+	     //#ifdef USE_FORTRAN
+	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
+	    //int *nx_p = &NX;
+	    //int *ny_p = &NY;
+	    //int *nz_p = &NZ;
+	    //int *nxshift_p = &nxShift;
+	    /* call subroutine */
+	    //Titanium_laplace3d_f(nx_p, ny_p, nz_p, nxshift_p, uOld, uNew);
+	    //Titanium_laplace3d_f(&NX, &NY, &NZ, &nxShift, uOld, uNew);
+	     //#els
+	    Titanium_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
+	    //#endif	  
+	    tmp = uNew; uNew = uOld; uOld = tmp;
+	  }
+	  *tcomp = my_wtime() - taux;
+	  break;
+
+	case (ALG_BASELINE_OPT_F90) :
+	  taux = my_wtime();
+	  for (step = 0; step < niter; ++step){  
+#ifdef USE_MPI
+	    taux2 = my_wtime();
+	    exchange_halos(g);
+	     *tcomm += my_wtime() - taux2;
+#endif
+	     //#ifdef USE_FORTRAN
 	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
 	    //int *nx_p = &NX;
 	    //int *ny_p = &NY;
@@ -152,13 +204,14 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	    /* call subroutine */
 	    //Titanium_laplace3d_f(nx_p, ny_p, nz_p, nxshift_p, uOld, uNew);
 	    Titanium_laplace3d_f(&NX, &NY, &NZ, &nxShift, uOld, uNew);
-#else
-	    Titanium_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
-#endif	  
+	    //#else
+	    //Titanium_laplace3d(NX, NY, NZ, nxShift, uOld, uNew);
+	    //#endif	  
 	    tmp = uNew; uNew = uOld; uOld = tmp;
 	  }
 	  *tcomp = my_wtime() - taux;
 	  break;
+	  
 	case (ALG_BLOCKED) :
 	  taux = my_wtime();
 	  for (step = 0; step < niter; ++step){   
@@ -168,7 +221,36 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	    *tcomm += my_wtime() - taux2;
 #endif
 	    
-#ifdef USE_FORTRAN
+	    //#ifdef USE_FORTRAN
+	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
+	    //int *nx_p = &NX;
+	    //int *ny_p = &NY;
+	    //int *nz_p = &NZ;
+	    //int *bx_p = &BX;
+	    //int *by_p = &BY;
+	    //int *bz_p = &BZ;
+	    //int *nxshift_p = &nxShift;
+	    /* call subroutine */
+	    //Blocked_laplace3d_f(nx_p, ny_p, nz_p, bx_p, by_p, bz_p, nxshift_p, uOld, uNew);
+	    //Blocked_laplace3d_f(&NX, &NY, &NZ, &BX, &BY, &BZ, &nxShift, uOld, uNew);
+	    //#else
+	    Blocked_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, uOld, uNew);
+	    //#endif	    
+	    tmp = uNew; uNew = uOld; uOld = tmp;
+	  }
+	  *tcomp = my_wtime() - taux;
+	  break;
+
+	case (ALG_BLOCKED_F90) :
+	  taux = my_wtime();
+	  for (step = 0; step < niter; ++step){   
+#ifdef USE_MPI
+	    taux2 =  my_wtime();
+	    exchange_halos(g);
+	    *tcomm += my_wtime() - taux2;
+#endif
+	    
+	    //#ifdef USE_FORTRAN
 	    /* recast NX etc as pointers (must be pointers for fortran subroutine) */
 	    //int *nx_p = &NX;
 	    //int *ny_p = &NY;
@@ -180,13 +262,14 @@ void laplace3d(const struct grid_info_t *g, double *tcomp, double *tcomm){
 	    /* call subroutine */
 	    //Blocked_laplace3d_f(nx_p, ny_p, nz_p, bx_p, by_p, bz_p, nxshift_p, uOld, uNew);
 	    Blocked_laplace3d_f(&NX, &NY, &NZ, &BX, &BY, &BZ, &nxShift, uOld, uNew);
-#else
-	    Blocked_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, uOld, uNew);
-#endif	    
+	    //#else
+	    //Blocked_laplace3d(NX, NY, NZ, nxShift, BX, BY, BZ, uOld, uNew);
+	    //#endif	    
 	    tmp = uNew; uNew = uOld; uOld = tmp;
 	  }
 	  *tcomp = my_wtime() - taux;
 	  break;
+	  
 #ifdef USE_MPI
 	case (ALG_CCO)  :  
 	  for (step = 0; step < niter; ++step){
